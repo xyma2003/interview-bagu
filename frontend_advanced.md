@@ -138,3 +138,41 @@ Proxy 和 Reflect 是配套设计的：Proxy 让你拦截对象操作，Reflect 
 
 ---
 
+### Q28: XSS 和 CSRF 攻击的原理是什么？如何防御？
+
+**题目解析**：Web 安全是前端工程师必须掌握的知识，也是面试的高频考察点。
+
+**题目讲解**：
+**XSS（Cross-Site Scripting，跨站脚本）**：
+攻击者在页面注入恶意脚本，在受害者浏览器上执行，窃取 Cookie/Session 或做其他恶意操作。
+
+三种类型：
+1. **存储型 XSS**：恶意脚本存储在服务器（数据库），每次有人访问该页面都会执行
+2. **反射型 XSS**：恶意脚本在 URL 参数里，服务端反射到响应页面
+3. **DOM型 XSS**：前端 JavaScript 把不可信数据插入 DOM（innerHTML/document.write）
+
+**XSS 防御**：
+- **输入验证 + 输出转义**：所有用户输入在显示时转义 HTML 特殊字符（`<` → `&lt;`）
+- **CSP（Content Security Policy）**：HTTP 头设置 `Content-Security-Policy: script-src 'self'`，禁止内联 script 和非同源脚本
+- **HttpOnly Cookie**：阻止 JS 访问 Cookie（`document.cookie` 读不到）
+- **避免 innerHTML**：用 `textContent` 代替，或用 DOMPurify 净化 HTML
+
+**CSRF（Cross-Site Request Forgery，跨站请求伪造）**：
+攻击者诱导受害者访问恶意页面，该页面自动向目标站点发送带有受害者凭证（Cookie）的请求。
+
+**CSRF 防御**：
+- **CSRF Token**：服务端生成随机 token 嵌入表单，请求时校验（攻击者无法获取这个 token）
+- **SameSite Cookie**：`Set-Cookie: token=xxx; SameSite=Strict/Lax`，跨站请求不携带 Cookie
+- **双重 Cookie**：读 Cookie 中的 token 并在请求 Header 中携带，服务端校验二者一致（CSRF 攻击无法读 Cookie 但能携带）
+- **Referer 校验**：验证请求来源域名（不够可靠，可被伪造或被用户隐藏）
+
+**考察点**：
+1. HttpOnly 防 XSS 盗 Cookie，SameSite 防 CSRF 的机制
+2. CSP 的配置和绕过方式
+3. React/Vue 的自动转义（JSX 表达式自动转义，防存储型 XSS）
+
+**示例答案**：
+XSS 的本质是"把数据当代码执行"——攻击者在用户输入里藏 `<script>`，如果服务端不转义直接渲染，就会在所有访问者浏览器上执行恶意脚本。防御核心是输出时转义：把用户数据展示到 HTML 时，将 `<>&'"` 转义为 HTML 实体；React/Vue 的模板/JSX 默认做这个转义，所以现代框架大幅减少了 XSS 风险，但 `dangerouslySetInnerHTML` 和 `v-html` 会绕过，要谨慎。CSP 是纵深防御，即使有注入点，脚本因为 CSP 策略而被浏览器拒绝执行。CSRF 利用的是浏览器的自动 Cookie 携带行为：你登录了银行网站，恶意页面里的表单提交就会自动带上你的 Cookie。SameSite=Strict/Lax 是最简单的现代防御：浏览器不在跨站请求里携带这类 Cookie。CSRF Token 是传统方案，后端生成唯一 token 嵌入表单，攻击者的页面无法读取这个 token（同源策略），所以伪造的请求缺少这个 token 会被拒绝。
+
+---
+
