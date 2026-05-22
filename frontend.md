@@ -258,3 +258,38 @@ this 的值在调用时决定，不在定义时。规则优先级：new > call/a
 
 ---
 
+### Q8: Promise、async/await 的错误处理有哪些最佳实践？
+
+**题目解析**：异步错误处理是生产代码质量的重要体现，考察候选人的工程规范意识。
+
+**题目讲解**：
+**Promise 错误处理**：
+- `.catch()` 捕获 reject 和 then 回调中的抛出错误
+- 未处理的 reject 会触发 `unhandledRejection` 事件
+
+**async/await 错误处理**：
+- try/catch 包裹 await 表达式
+- 对多个 await，可以统一 try/catch，也可以分开
+- `await Promise.allSettled()` 获取所有结果（含失败），不因一个失败而短路
+
+**最佳实践**：
+1. **不要丢失 catch**：Promise 链必须有 .catch，async 函数调用也要有 try/catch 或外层 catch
+2. **Error 类型明确**：自定义 Error 子类，携带业务信息（ErrorCode、context）
+3. **并发错误**：`Promise.all` 中任何一个 reject 会整体 reject，用 `Promise.allSettled` 获取全部结果
+4. **统一错误边界**：在顶层（路由级别）设置错误处理，兜底未捕获错误
+5. **避免 async 地狱**：不要为了简洁省略 await，未 await 的 Promise 错误会被吞
+
+**考察点**：
+1. Promise.all vs Promise.allSettled vs Promise.race 的区别
+2. async 函数本身就返回 Promise，链式调用要注意
+3. 在 React/Vue 中的错误边界设计
+
+**示例答案**：
+异步错误处理的核心是确保每个 Promise 链都有 catch，不能"fire and forget"。在 async/await 里，try/catch 包裹一个或多个 await 表达式，catch 块里处理统一的错误逻辑（上报、降级回显）。一个实用技巧是把 await 的返回和错误一起处理：封装 `const [data, err] = await to(promise)` 这样的 helper，避免 try/catch 嵌套过深。并发场景里，`Promise.all` 遇到一个失败就全部失败（适合"全成功才继续"的场景），`Promise.allSettled` 等所有完成后返回每个结果的状态（适合"批量操作，部分失败也要处理"）。自定义 Error 类要带上业务 code 和 context，方便日志排查。最后，在 Node.js 服务里设置 `process.on('unhandledRejection')` 全局兜底，在 React 里用 ErrorBoundary 捕获渲染错误。
+
+---
+
+## 三、浏览器原理
+
+---
+
