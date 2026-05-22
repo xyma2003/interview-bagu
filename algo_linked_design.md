@@ -387,3 +387,28 @@ def decodeString(s: str) -> str:
 
 ---
 
+### Q63: 每日温度 · LeetCode 739
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目**：找出每天之后第一个更高温度的距离。
+
+**题目讲解（单调递减栈）**：
+```python
+def dailyTemperatures(temperatures: list[int]) -> list[int]:
+    n = len(temperatures)
+    ans = [0] * n
+    stack = []  # 存下标，维护单调递减
+    for i, t in enumerate(temperatures):
+        while stack and temperatures[stack[-1]] < t:
+            j = stack.pop()
+            ans[j] = i - j
+        stack.append(i)
+    return ans
+```
+
+**考察点**：单调栈解决"下一个更大元素"问题；O(N) 时间
+
+---
+
