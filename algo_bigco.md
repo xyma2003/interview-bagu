@@ -96,3 +96,30 @@ def maxSlidingWindow(nums: list[int], k: int) -> list[int]:
 
 ---
 
+### Q74: 字节 面试：最长有效括号 · LeetCode 32（DP 解法）
+
+**🏢 高频公司**：字节
+**难度**：困难 ⭐⭐⭐
+
+**DP 解法**：
+```python
+def longestValidParentheses(s: str) -> int:
+    n = len(s)
+    dp = [0] * n   # dp[i] = 以 s[i] 结尾的最长有效括号长度
+    ans = 0
+    for i in range(1, n):
+        if s[i] == ')':
+            if s[i-1] == '(':
+                dp[i] = (dp[i-2] if i >= 2 else 0) + 2
+            elif dp[i-1] > 0:
+                j = i - dp[i-1] - 1   # 与当前 ')' 配对的 '(' 的位置
+                if j >= 0 and s[j] == '(':
+                    dp[i] = dp[i-1] + 2 + (dp[j-1] if j > 0 else 0)
+            ans = max(ans, dp[i])
+    return ans
+```
+
+**考察点**：DP 状态转移的两种情况（前一个是 `(`；前面是有效子串，再往前是 `(`）
+
+---
+
