@@ -903,3 +903,62 @@ def check_faithfulness(claim: str, source: str) -> bool:
 
 ---
 
+### Q69: Agent Memory 的 Write-Back 策略和记忆遗忘机制如何设计？
+
+**🏢 高频公司**：小红书、字节
+
+**题目讲解**：
+**记忆写入时机（Write-Back）**：
+
+**同步写入**（对话结束时）：
+- 用户说再见或超时后触发
+- 提取对话中的关键信息（用户偏好、决策结果）
+- 缺点：对话中途断开会丢失
+
+**异步写入**（定时/后台）：
+- 对话进行中后台异步提取，不阻塞响应
+- 用消息队列解耦（对话服务 → Kafka → 记忆服务）
+- 适合实时性要求高的场景
+
+**实现示例**：
+```python
+import asyncio
+
+async def chat_with_memory_write(user_msg: str, session: Session):
+    # 同步：生成回复
+    reply = await llm.generate(user_msg, context=session.memory)
+    
+    # 异步：提取并写入记忆（不等待结果）
+    asyncio.create_task(extract_and_save_memory(user_msg, reply, session.user_id))
+    
+    return reply
+
+async def extract_and_save_memory(user_msg, reply, user_id):
+    # 用 LLM 提取关键信息
+    extracted = await llm.extract(
+        f"从以下对话提取用户偏好和关键事实：\n用户：{user_msg}\nAI：{reply}",
+        schema=MemorySchema
+    )
+    await memory_db.upsert(user_id, extracted)
+```
+
+**记忆遗忘策略**：
+1. **TTL 过期**：不重要的记忆设 30 天 TTL，自动过期
+2. **重要性评分**：LLM 给每条记忆打重要性分（1-10），低分记忆优先淘汰
+3. **访问频率**：长期未被检索到的记忆权重衰减
+4. **用户主动删除**：GDPR 合规，支持"忘记我的偏好"
+
+**记忆的更新 vs 追加**：
+- 同类信息（"用户不吃辣"覆盖"用户不吃香菜"→ 都是饮食偏好）：更新
+- 不同类信息（"用户提到女儿"+ "用户是程序员"）：追加
+
+**考察点**：
+1. 异步写入的可靠性保证（消息队列 vs fire-and-forget）
+2. 记忆去重（向量相似度判断是否是同类信息）
+3. 记忆隐私和合规（敏感信息不应存入长期记忆）
+
+**示例答案**：
+记忆写入最好异步，不阻塞主响应路径。实现上用 `asyncio.create_task` 启动后台任务，或者发 Kafka 消息让专门的记忆服务处理。提取什么记忆是关键：不是所有对话都值得记录，只提取"用户偏好"、"重要事实"、"决策结果"类信息，普通闲聊不存。记忆的生命周期管理：重要信息（用户的忌口、工作单位）设较长 TTL 或永久；普通偏好（"上次喜欢的餐厅"）设 30 天 TTL。记忆去重很关键，不能无限追加——用 embedding 相似度判断新记忆是否与已有记忆重复，重复则更新而非追加，避免记忆库无限膨胀。在 Critter 项目里我实现了这套机制：按类别（饮食/工作/爱好）分类存储，同类新信息覆盖旧信息，用 json 文件持久化，每次对话注入 system prompt。
+
+---
+
