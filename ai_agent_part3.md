@@ -655,3 +655,55 @@ user = client.messages.create(
 
 ---
 
+### Q64: 什么是 LLM 的 Tool Use 并行调用（Parallel Tool Use）？如何利用它提升 Agent 速度？
+
+**🏢 高频公司**：字节、腾讯、MiniMax
+
+**题目讲解**：
+部分 LLM（Claude 3+、GPT-4 Turbo）支持在一次回复中输出多个工具调用请求，客户端并行执行后一起返回，大幅降低多步骤 Agent 的延迟。
+
+**工作流对比**：
+```
+串行：
+query → LLM → call tool_A → LLM → call tool_B → LLM → answer
+延迟：3次LLM调用 + 2次工具调用
+
+并行：
+query → LLM → [call tool_A, call tool_B 同时] → LLM → answer
+延迟：2次LLM调用 + 1次（并行）工具调用
+```
+
+**实现**：
+```python
+# Claude 可以在一次 response 里输出多个 tool_use block
+response = client.messages.create(...)
+tool_calls = [b for b in response.content if b.type == "tool_use"]
+
+# 并行执行
+import asyncio
+results = await asyncio.gather(*[
+    execute_tool(tc.name, tc.input) for tc in tool_calls
+])
+
+# 将所有结果一起返回
+tool_results = [
+    {"type": "tool_result", "tool_use_id": tc.id, "content": str(r)}
+    for tc, r in zip(tool_calls, results)
+]
+```
+
+**设计原则**：
+- 独立的信息查询（查天气 + 查股价 + 查新闻）适合并行
+- 有依赖的操作（查用户信息 → 基于结果查订单）必须串行
+- Agent 框架设计时，工具描述里说明依赖关系，让模型自己决定是否并行
+
+**考察点**：
+1. 哪些工具可以并行（独立性判断）
+2. 并行调用的错误处理（部分失败时的处理）
+3. 在 LangGraph 中实现并行工具节点
+
+**示例答案**：
+Parallel Tool Use 是 Agent 性能优化的重要手段。Claude 可以一次回复输出多个 tool_use block，客户端用 asyncio.gather 并发执行，再将所有结果组成 tool_results 列表一起送回。这把 N 次独立工具调用的延迟从 O(N × LLM_latency) 压缩到近似 O(2 × LLM_latency)（一次决策 + 一次综合）。在 LangGraph 里可以用 Send API 实现并行节点：把工具调用列表拆分，每个工具调用 Send 到一个并行节点，所有节点完成后汇总到下一个节点。关键判断是哪些调用可以并行——查天气和查股价完全独立，可以并行；但"先查用户余额再决定推荐策略"有数据依赖，必须串行。
+
+---
+
