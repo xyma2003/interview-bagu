@@ -104,3 +104,33 @@ def longestCommonPrefix(strs: list[str]) -> str:
 
 ---
 
+### Q94: 回文链表判断 · LeetCode 234
+
+**🏢 高频公司**：腾讯
+**难度**：简单 ⭐
+
+**题目讲解**（快慢指针 + 翻转后半段，O(N) 时间 O(1) 空间）：
+```python
+def isPalindrome(head) -> bool:
+    # 1. 找中点
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next; fast = fast.next.next
+    
+    # 2. 翻转后半段
+    prev, curr = None, slow
+    while curr:
+        nxt = curr.next; curr.next = prev; prev = curr; curr = nxt
+    
+    # 3. 比较前后两段
+    left, right = head, prev
+    while right:
+        if left.val != right.val: return False
+        left = left.next; right = right.next
+    return True
+```
+
+**考察点**：找中点 + 翻转后半 + 比较；做完可以还原链表（面试加分）
+
+---
+
