@@ -607,3 +607,67 @@ Rebalance 是 Kafka 消费者的最大痛点，Stop-The-World 期间所有消费
 
 ---
 
+### Q41: 字节/阿里 面试：什么是 CAS？Java 中 AtomicInteger 如何使用 CAS 实现无锁并发？
+
+**🏢 高频公司**：字节、阿里（Java 并发必考）
+
+**题目解析**：
+CAS 是无锁并发编程的核心原语，理解它有助于理解 Java 并发包的底层实现。
+
+**题目讲解**：
+**CAS（Compare And Swap）**：
+- 原子操作：比较内存中的值是否等于期望值，如果是则更新为新值，否则失败返回
+- 硬件指令：`CMPXCHG`（x86），原子执行，无需 OS 锁
+- 伪代码：
+```
+bool CAS(addr, expected, newValue):
+    if *addr == expected:
+        *addr = newValue
+        return true
+    return false
+```
+
+**Java AtomicInteger 实现**：
+```java
+// 底层用 Unsafe 类直接操作内存（绕过 JVM）
+public final int incrementAndGet() {
+    return unsafe.getAndAddInt(this, valueOffset, 1) + 1;
+}
+
+// Unsafe.getAndAddInt 的实现（自旋 CAS）
+public final int getAndAddInt(Object var1, long var2, int var4) {
+    int var5;
+    do {
+        var5 = this.getIntVolatile(var1, var2);  // 读当前值（volatile）
+    } while(!this.compareAndSwapInt(var1, var2, var5, var5 + var4));  // CAS
+    return var5;
+}
+```
+
+**CAS 的三大问题**：
+1. **ABA 问题**：值从 A 变为 B 再变回 A，CAS 判断值还是 A 就认为没变，但实际中间被修改过
+   - 解决：`AtomicStampedReference`，给值加版本号（stamp），比较时同时比较值和版本号
+
+2. **自旋开销**：高并发时 CAS 频繁失败，CPU 空转（自旋等待），开销大
+   - 解决：JDK 8 的 `LongAdder`：分段 CAS（Cells 数组），减少竞争
+
+3. **只保证单个变量原子**：多个变量的原子操作需要 `AtomicReference`
+
+**CAS vs synchronized**：
+- 高竞争（线程多，频繁冲突）：synchronized（内核锁）更高效，避免自旋浪费 CPU
+- 低竞争（线程少，冲突少）：CAS 无需切换内核态，性能更好
+
+**考察点**：
+1. ABA 问题的场景举例（链表头节点被替换又换回来）
+2. volatile 在 CAS 中的作用（可见性保证）
+3. LongAdder vs AtomicLong 的适用场景
+
+**示例答案**：
+CAS 是无锁并发的基础，Java 通过 Unsafe 类封装 CPU 的 `CMPXCHG` 指令实现原子操作。AtomicInteger.incrementAndGet 的实现是自旋 CAS：读取当前值，尝试 CAS 更新为 +1，失败（其他线程改了值）则重新读重新 CAS，直到成功。这比 synchronized 省掉了内核态切换，在低竞争时性能好 3-5 倍。CAS 的 ABA 问题是面试常问的坑：值从 A 改为 B 再改回 A，CAS 无法感知中间的变化，在无锁链表等场景可能导致节点被错误复用。解决方案是 AtomicStampedReference，每次修改都递增 stamp（版本号），比较时同时验证值和 stamp，任一不同就失败。高并发下 AtomicLong 的自旋开销大，JDK 8 的 LongAdder 把计数器分散到多个 Cell（每个 Cell 一个 long），线程 hash 到不同 Cell 并发 CAS，最终 sum 求和，把竞争从单点扩散到多点，高并发场景吞吐量是 AtomicLong 的 10 倍以上。
+
+---
+
+*本专项题库覆盖字节/腾讯/小红书/阿里的后端高频题，共 10 题（Q32-Q41），与基础+进阶篇合计约 41 道后端面试题。*
+
+---
+
