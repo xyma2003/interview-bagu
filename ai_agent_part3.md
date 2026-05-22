@@ -962,3 +962,82 @@ async def extract_and_save_memory(user_msg, reply, user_id):
 
 ---
 
+### Q70: 如何设计多 Agent 系统的错误恢复和任务重试机制？
+
+**🏢 高频公司**：字节、腾讯
+
+**题目讲解**：
+
+**错误类型分类**：
+1. **可重试错误**：网络超时、API 限流（429）、临时服务不可用（503）
+2. **不可重试错误**：参数格式错误（400）、权限不足（403）、业务逻辑错误
+3. **需要人工干预**：工具调用返回了意外结果，Agent 无法自行处理
+
+**重试策略**：
+```python
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception_type((RateLimitError, TimeoutError)),
+    reraise=True
+)
+async def call_tool(tool_name: str, args: dict):
+    ...
+```
+
+**任务级恢复（Checkpoint-based）**：
+```python
+# LangGraph 的 Checkpointer 记录每步状态
+# 失败时从最后成功的 checkpoint 恢复
+graph_config = {"configurable": {"thread_id": "task-123"}}
+
+try:
+    result = await graph.ainvoke(input, graph_config)
+except Exception as e:
+    # 从检查点恢复（LangGraph 自动处理）
+    result = await graph.ainvoke(None, graph_config)  # None 触发从 checkpoint 继续
+```
+
+**错误隔离（Circuit Breaker）**：
+```python
+class CircuitBreaker:
+    def __init__(self, failure_threshold=5, timeout=60):
+        self.failures = 0
+        self.state = "closed"   # closed/open/half-open
+        self.last_failure_time = 0
+    
+    async def call(self, func, *args):
+        if self.state == "open":
+            if time.time() - self.last_failure_time > self.timeout:
+                self.state = "half-open"
+            else:
+                raise Exception("Circuit breaker OPEN")
+        try:
+            result = await func(*args)
+            if self.state == "half-open":
+                self.state = "closed"; self.failures = 0
+            return result
+        except Exception as e:
+            self.failures += 1
+            self.last_failure_time = time.time()
+            if self.failures >= self.failure_threshold:
+                self.state = "open"
+            raise
+```
+
+**优雅降级**：
+- 工具 A 失败 → 尝试备用工具 B → 返回降级结果 → 通知用户
+- 不允许 Agent 因单个工具故障而完全停止运行
+
+**考察点**：
+1. 幂等性对重试的重要性（重试前必须保证操作幂等）
+2. Circuit Breaker 三态（Closed/Open/Half-Open）
+3. LangGraph Checkpointer 的断点恢复机制
+
+**示例答案**：
+多 Agent 系统的错误恢复分三层。工具级：用 tenacity 的指数退避重试，只重试幂等操作（查询类），写操作必须先加幂等 ID 再重试。任务级：LangGraph Checkpointer 在每个节点执行后保存完整 state，失败时从最后成功节点恢复，不需要从头重跑。服务级：对外部工具调用加 Circuit Breaker，连续失败超阈值时熔断（短路），避免雪崩，定时探测恢复。设计原则是"让 Agent 感知错误并自主决策降级"：工具超时时，Agent 应该在下一个 Thought 里感知到（通过 tool_result 里的错误信息），自主选择备用方案或告知用户"该功能暂时不可用"，而不是对用户完全无响应。
+
+---
+
