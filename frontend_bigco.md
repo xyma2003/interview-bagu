@@ -147,3 +147,88 @@ Object.prototype.toString.call(/regex/)  // "[object RegExp]"
 
 ---
 
+### Q39: 字节 面试：实现一个带取消功能的 fetch，以及请求重试机制
+
+**🏢 高频公司**：字节（高频）、腾讯
+
+**题目解析**：
+AbortController 取消请求和指数退避重试是工程实践中的常见需求，考察候选人的异步编程能力。
+
+**题目讲解**：
+
+**带取消的 fetch**：
+```javascript
+function fetchWithCancel(url, options = {}) {
+  const controller = new AbortController();
+  const promise = fetch(url, { ...options, signal: controller.signal })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+      return res.json();
+    });
+  
+  return {
+    promise,
+    cancel: () => controller.abort()
+  };
+}
+
+// 使用
+const { promise, cancel } = fetchWithCancel('/api/data');
+// 1秒后取消
+setTimeout(cancel, 1000);
+promise.then(data => console.log(data))
+       .catch(err => {
+         if (err.name === 'AbortError') console.log('请求已取消');
+         else throw err;
+       });
+```
+
+**带重试的 fetch**：
+```javascript
+async function fetchWithRetry(url, options = {}, {
+  maxRetries = 3,
+  delay = 1000,
+  backoff = 2,          // 指数退避倍数
+  shouldRetry = (err) => true  // 可自定义重试条件
+} = {}) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      if (attempt === maxRetries || !shouldRetry(err)) throw err;
+      const waitTime = delay * Math.pow(backoff, attempt);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+}
+
+// 使用：只对网络错误重试，不对 4xx 重试
+fetchWithRetry('/api/data', {}, {
+  shouldRetry: (err) => !err.message.includes('HTTP 4')
+});
+```
+
+**组合：取消 + 重试**：
+```javascript
+async function fetchWithRetryAndCancel(url, options = {}, retryOptions = {}) {
+  const controller = new AbortController();
+  const promise = fetchWithRetry(url, 
+    { ...options, signal: controller.signal }, 
+    retryOptions
+  );
+  return { promise, cancel: () => controller.abort() };
+}
+```
+
+**考察点**：
+1. AbortController 的原理（信号传递）
+2. 指数退避的意义（避免同时重试打垮服务）
+3. 重试条件的设计（4xx 不重试，5xx 和网络错误重试）
+
+**示例答案**：
+fetch 取消用 AbortController：创建 controller，把 controller.signal 传给 fetch 的 options，调用 controller.abort() 时 fetch 会 reject 一个 AbortError。注意取消后要判断是 AbortError 才静默处理，其他错误正常抛出。重试实现用 for 循环 + try/catch，每次失败等待 `delay * backoff^attempt` 毫秒（指数退避），防止同时大量请求重试打垮后端。shouldRetry 回调让调用者控制重试条件：4xx 客户端错误说明请求本身有问题，重试也没用，不应该重试；5xx 和网络断开才值得重试。生产中还要加 jitter（随机偏移），避免同一时刻大量用户都在重试造成惊群效应。
+
+---
+
