@@ -377,3 +377,27 @@ def search(nums: list[int], target: int) -> int:
 
 ---
 
+### Q10: 寻找旋转排序数组中的最小值 · LeetCode 153
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def findMin(nums: list[int]) -> int:
+    l, r = 0, len(nums) - 1
+    while l < r:
+        mid = (l + r) // 2
+        if nums[mid] > nums[r]:
+            l = mid + 1  # 最小值在右半
+        else:
+            r = mid      # 最小值在左半（含 mid）
+    return nums[l]
+```
+
+**复杂度**：O(log N)
+
+**考察点**：与 nums[r] 比较（不是 nums[l]），因为旋转点总在右侧
+
+---
+
