@@ -457,3 +457,92 @@ JDK 8 引入红黑树是为了防止哈希攻击和提升最坏情况性能。JD
 
 ---
 
+### Q39: 小红书 面试：用 Python 实现一个线程安全的单例模式，以及双重检查锁的问题
+
+**🏢 高频公司**：小红书、字节（Python 岗）
+
+**题目解析**：
+Python 的单例模式和线程安全是 Python 后端面试的常见考察点。
+
+**题目讲解**：
+
+**方案一：模块级变量（Python 推荐方式）**：
+```python
+# singleton.py
+class Singleton:
+    def __init__(self):
+        self.data = {}
+
+instance = Singleton()  # 模块导入时创建，Python GIL 保证一次创建
+
+# 使用
+from singleton import instance
+```
+
+**方案二：基于 __new__（非线程安全）**：
+```python
+class Singleton:
+    _instance = None
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+```
+- 多线程下：两个线程同时判断 `_instance is None`，可能各自创建实例
+
+**方案三：加锁（线程安全但每次都加锁，性能低）**：
+```python
+import threading
+class Singleton:
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+        return cls._instance
+```
+
+**方案四：双重检查锁（Java 中可行，Python 中也可）**：
+```python
+class Singleton:
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        if cls._instance is None:           # 第一次检查（无锁）
+            with cls._lock:                  # 加锁
+                if cls._instance is None:   # 第二次检查（锁内）
+                    cls._instance = super().__new__(cls)
+        return cls._instance
+```
+- Python 中双重检查锁相对安全（GIL 保证基本操作原子性，且无指令重排序问题）
+- Java 中需要 `volatile` 关键字（防止指令重排导致返回未初始化的对象）
+
+**方案五：元类（最 Pythonic）**：
+```python
+class SingletonMeta(type):
+    _instances = {}
+    _lock = threading.Lock()
+    
+    def __call__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls not in cls._instances:
+                cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class MyClass(metaclass=SingletonMeta):
+    pass
+```
+
+**考察点**：
+1. Java 双重检查锁为什么需要 volatile（指令重排序问题）
+2. Python GIL 对线程安全的影响
+3. 元类 vs 装饰器实现单例的区别
+
+**示例答案**：
+Python 中最简单可靠的单例是模块级变量：Python 模块在第一次导入时执行一次，之后缓存，天然单例。需要延迟初始化时用双重检查锁：第一个 `if` 检查避免每次都加锁（性能），加锁后再次 `if` 检查防止多线程同时通过第一个检查后重复创建。Python 中双重检查锁比 Java 安全：Python 有 GIL 保证单个字节码操作的原子性，且 CPython 没有 Java JVM 的指令重排序优化，不需要 `volatile`。Java 中不加 `volatile` 的双重检查锁存在一个经典 bug：`instance = new Singleton()` 不是原子的，JVM 可能先分配内存、设置引用（instance 不再为 null），然后才初始化对象；另一个线程看到 instance 不为 null 但对象还未初始化完成，拿到了"半初始化"的对象。`volatile` 禁止这个指令重排，保证拿到的必须是完全初始化的对象。
+
+---
+
