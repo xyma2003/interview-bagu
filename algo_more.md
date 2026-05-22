@@ -134,3 +134,36 @@ def isPalindrome(head) -> bool:
 
 ---
 
+### Q95: 字符串转整数（atoi）· LeetCode 8
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目讲解**（状态机）：
+```python
+def myAtoi(s: str) -> int:
+    s = s.lstrip()
+    if not s: return 0
+    
+    sign = 1
+    i = 0
+    if s[0] in '+-':
+        sign = -1 if s[0] == '-' else 1
+        i = 1
+    
+    result = 0
+    INT_MAX, INT_MIN = 2**31 - 1, -(2**31)
+    
+    while i < len(s) and s[i].isdigit():
+        result = result * 10 + int(s[i])
+        i += 1
+        if sign * result > INT_MAX: return INT_MAX
+        if sign * result < INT_MIN: return INT_MIN
+    
+    return sign * result
+```
+
+**考察点**：处理顺序（去空格→判断符号→读数字→处理溢出）；溢出要提前判断
+
+---
+
