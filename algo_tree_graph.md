@@ -366,3 +366,35 @@ def combinationSum(candidates: list[int], target: int) -> list[list[int]]:
 
 ---
 
+### Q39: N 皇后 · LeetCode 51
+
+**🏢 高频公司**：字节（困难必考）
+**难度**：困难 ⭐⭐⭐
+
+**题目讲解**：
+```python
+def solveNQueens(n: int) -> list[list[str]]:
+    res = []
+    cols = set(); diag1 = set(); diag2 = set()  # 列、左斜、右斜
+    board = [['.'] * n for _ in range(n)]
+    
+    def backtrack(row):
+        if row == n:
+            res.append([''.join(r) for r in board]); return
+        for col in range(n):
+            if col in cols or (row-col) in diag1 or (row+col) in diag2:
+                continue
+            cols.add(col); diag1.add(row-col); diag2.add(row+col)
+            board[row][col] = 'Q'
+            backtrack(row + 1)
+            board[row][col] = '.'
+            cols.discard(col); diag1.discard(row-col); diag2.discard(row+col)
+    
+    backtrack(0)
+    return res
+```
+
+**考察点**：三个集合记录冲突；主对角线 `row-col` 相等，副对角线 `row+col` 相等
+
+---
+
