@@ -76,3 +76,29 @@ def isValidBST(root, lo=float('-inf'), hi=float('inf')) -> bool:
 
 ---
 
+### Q29: 二叉树中的最大路径和 · LeetCode 124
+
+**🏢 高频公司**：字节（必考困难）、腾讯
+**难度**：困难 ⭐⭐⭐
+
+**题目讲解**：
+```python
+def maxPathSum(root) -> int:
+    ans = float('-inf')
+    def dfs(node) -> int:       # 返回以 node 为端点的最大路径和
+        nonlocal ans
+        if not node: return 0
+        left  = max(dfs(node.left),  0)   # 负数不取
+        right = max(dfs(node.right), 0)
+        ans = max(ans, node.val + left + right)   # 经过 node 的完整路径
+        return node.val + max(left, right)        # 只能选一侧向上传递
+    dfs(root)
+    return ans
+```
+
+**考察点**：
+1. `dfs` 返回值 = 以该节点为端点的最大值（只能选一侧延伸）
+2. 经过节点的完整路径（两侧都取）用 `nonlocal ans` 更新全局最大
+
+---
+
