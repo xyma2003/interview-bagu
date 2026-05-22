@@ -378,3 +378,32 @@ def flatten(root) -> None:
 
 ---
 
+### Q87: 字节 面试：实现一个计算器（基本运算 + 括号）· LeetCode 224
+
+**题目讲解**：
+```python
+def calculate(s: str) -> int:
+    stack = []
+    num, sign = 0, 1
+    res = 0
+    for c in s:
+        if c.isdigit():
+            num = num * 10 + int(c)
+        elif c in '+-':
+            res += sign * num
+            num = 0
+            sign = 1 if c == '+' else -1
+        elif c == '(':
+            stack.append(res); stack.append(sign)
+            res = 0; sign = 1
+        elif c == ')':
+            res += sign * num; num = 0
+            res *= stack.pop()   # 括号外的符号
+            res += stack.pop()   # 括号外的结果
+    return res + sign * num
+```
+
+**考察点**：栈保存括号外的状态；遇到 `)` 时还原
+
+---
+
