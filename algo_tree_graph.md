@@ -315,3 +315,26 @@ def permute(nums: list[int]) -> list[list[int]]:
 
 ---
 
+### Q37: 子集 · LeetCode 78
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def subsets(nums: list[int]) -> list[list[int]]:
+    res = []
+    def backtrack(start, path):
+        res.append(path[:])   # 每个路径都是一个子集
+        for i in range(start, len(nums)):
+            path.append(nums[i])
+            backtrack(i+1, path)
+            path.pop()
+    backtrack(0, [])
+    return res
+```
+
+**考察点**：start 参数避免重复选择之前的元素；子集不需要"终止条件"，每个节点都记录
+
+---
+
