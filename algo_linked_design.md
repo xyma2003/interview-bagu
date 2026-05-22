@@ -156,3 +156,41 @@ def reverseKGroup(head, k: int):
 
 ---
 
+### Q56: 排序链表 · LeetCode 148
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目**：O(N log N) 时间，O(1) 空间排序链表。
+
+**题目讲解（归并排序）**：
+```python
+def sortList(head):
+    if not head or not head.next: return head
+    
+    # 快慢指针找中点
+    slow, fast = head, head.next
+    while fast and fast.next:
+        slow = slow.next; fast = fast.next.next
+    
+    mid = slow.next
+    slow.next = None   # 断开
+    
+    left  = sortList(head)
+    right = sortList(mid)
+    return merge(left, right)
+
+def merge(l1, l2):
+    dummy = curr = ListNode(0)
+    while l1 and l2:
+        if l1.val <= l2.val: curr.next = l1; l1 = l1.next
+        else: curr.next = l2; l2 = l2.next
+        curr = curr.next
+    curr.next = l1 or l2
+    return dummy.next
+```
+
+**考察点**：链表归并排序；Bottom-up 迭代版可达 O(1) 空间
+
+---
+
