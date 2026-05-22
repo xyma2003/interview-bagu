@@ -412,3 +412,24 @@ def dailyTemperatures(temperatures: list[int]) -> list[int]:
 
 ---
 
+### Q64: 接雨水 Ⅱ（单调栈解法）· 对比 LC 42
+
+**题目讲解（单调栈）**：
+```python
+def trap_stack(height: list[int]) -> int:
+    stack = []; ans = 0
+    for i, h in enumerate(height):
+        while stack and height[stack[-1]] < h:
+            bottom = stack.pop()
+            if not stack: break
+            width    = i - stack[-1] - 1
+            bounded  = min(height[stack[-1]], h) - height[bottom]
+            ans += width * bounded
+        stack.append(i)
+    return ans
+```
+
+**考察点**：单调栈按"层"计算雨水；与双指针按"列"计算的区别
+
+---
+
