@@ -370,3 +370,63 @@ async def on_node_complete(node_name: str, step: int, total: int):
 
 ---
 
+### Q79: 如何设计 LLM 应用的 Prompt 版本管理系统？
+
+**🏢 高频公司**：小红书、阿里
+
+**题目讲解**：
+
+**问题**：Prompt 频繁修改，缺乏版本控制和 A/B 测试，无法追溯哪个版本导致了效果变化。
+
+**版本管理系统设计**：
+```python
+# 数据模型
+class PromptVersion(BaseModel):
+    prompt_id: str          # "user_greeting"
+    version: int            # 1, 2, 3...
+    content: str            # 完整 prompt 文本
+    created_by: str
+    created_at: datetime
+    metrics: dict           # 上线后的效果指标（满意率/延迟/成本）
+    status: str             # draft/testing/active/archived
+
+# 使用方式
+class PromptManager:
+    def get_prompt(self, prompt_id: str, version: str = "active") -> str:
+        if version == "active":
+            return self.db.get_active(prompt_id)
+        elif version == "canary":
+            # 10% 流量走 canary 版本
+            if random.random() < 0.1:
+                return self.db.get_canary(prompt_id)
+        return self.db.get_active(prompt_id)
+    
+    def promote(self, prompt_id: str, version: int):
+        """将指定版本设为 active"""
+        old = self.db.get_active(prompt_id)
+        self.db.set_archived(prompt_id, old.version)
+        self.db.set_active(prompt_id, version)
+```
+
+**最佳实践**：
+1. **GitOps**：Prompt 存在 Git 仓库（.prompt 文件），Code Review 才能修改，CI/CD 自动部署
+2. **分环境**：dev/staging/production 各自独立的 prompt 版本
+3. **金丝雀发布**：新版本先对 5-10% 流量生效，指标正常后全量
+4. **自动回滚**：满意度下降超过阈值自动回滚到上一版本
+5. **Prompt 注册表**：集中管理，避免 prompt 散落在各个代码文件里
+
+**工具**：
+- **LangSmith Prompt Hub**：云端 prompt 管理，带版本控制
+- **Langfuse**：开源，支持 prompt 版本和效果追踪
+- **自建 Git + 数据库**：最灵活，完全可控
+
+**考察点**：
+1. Prompt 变更的审批流程（类比代码 Code Review）
+2. A/B 测试的统计显著性判断
+3. Prompt 注入 vs 硬编码的维护成本
+
+**示例答案**：
+Prompt 版本管理和代码版本管理同等重要——一个错误的 prompt 上线可能导致产品大规模质量下降。最低限度要做的是：Prompt 单独存文件（不硬编码在代码里），提交到 Git，修改需要 Review 和测试。进阶方案是建 Prompt Registry 服务：每条 prompt 有 ID 和版本号，active/canary/archived 三种状态，线上代码通过 prompt_id 查询，不涉及代码改动就能更新 prompt。新版本先做金丝雀（5% 流量），监控满意度和成本指标，稳定后全量，异常时一键回滚。LangSmith Prompt Hub 或 Langfuse 都提供现成的 UI，中小团队直接用更省事。
+
+---
+
