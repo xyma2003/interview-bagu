@@ -602,3 +602,44 @@ LLM 红队测试是在 AI 应用上线前主动寻找安全漏洞的过程，类
 
 ---
 
+### Q45: CrewAI 和 AutoGen 的核心设计理念是什么？它们与 LangGraph 有何不同？
+
+**题目解析**：AI Agent 框架选型是实际工程决策，考察候选人对不同框架的对比理解。
+
+**题目讲解**：
+**LangGraph（Anthropic 生态）**：
+- 显式状态机（TypedDict State + 有向图）
+- 精细控制：每条边、每个节点都可以自定义
+- 优势：可调试性强，支持 HITL、Checkpointing、并行节点
+- 适合：复杂流程、需要精细控制的生产系统
+
+**CrewAI（角色驱动）**：
+- 以"角色/岗位"（Role/Backstory）为核心抽象，强调 Agent 的人格
+- Agent 组成 Crew，按顺序或层次完成 Task
+- Hierarchical Process：Manager Agent 分配任务给 Worker
+- 适合：快速搭建、业务语义清晰的场景（类比公司组织架构）
+- 缺点：内部状态管理较黑盒，自定义控制流有限
+
+**AutoGen（微软，对话驱动）**：
+- 以"对话"为核心：Agent 间通过消息对话协作
+- ConversableAgent：每个 Agent 都能与其他 Agent 对话
+- GroupChat：多 Agent 轮流发言，Speaker selection 决定谁说话
+- 优势：灵活的多 Agent 对话，学术友好
+- 缺点：对话流程不如显式状态机可控，难以预测执行路径
+
+**选择建议**：
+- 生产复杂流程，需要强可控性和调试性 → LangGraph
+- 快速原型，业务逻辑可以类比人类团队协作 → CrewAI
+- 研究/实验，需要灵活对话 → AutoGen
+- 简单 RAG/Tool 调用 → LangChain 直接够用
+
+**考察点**：
+1. 三种框架的核心抽象（图/角色/对话）
+2. Hierarchical Agent 的任务分配机制
+3. 框架选型的实际考量（可调试 vs 快速开发）
+
+**示例答案**：
+三个框架的核心抽象不同：LangGraph 用状态图，你显式定义每个节点的处理逻辑和边的转移条件，像写状态机一样控制 Agent 的每一步，可观测性和可控性最强，适合需要上生产的复杂场景；CrewAI 用角色驱动，你定义每个 Agent 的职责（Role/Goal/Backstory），框架自动管理任务流转，类比"组建一个团队完成项目"，业务语义直观，开发快但自定义能力有限；AutoGen 用消息驱动，Agent 互相发消息对话，GroupChat 决定谁该发言，非常灵活但执行路径难以精确预测，更适合研究场景。我在工作中，原型阶段用 CrewAI 快速验证多 Agent 协作思路，确认可行后用 LangGraph 重写成生产版本，获得完整的 Checkpointing、HITL 和 Tracing 支持。
+
+---
+
