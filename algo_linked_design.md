@@ -551,3 +551,30 @@ def strStr(haystack: str, needle: str) -> int:
 
 ---
 
+### Q70: Pow(x, n) · LeetCode 50
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目讲解（快速幂）**：
+```python
+def myPow(x: float, n: int) -> float:
+    if n < 0: x, n = 1/x, -n
+    result = 1.0
+    while n:
+        if n % 2 == 1: result *= x
+        x *= x
+        n //= 2
+    return result
+```
+
+**复杂度**：O(log N)
+
+**考察点**：快速幂（反复平方）；注意 n 为负数的处理；递归版同样 O(log N)
+
+---
+
+*本文件共 20 题（Q51-Q70），覆盖链表 / 栈 / 设计题 / 字符串 / 数学。*
+
+---
+
