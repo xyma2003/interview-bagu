@@ -501,3 +501,47 @@ window.addEventListener('error', (event) => {
 
 ---
 
+### Q36: 什么是 Service Worker？它能实现哪些功能？
+
+**题目解析**：Service Worker 是 PWA 的核心，也是离线缓存和推送通知的基础。
+
+**题目讲解**：
+**Service Worker 特点**：
+- 独立于主线程的 Worker，在后台运行
+- 可拦截和处理网络请求（Fetch 事件）
+- 可以操作 Cache Storage（持久化缓存）
+- 不能直接访问 DOM
+- 生命周期独立（install → activate → idle/fetch）
+- 只在 HTTPS 下工作（localhost 例外）
+
+**主要能力**：
+1. **离线缓存（Offline First）**：
+   - install 阶段预缓存关键资源（App Shell）
+   - fetch 阶段实现缓存策略（Cache First / Network First / Stale While Revalidate）
+2. **后台同步（Background Sync）**：
+   - 用户离线时的操作，联网后自动重试（SyncManager）
+3. **推送通知（Push Notification）**：
+   - 即使页面未打开，服务端也能推送通知
+4. **周期性后台任务（Periodic Background Sync）**：
+   - 定期在后台刷新内容
+
+**Workbox（Google）**：
+- Service Worker 的高级封装，提供多种缓存策略开箱即用：
+  - CacheFirst：优先缓存（字体、图片）
+  - NetworkFirst：优先网络（API 请求）
+  - StaleWhileRevalidate：立即返回缓存，同时在后台更新（非关键数据）
+
+**考察点**：
+1. Service Worker 的生命周期（install/waiting/activate）
+2. `skipWaiting()` 和 `clients.claim()` 的用途
+3. 缓存策略的选择依据
+
+**示例答案**：
+Service Worker 是在浏览器后台运行的脚本，可以拦截所有网络请求并决定如何响应——从缓存返回、从网络获取，或者两者结合。实现离线缓存的核心是：install 阶段把关键资源（HTML/CSS/JS App Shell）预缓存到 Cache Storage，之后用户访问时即使断网也能从缓存提供完整页面。缓存策略的选择很重要：HTML 用 NetworkFirst（保证内容最新），静态资源（带 hash 的 JS/CSS）用 CacheFirst（hash 变了就是新文件，直接用缓存最快），API 数据用 StaleWhileRevalidate（先返回缓存不阻塞渲染，同时后台更新缓存）。Workbox 把这些策略封装好了，直接用 `registerRoute` 配置路由匹配规则和策略即可，不用手写复杂的 SW 代码。`skipWaiting()` 让新 SW 直接激活而不用等待所有旧页面关闭，`clients.claim()` 让新 SW 立即接管当前打开的页面——两者配合实现静默更新。推送通知需要服务端 Web Push 协议支持，用户授权后即使页面关闭也能收到通知。
+
+---
+
+*进阶篇完，与基础篇合计约 36 道前端面试题，涵盖 JavaScript高级特性/安全/React进阶/微前端/测试/SW。*
+
+---
+
