@@ -145,3 +145,36 @@ def buildTree(preorder: list[int], inorder: list[int]):
 
 ---
 
+### Q32: 岛屿数量 · LeetCode 200
+
+**🏢 高频公司**：字节、腾讯、阿里、小红书（超高频）
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def numIslands(grid: list[list[str]]) -> int:
+    if not grid: return 0
+    rows, cols = len(grid), len(grid[0])
+    
+    def dfs(r, c):
+        if not (0 <= r < rows and 0 <= c < cols) or grid[r][c] != '1':
+            return
+        grid[r][c] = '0'   # 标记已访问（原地修改）
+        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+            dfs(r+dr, c+dc)
+    
+    count = 0
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == '1':
+                dfs(r, c)
+                count += 1
+    return count
+```
+
+**复杂度**：O(M×N)
+
+**考察点**：DFS/BFS 都行；追问：BFS 写法？Union-Find 写法？
+
+---
+
