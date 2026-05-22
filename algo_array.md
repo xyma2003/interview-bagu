@@ -45,3 +45,46 @@ def twoSum(nums: list[int], target: int) -> list[int]:
 
 ---
 
+### Q2: 三数之和 (3Sum) · LeetCode 15
+
+**🏢 高频公司**：字节、腾讯、阿里（高频）
+**难度**：中等 ⭐⭐
+
+**题目**：找出数组中所有和为 0 的不重复三元组。
+
+**题目解析**：
+在两数之和基础上增加去重难度，考察双指针技巧和边界处理。
+
+**题目讲解**：
+```python
+def threeSum(nums: list[int]) -> list[list[int]]:
+    nums.sort()
+    res = []
+    for i in range(len(nums) - 2):
+        if nums[i] > 0: break          # 已排序，最小数>0则无解
+        if i > 0 and nums[i] == nums[i-1]: continue  # 跳过重复的第一个数
+        l, r = i + 1, len(nums) - 1
+        while l < r:
+            s = nums[i] + nums[l] + nums[r]
+            if s == 0:
+                res.append([nums[i], nums[l], nums[r]])
+                while l < r and nums[l] == nums[l+1]: l += 1  # 跳过重复
+                while l < r and nums[r] == nums[r-1]: r -= 1
+                l += 1; r -= 1
+            elif s < 0: l += 1
+            else: r -= 1
+    return res
+```
+
+**复杂度**：时间 O(N²)，空间 O(1)（排序 O(N log N)，双指针 O(N)）
+
+**考察点**：
+1. 先排序，再双指针（O(N²) 是该题最优）
+2. 三处去重：外层循环、左指针移动后、右指针移动后
+3. 提前剪枝：nums[i] > 0 时后面不可能有解
+
+**示例答案**：
+排序后固定第一个数 `nums[i]`，用双指针在剩余部分找两数之和等于 `-nums[i]`。关键是去重：外层循环跳过相同的 `nums[i]`；找到一个解后，左右指针都要跳过连续重复元素再继续搜索。时间复杂度 O(N²) 是该问题的下界，无法优化到更低。
+
+---
+
