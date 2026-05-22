@@ -1122,3 +1122,48 @@ React Query 的核心是"服务端状态的本地缓存管理"。每个请求用
 
 ---
 
+### Q58: 前端如何实现 OAuth 2.0 登录流程？PKCE 解决了什么问题？
+
+**🏢 高频公司**：阿里、腾讯
+
+**题目讲解**：
+**Authorization Code Flow**（服务端有 server）：
+```
+1. 前端跳转到授权服务器（携带 client_id + redirect_uri）
+2. 用户登录授权，授权服务器回跳 redirect_uri + code
+3. 后端用 code 换 access_token（携带 client_secret，不暴露给前端）
+4. 后端返回 token 给前端（Set-Cookie HttpOnly）
+```
+
+**PKCE（Proof Key for Code Exchange）**：
+解决 SPA/移动端（无 server，无法保护 client_secret）的安全问题：
+```javascript
+// 1. 生成 code_verifier（随机字符串）
+const codeVerifier = crypto.randomUUID() + crypto.randomUUID()
+
+// 2. 计算 code_challenge = BASE64URL(SHA256(code_verifier))
+const challenge = btoa(String.fromCharCode(...new Uint8Array(
+  await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier))
+))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+
+// 3. 授权请求携带 code_challenge
+const authUrl = `${authServer}/authorize?code_challenge=${challenge}&code_challenge_method=S256&...`
+
+// 4. 换 token 时携带 code_verifier（授权服务器验证 SHA256(verifier) === challenge）
+const tokenResponse = await fetch(`${authServer}/token`, {
+  method: 'POST',
+  body: new URLSearchParams({
+    code, code_verifier: codeVerifier, ...
+  })
+})
+```
+
+**PKCE 的安全性**：即使 code 被中间人截获，没有 code_verifier 也无法换 token（verifier 只存在客户端，从未传输到授权服务器，只传了它的哈希）。
+
+**考察点**：
+1. Authorization Code Flow vs Implicit Flow（后者直接返回 token，已废弃）
+2. PKCE 的 code_verifier 和 code_challenge 的关系
+3. Token 存储（不建议 LocalStorage，推荐 HttpOnly Cookie 或 refresh token rotation）
+
+---
+
