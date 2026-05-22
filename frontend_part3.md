@@ -825,3 +825,78 @@ Web Worker 把 CPU 密集型任务移到独立线程，主线程专注 UI 交互
 
 ---
 
+### Q53: 前端如何实现大文件分片上传？断点续传的原理是什么？
+
+**🏢 高频公司**：字节、腾讯、阿里
+
+**题目讲解**：
+```javascript
+async function uploadLargeFile(file: File) {
+  const CHUNK_SIZE = 5 * 1024 * 1024  // 5MB 每片
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE)
+  const fileHash = await calculateHash(file)  // 文件唯一标识
+  
+  // 1. 检查服务端已上传的分片（断点续传）
+  const { uploadedChunks } = await api.checkUploadStatus(fileHash)
+  
+  // 2. 并发上传缺失的分片
+  const tasks = []
+  for (let i = 0; i < totalChunks; i++) {
+    if (uploadedChunks.includes(i)) continue  // 已上传，跳过
+    const chunk = file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
+    tasks.push(uploadChunk(chunk, i, fileHash))
+  }
+  
+  // 控制并发数（最多 3 个同时上传）
+  await runWithConcurrency(tasks, 3)
+  
+  // 3. 通知服务端合并
+  await api.mergeChunks(fileHash, totalChunks)
+}
+
+async function runWithConcurrency(tasks, limit) {
+  const pool = new Set()
+  for (const task of tasks) {
+    const p = task().finally(() => pool.delete(p))
+    pool.add(p)
+    if (pool.size >= limit) await Promise.race(pool)
+  }
+  await Promise.all(pool)
+}
+```
+
+**文件 Hash 计算（Web Worker 异步）**：
+```javascript
+// 大文件 MD5 计算放到 Worker，防止主线程卡顿
+async function calculateHash(file: File): Promise<string> {
+  return new Promise(resolve => {
+    const worker = new Worker('./hash-worker.js')
+    worker.postMessage(file)
+    worker.onmessage = e => resolve(e.data.hash)
+  })
+}
+```
+
+**服务端合并（Node.js）**：
+```javascript
+// 按分片序号顺序合并
+async function mergeChunks(fileHash, totalChunks) {
+  const ws = fs.createWriteStream(`./uploads/${fileHash}`)
+  for (let i = 0; i < totalChunks; i++) {
+    const chunk = fs.readFileSync(`./temp/${fileHash}-${i}`)
+    ws.write(chunk)
+  }
+  ws.end()
+}
+```
+
+**考察点**：
+1. 并发控制（p-limit 库或手写 concurrency pool）
+2. 文件 hash 计算（MD5/spark-md5，用 Worker 避免主线程阻塞）
+3. 断点续传的服务端状态记录（Redis 存已上传分片列表）
+
+**示例答案**：
+大文件上传核心是切片 + 并发 + 断点续传。先计算文件内容的 Hash（用 spark-md5 按分片逐步计算，放 Worker 里避免 UI 卡顿），用 Hash 作为文件唯一标识。上传前先问服务端"已经上传了哪些分片"，跳过已上传的，只传缺失部分（断点续传）。并发控制很关键，太少慢、太多占带宽，一般 3-5 个并发是最优区间，用 p-limit 或手写 concurrency pool 控制。所有分片上传完后通知服务端合并，服务端按序号拼接文件流。进度展示实时更新（已上传分片数 / 总分片数），用 onprogress 事件追踪每个分片的上传进度。
+
+---
+
