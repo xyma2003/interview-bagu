@@ -1167,3 +1167,54 @@ const tokenResponse = await fetch(`${authServer}/token`, {
 
 ---
 
+### Q59: 如何检测页面的内存泄漏？常见的内存泄漏场景有哪些？
+
+**🏢 高频公司**：字节、腾讯
+
+**题目讲解**：
+
+**常见内存泄漏场景**：
+1. **未移除的事件监听**：`addEventListener` 后组件销毁没有 `removeEventListener`
+2. **未清除的 Timer**：setInterval/setTimeout 持有外部对象引用
+3. **全局变量积累**：不小心挂载到 window 上的对象
+4. **闭包引用**：闭包持有大对象引用，闭包本身被长期持有
+5. **DOM 引用**：JS 里保存了 DOM 元素的引用，DOM 从页面移除后引用仍在
+6. **React 组件**：useEffect 里的订阅/监听没有在 cleanup 函数里取消
+
+**检测方法**：
+
+**Chrome DevTools Memory 面板**：
+1. Performance → Record → 操作页面 → Stop → 查看 Memory 曲线是否下降（GC 后）
+2. Memory → Heap Snapshot（快照）→ 对比前后快照看增量对象
+3. Memory → Allocation instrumentation on timeline（实时追踪分配）
+
+**代码层检测（弱引用追踪）**：
+```javascript
+const weakRef = new WeakRef(myObject)
+// 如果 GC 回收了 myObject，weakRef.deref() 返回 undefined
+setInterval(() => {
+  if (weakRef.deref() === undefined) console.log('已被 GC 回收')
+}, 1000)
+```
+
+**React 最佳实践**：
+```javascript
+useEffect(() => {
+  const handler = () => { /* ... */ }
+  window.addEventListener('resize', handler)
+  const timer = setInterval(fetchData, 5000)
+  
+  return () => {                         // ✅ cleanup
+    window.removeEventListener('resize', handler)
+    clearInterval(timer)
+  }
+}, [])
+```
+
+**考察点**：
+1. WeakMap/WeakRef 的 GC 友好性
+2. Chrome Heap Snapshot 的分析方法
+3. 全局对象泄漏的检测（window 属性数量变化）
+
+---
+
