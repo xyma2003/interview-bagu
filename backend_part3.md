@@ -750,3 +750,44 @@ WHERE product_id = 1001 AND stock > 0
 
 ---
 
+### Q46: 什么是服务网格（Service Mesh）？Istio 的 Sidecar 模式解决了什么问题？
+
+**🏢 高频公司**：腾讯、字节、阿里
+
+**题目讲解**：
+**微服务的通信痛点**：
+每个服务都要实现：服务发现、负载均衡、熔断限流、链路追踪、mTLS 加密... 这些横切关注点让每个服务都很重，且难以统一。
+
+**Service Mesh（服务网格）**：
+把网络通信逻辑下沉到基础设施层，应用代码只关注业务逻辑。
+
+**Istio Sidecar 模式**：
+每个 Pod 注入一个 Envoy Proxy 容器（Sidecar），所有进出该 Pod 的网络流量经过 Proxy 处理：
+```
+Service A → [Envoy Sidecar A] → [Envoy Sidecar B] → Service B
+                ↓ 上报                    ↑
+           Control Plane (Istiod)
+```
+
+**Sidecar 提供的功能**（无需修改应用代码）：
+- **服务发现 + 负载均衡**：Envoy 知道所有服务实例
+- **熔断 + 限流**：在 Proxy 层面自动实现
+- **mTLS**：服务间通信自动加密，证书由 Istiod 管理
+- **链路追踪**：自动在请求头注入 trace ID
+- **流量管理**：灰度发布、A/B 测试（控制 10% 流量到新版本）
+
+**代价**：
+- 每个 Pod 多一个 Sidecar 容器（CPU + 内存开销）
+- 链路多一跳（延迟增加约 1-5ms）
+- 运维复杂度增加
+
+**考察点**：
+1. Service Mesh vs API Gateway 的区别（东西向 vs 南北向）
+2. eBPF 模式（Cilium）替代 Sidecar（无注入，内核层处理）
+3. Sidecar 的控制平面（Istiod）和数据平面（Envoy）分离
+
+**示例答案**：
+Service Mesh 解决微服务通信的横切关注点问题——服务发现、熔断、链路追踪等每个服务都要写一遍，而且各语言的实现可能不一致。Istio 的 Sidecar 方案是每个 Pod 注入 Envoy Proxy，所有流量经过 Proxy，功能在基础设施层统一实现，应用代码完全不感知。控制平面（Istiod）管理配置和证书，数据平面（Envoy）执行规则和加密。代价是多一个 Sidecar 的资源开销和额外延迟，对延迟敏感的服务要权衡。新兴的 eBPF 方案（Cilium）把网络处理下沉到 Linux 内核，不需要 Sidecar，性能更好，是 Service Mesh 的未来方向。
+
+---
+
