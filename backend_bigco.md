@@ -286,3 +286,71 @@ CREATE TABLE events (
 
 ---
 
+### Q36: 腾讯 面试：Redis 的 Pipeline 和 Lua Script 分别解决什么问题？
+
+**🏢 高频公司**：腾讯、字节、阿里
+
+**题目解析**：
+Pipeline 和 Lua 是 Redis 高级特性，考察候选人对 Redis 性能优化的深度理解。
+
+**题目讲解**：
+**Pipeline（管道）**：
+- 问题：每次 Redis 命令都有网络往返（RTT），100 次命令 = 100 × RTT = 100 × 1ms = 100ms
+- 解决：将多个命令一次性发送，服务端批量执行后一次性返回所有结果
+- **不保证原子性**：命令之间可能被其他客户端插入
+- **适合**：批量写入、批量读取
+
+```python
+with redis.pipeline() as pipe:
+    for i in range(100):
+        pipe.set(f'key:{i}', i)
+    pipe.execute()  # 一次网络往返，100 个命令
+```
+
+**Lua Script（原子操作）**：
+- 问题：需要原子性地执行多个 Redis 命令（如：读-判断-写，不能被打断）
+- 解决：Lua 脚本在 Redis 单线程中原子执行，脚本内的所有命令不会被其他客户端命令插入
+- **保证原子性**：脚本内的操作整体是原子的
+- **可缓存**：用 `EVALSHA` 执行已加载的脚本（避免每次传脚本字符串）
+
+```python
+# 原子性的分布式限流
+lua_script = """
+local count = redis.call('GET', KEYS[1])
+if count and tonumber(count) >= tonumber(ARGV[1]) then
+    return 0  -- 超限
+end
+redis.call('INCR', KEYS[1])
+redis.call('EXPIRE', KEYS[1], ARGV[2])
+return 1  -- 允许
+"""
+result = redis.eval(lua_script, 1, 'rate:user:123', 100, 60)
+```
+
+**两者的区别**：
+| | Pipeline | Lua Script |
+|---|---|---|
+| 原子性 | ❌（命令间可被打断）| ✅（整个脚本原子）|
+| 网络优化 | ✅（减少 RTT）| 取决于脚本复杂度 |
+| 适合场景 | 批量独立命令 | 需要原子 CAS/读改写 |
+| 错误处理 | 部分失败返回各自错误 | 任一错误整个脚本回滚 |
+
+**典型 Lua 使用场景**：
+- 分布式锁的原子释放（GET + 校验 + DEL）
+- 限流计数器（原子 INCR + EXPIRE）
+- 库存扣减（原子 GET + 校验 + DECR）
+
+**考察点**：
+1. Pipeline 不是事务（MULTI/EXEC 才是 Redis 事务，但也不是严格 ACID）
+2. Lua 脚本阻塞 Redis 的风险（长时间 Lua 脚本会阻塞其他命令）
+3. Pipeline + Lua 组合：大批量的原子操作
+
+**示例答案**：
+Pipeline 解决网络延迟问题：把 100 个独立命令打包一次发送，从 100 次 RTT 变成 1 次，吞吐量提升显著，但这 100 个命令之间没有原子性保证。Lua 解决原子性问题：需要"读一个值然后根据值做操作"这种 CAS 场景，Lua 脚本在 Redis 单线程中原子执行，中间不会有其他命令插入。分布式锁的释放是 Lua 最典型的用场：`GET lock_key` 判断是否是自己的锁，是才 `DEL`，这两步必须原子，用 Lua 一步搞定，避免"GET 返回是我的锁，然后锁 TTL 过期，别人加锁，我再 DEL 掉别人的锁"的 race condition。需要注意 Lua 脚本不能太长/太复杂，Redis 单线程模型下长时间 Lua 会阻塞所有其他命令，建议 Lua 脚本执行时间控制在 1ms 内。
+
+---
+
+## 阿里高频（Java + 分布式）
+
+---
+
