@@ -546,3 +546,64 @@ Python 中最简单可靠的单例是模块级变量：Python 模块在第一次
 
 ---
 
+### Q40: 阿里 面试：Kafka 消费者 Rebalance 是什么？如何减少 Rebalance 的影响？
+
+**🏢 高频公司**：阿里、字节（Kafka 深度题）
+
+**题目解析**：
+Kafka Rebalance 是生产中的常见性能问题，考察候选人对 Kafka 消费者机制的深度理解。
+
+**题目讲解**：
+**什么是 Rebalance**：
+当 Consumer Group 的成员发生变化或 Topic 分区数变化时，Kafka 重新分配 Partition 给各 Consumer，这个过程称为 Rebalance。
+
+**触发 Rebalance 的条件**：
+1. 消费者加入 Group（新部署）
+2. 消费者离开 Group（正常下线或崩溃）
+3. 消费者超过 `session.timeout.ms`（未发心跳）
+4. Topic 分区数变化
+5. Consumer 超过 `max.poll.interval.ms` 未调用 poll()（消息处理太慢）
+
+**Rebalance 的影响**：
+- Rebalance 期间，所有消费者暂停消费（Stop-The-World）
+- 每次 Rebalance 都要重新分配所有 Partition，成本 O(N×M)（N=partition, M=consumer）
+- 消费者可能被分配到新 Partition，丢失未提交的 offset 缓存
+
+**减少 Rebalance 的策略**：
+
+1. **增加 session.timeout.ms**（心跳超时），减少因网络抖动误判 Consumer 下线
+   ```
+   session.timeout.ms = 30000 (ms)
+   heartbeat.interval.ms = 10000 (三分之一原则)
+   ```
+
+2. **增加 max.poll.interval.ms**，给消息处理更多时间
+   ```
+   max.poll.interval.ms = 300000 (5分钟)
+   ```
+
+3. **减小每次 poll 的数据量**，加快处理速度
+   ```
+   max.poll.records = 100 (默认500)
+   ```
+
+4. **Static Membership（静态成员）**：
+   - 给每个 Consumer 分配唯一 `group.instance.id`
+   - Consumer 重启后以相同 ID 加入，Coordinator 不触发 Rebalance，直接恢复原来的 Partition 分配
+   - 适合：容器重启频繁的 K8s 部署
+
+5. **Incremental Cooperative Rebalance（增量协作重平衡，Kafka 2.4+）**：
+   - 不是 Stop-The-World，而是渐进式：只迁移需要重新分配的 Partition
+   - 未受影响的 Partition 继续消费，不中断
+   - 大幅减少 Rebalance 期间的消费停顿
+
+**考察点**：
+1. session.timeout 和 heartbeat.interval 的关系
+2. max.poll.interval 过小触发 Rebalance 的场景
+3. Static Membership 的工作原理
+
+**示例答案**：
+Rebalance 是 Kafka 消费者的最大痛点，Stop-The-World 期间所有消费者停止消费，积压消息增加，线上可能出现告警。减少 Rebalance 要从触发条件入手：大多数非预期 Rebalance 是因为消费者处理消息太慢（超过 max.poll.interval）或心跳超时（网络抖动 + session.timeout 过短）。调优方向：`max.poll.records` 从 500 降到 100，减少每次 poll 的批次大小，加快消费速度，不超 max.poll.interval；`session.timeout.ms` 调大到 30s（心跳 10s），容忍 GC pause 等短暂延迟；使用 `group.instance.id` 开启静态成员，K8s 滚动更新时 Consumer 重启不触发 Rebalance，只是暂时"离线"后以原 ID 重连并恢复原来的 Partition 分配，对生产影响极小。Kafka 2.4 的增量协作重平衡是根本解决方案：只迁移需要变动的 Partition，其他继续消费，大幅降低停顿时间，强烈推荐升级。
+
+---
+
