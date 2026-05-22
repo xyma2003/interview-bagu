@@ -354,3 +354,54 @@ Pipeline 解决网络延迟问题：把 100 个独立命令打包一次发送，
 
 ---
 
+### Q37: 阿里 面试：Spring 的 IOC 和 AOP 原理是什么？Bean 的生命周期有哪些阶段？
+
+**🏢 高频公司**：阿里（Java 必考）、腾讯、字节
+
+**题目解析**：
+Spring 是 Java 后端的核心框架，IOC/AOP/Bean 生命周期是阿里面试的必考内容。
+
+**题目讲解**：
+**IOC（控制反转 / 依赖注入）**：
+- 传统：对象自己 `new` 依赖；IOC：依赖由 Spring 容器注入，对象只声明需要什么
+- 容器在启动时扫描 `@Component/@Service/@Repository` 等注解，创建 Bean 并维护依赖关系
+- `@Autowired`：按类型注入；`@Qualifier`：按名称注入；`@Value`：注入配置值
+
+**AOP（面向切面编程）**：
+- 将横切关注点（日志、事务、权限）从业务逻辑中分离
+- 底层原理：
+  - **JDK 动态代理**：目标类实现了接口，用 `Proxy.newProxyInstance` 创建代理
+  - **CGLIB 代理**：目标类没有接口，字节码生成子类覆盖方法
+- `@Transactional` 就是 AOP：在目标方法前开启事务，后提交/回滚
+
+**Bean 生命周期**：
+```
+1. BeanDefinition 加载（扫描注解/解析 XML）
+2. 实例化（Constructor 调用）
+3. 属性注入（@Autowired 等依赖注入）
+4. BeanNameAware/BeanFactoryAware 等 Aware 接口回调
+5. BeanPostProcessor#postProcessBeforeInitialization（前置处理）
+6. @PostConstruct / InitializingBean#afterPropertiesSet（初始化方法）
+7. BeanPostProcessor#postProcessAfterInitialization（后置处理）
+   ← AOP 代理在这里创建（AbstractAutoProxyCreator）
+8. 使用中
+9. @PreDestroy / DisposableBean#destroy（销毁）
+```
+
+**@Transactional 失效场景**：
+1. **同类内部调用**：A 方法调用同类的 B 方法（B 有 @Transactional），不走代理，事务不生效
+2. **private 方法**：CGLIB 无法代理 private 方法
+3. **非 Spring 管理的类**：没有被 Spring 容器管理
+4. **异常被 catch 了**：事务感知不到异常，不会回滚
+5. **非 RuntimeException**：默认只对 RuntimeException 回滚（可用 `@Transactional(rollbackFor = Exception.class)` 指定）
+
+**考察点**：
+1. AOP 代理的选择条件（有无接口）
+2. @Transactional 的传播机制（REQUIRED/REQUIRES_NEW/NESTED）
+3. Spring 循环依赖（三级缓存解决）
+
+**示例答案**：
+IOC 的核心是控制反转：对象不自己创建依赖，而是由 Spring 容器管理和注入。Spring 在启动时扫描注解、构建 BeanDefinition、按依赖关系实例化并注入，形成完整的对象图。AOP 底层是代理模式：有接口用 JDK 动态代理（实现接口的代理类），无接口用 CGLIB（字节码生成子类）。`@Transactional` 就是 Spring 最常用的 AOP 应用，在目标方法前开启事务，正常完成时提交，RuntimeException 时回滚。最常见的踩坑点是同类内部调用：A 调用 this.B()，this 是原始对象而非代理，事务注解不生效，必须通过注入 ApplicationContext 拿到代理对象再调用。Bean 生命周期的关键节点是 BeanPostProcessor 的后置处理，这里 Spring 会把 Bean 替换为 AOP 代理对象（如果有 AOP 切面匹配），所以 @PostConstruct 里的 this 是原始对象，外部注入的是代理对象。
+
+---
+
