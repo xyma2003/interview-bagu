@@ -685,3 +685,26 @@ def searchRange(nums: list[int], target: int) -> list[int]:
 
 ---
 
+### Q22: 有效的括号 · LeetCode 20
+
+**🏢 高频公司**：所有大厂（超高频）
+**难度**：简单 ⭐
+
+**题目讲解**：
+```python
+def isValid(s: str) -> bool:
+    stack = []
+    mapping = {')': '(', '}': '{', ']': '['}
+    for c in s:
+        if c in mapping:
+            top = stack.pop() if stack else '#'
+            if mapping[c] != top: return False
+        else:
+            stack.append(c)
+    return not stack
+```
+
+**考察点**：栈的经典应用；追问：最长有效括号 LC32（DP 或栈）
+
+---
+
