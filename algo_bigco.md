@@ -420,3 +420,18 @@ def relativeSortArray(arr1: list[int], arr2: list[int]) -> list[int]:
 
 ---
 
+### Q89: 字节 面试：最优除法 · LeetCode 553（贪心）
+
+**题目**：给定正整数数组，通过加括号使结果最大。
+
+**题目讲解**：
+结论：`a[0] / (a[1] / a[2] / ... / a[n-1])` 总是最大的（第一个数除以分母最小，分母最小就是 a[1] 除以其余所有数的乘积）。
+```python
+def optimalDivision(nums: list[int]) -> str:
+    if len(nums) == 1: return str(nums[0])
+    if len(nums) == 2: return f"{nums[0]}/{nums[1]}"
+    return f"{nums[0]}/({'/' .join(map(str, nums[1:]))})"
+```
+
+---
+
