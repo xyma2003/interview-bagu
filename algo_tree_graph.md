@@ -178,3 +178,40 @@ def numIslands(grid: list[list[str]]) -> int:
 
 ---
 
+### Q33: 腐烂的橘子 · LeetCode 994
+
+**🏢 高频公司**：字节、小红书
+**难度**：中等 ⭐⭐
+
+**题目**：多源 BFS，求所有新鲜橘子腐烂的最少分钟数。
+
+**题目讲解**：
+```python
+from collections import deque
+
+def orangesRotting(grid: list[list[int]]) -> int:
+    rows, cols = len(grid), len(grid[0])
+    q = deque()
+    fresh = 0
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == 2: q.append((r, c, 0))
+            elif grid[r][c] == 1: fresh += 1
+    
+    minutes = 0
+    while q:
+        r, c, t = q.popleft()
+        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+            nr, nc = r+dr, c+dc
+            if 0<=nr<rows and 0<=nc<cols and grid[nr][nc] == 1:
+                grid[nr][nc] = 2
+                fresh -= 1
+                minutes = t + 1
+                q.append((nr, nc, t+1))
+    return minutes if fresh == 0 else -1
+```
+
+**考察点**：多源 BFS（所有腐烂橘子同时出发）；时间戳随 BFS 层数增加
+
+---
+
