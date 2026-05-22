@@ -194,3 +194,22 @@ def merge(l1, l2):
 
 ---
 
+### Q57: 相交链表 · LeetCode 160
+
+**🏢 高频公司**：字节、腾讯
+**难度**：简单 ⭐
+
+**题目讲解**：
+```python
+def getIntersectionNode(headA, headB):
+    a, b = headA, headB
+    while a != b:
+        a = a.next if a else headB   # 走完 A 后从 B 头开始
+        b = b.next if b else headA
+    return a  # 相交返回交点，不相交返回 None
+```
+
+**考察点**：两指针走相同距离后必然相遇；`a+b = b+a`，消除长度差
+
+---
+
