@@ -167,3 +167,26 @@ def myAtoi(s: str) -> int:
 
 ---
 
+### Q96: 在排序矩阵中查找目标值 · LeetCode 240
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目**：行列均有序的矩阵中搜索目标值，O(M+N) 时间。
+
+**题目讲解**（从右上角开始）：
+```python
+def searchMatrix(matrix: list[list[int]], target: int) -> bool:
+    r, c = 0, len(matrix[0]) - 1
+    while r < len(matrix) and c >= 0:
+        val = matrix[r][c]
+        if val == target: return True
+        elif val < target: r += 1   # 当前行太小，向下走
+        else: c -= 1                # 当前列太大，向左走
+    return False
+```
+
+**考察点**：从右上角出发，每步排除一行或一列；类似"有序的决策树"
+
+---
+
