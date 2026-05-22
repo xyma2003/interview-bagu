@@ -356,3 +356,34 @@ class MyQueue:
 
 ---
 
+### Q62: 字符串解码 · LeetCode 394
+
+**🏢 高频公司**：字节、小红书
+**难度**：中等 ⭐⭐
+
+**题目**：`3[a2[c]]` → `accaccacc`
+
+**题目讲解**：
+```python
+def decodeString(s: str) -> str:
+    stack = []
+    cur_str = ""
+    cur_num = 0
+    for c in s:
+        if c.isdigit():
+            cur_num = cur_num * 10 + int(c)
+        elif c == '[':
+            stack.append((cur_str, cur_num))
+            cur_str = ""; cur_num = 0
+        elif c == ']':
+            prev_str, num = stack.pop()
+            cur_str = prev_str + cur_str * num
+        else:
+            cur_str += c
+    return cur_str
+```
+
+**考察点**：栈保存"外层状态"；`cur_num * 10 + int(c)` 处理多位数
+
+---
+
