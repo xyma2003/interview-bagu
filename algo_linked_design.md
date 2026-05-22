@@ -292,3 +292,34 @@ class MinStack:
 
 ---
 
+### Q60: 设计循环队列 · LeetCode 622
+
+**🏢 高频公司**：腾讯
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+class MyCircularQueue:
+    def __init__(self, k: int):
+        self.q = [0] * k; self.k = k
+        self.head = self.tail = 0; self.size = 0
+    
+    def enQueue(self, value: int) -> bool:
+        if self.isFull(): return False
+        self.q[self.tail] = value
+        self.tail = (self.tail + 1) % self.k; self.size += 1
+        return True
+    
+    def deQueue(self) -> bool:
+        if self.isEmpty(): return False
+        self.head = (self.head + 1) % self.k; self.size -= 1
+        return True
+    
+    def Front(self) -> int: return -1 if self.isEmpty() else self.q[self.head]
+    def Rear(self)  -> int: return -1 if self.isEmpty() else self.q[(self.tail-1)%self.k]
+    def isEmpty(self) -> bool: return self.size == 0
+    def isFull(self)  -> bool: return self.size == self.k
+```
+
+---
+
