@@ -108,3 +108,46 @@ Flex 是一维布局，沿一个轴（行或列）分配空间，适合组件内
 
 ---
 
+### Q4: JavaScript 的事件循环（Event Loop）是如何工作的？宏任务和微任务有什么区别？
+
+**题目解析**：Event Loop 是 JavaScript 异步机制的核心，是前端面试的必考题。
+
+**题目讲解**：
+JavaScript 是单线程语言，通过 Event Loop 实现非阻塞异步。
+
+**执行栈（Call Stack）**：同步代码直接在栈上执行。
+
+**任务队列**：
+- **宏任务（MacroTask）**：setTimeout、setInterval、I/O、UI 渲染、postMessage、MessageChannel
+- **微任务（MicroTask）**：Promise.then/catch/finally、MutationObserver、queueMicrotask
+
+**Event Loop 流程**：
+1. 执行完当前宏任务（初始时是整个脚本）
+2. 清空所有微任务队列（微任务执行过程中产生的新微任务也会立即加入并清空）
+3. 如果需要，执行 UI 渲染
+4. 取出下一个宏任务执行
+5. 重复
+
+**关键规则**：每个宏任务执行完后，立即清空所有微任务，然后才执行下一个宏任务。
+
+```javascript
+console.log('1');                    // 同步
+setTimeout(() => console.log('2'));  // 宏任务
+Promise.resolve().then(() => console.log('3')); // 微任务
+console.log('4');                    // 同步
+// 输出: 1, 4, 3, 2
+```
+
+**考察点**：
+1. 微任务比宏任务优先执行
+2. async/await 的微任务本质
+3. Node.js 的 process.nextTick 优先级
+
+**面试官更想听**：
+能举出代码例子，说明微任务队列在每个宏任务后清空的机制；能分析 async/await 的实际执行顺序。
+
+**示例答案**：
+JavaScript 单线程通过 Event Loop 实现异步。执行栈处理同步代码，遇到异步操作（setTimeout、Promise 等）将回调分别注册到宏任务队列或微任务队列。Event Loop 的关键规则是：每执行完一个宏任务，立即清空全部微任务（包括微任务执行中新产生的微任务），然后才执行下一个宏任务。宏任务包括：script（整体代码）、setTimeout、setInterval、I/O；微任务包括：Promise 回调、MutationObserver、queueMicrotask。所以 Promise.then 总比 setTimeout 先执行，不管 setTimeout 的延迟设为多少。async/await 的本质是 Promise 的语法糖，await 后面的代码等价于 .then() 回调，即微任务，理解这一点就能正确分析 async 函数的执行顺序。
+
+---
+
