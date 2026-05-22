@@ -737,3 +737,35 @@ function Counter() {
 
 ---
 
+### Q51: IndexedDB vs LocalStorage vs SessionStorage vs Cookie 的区别和适用场景
+
+**🏢 高频公司**：腾讯、字节
+
+**题目讲解**：
+
+| 特性 | Cookie | LocalStorage | SessionStorage | IndexedDB |
+|------|--------|--------------|----------------|-----------|
+| 存储大小 | 4KB | 5-10MB | 5-10MB | 无限制（受磁盘）|
+| 生命周期 | 可设置 | 永久 | Tab 关闭即清除 | 永久 |
+| 与服务端 | 每次请求自动携带 | 纯客户端 | 纯客户端 | 纯客户端 |
+| 数据类型 | 字符串 | 字符串 | 字符串 | 结构化数据 |
+| 异步 | 同步 | 同步 | 同步 | 异步 |
+| 索引/查询 | ❌ | ❌ | ❌ | ✅ |
+| 事务 | ❌ | ❌ | ❌ | ✅ |
+
+**适用场景**：
+- **Cookie**：身份认证 token（HttpOnly + Secure + SameSite），极小量需要服务端读取的数据
+- **LocalStorage**：用户偏好设置、主题、表单草稿（不敏感、不频繁读写）
+- **SessionStorage**：单页流程的临时数据（购物流程中间状态）
+- **IndexedDB**：离线数据缓存、大量结构化数据、需要查询的本地数据库（PWA 核心）
+
+**考察点**：
+1. Cookie 的 HttpOnly/Secure/SameSite 安全属性
+2. LocalStorage 的同步阻塞问题（大量数据时）
+3. IndexedDB 的事务机制
+
+**示例答案**：
+选存储先看三个维度：数据大小、是否需要服务端访问、生命周期。Session token 用 Cookie（HttpOnly 防 XSS 读取，SameSite=Strict 防 CSRF）；用户主题/偏好用 LocalStorage（简单、永久）；单次会话临时状态用 SessionStorage（Tab 关闭自动清除）；大量结构化数据（离线缓存的商品列表、聊天记录）用 IndexedDB（支持索引和查询，不受 5MB 限制）。PWA 的离线能力完全依赖 IndexedDB + Cache API，而不是 LocalStorage（太小且无查询）。
+
+---
+
