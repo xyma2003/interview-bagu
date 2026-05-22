@@ -639,3 +639,32 @@ def lengthOfLIS(nums: list[int]) -> int:
 
 ---
 
+### Q48: 编辑距离 · LeetCode 72
+
+**🏢 高频公司**：字节（必考 DP）
+**难度**：困难 ⭐⭐⭐
+
+**题目讲解**：
+```python
+def minDistance(word1: str, word2: str) -> int:
+    m, n = len(word1), len(word2)
+    dp = list(range(n+1))
+    for i in range(1, m+1):
+        prev = dp[:]
+        dp[0] = i
+        for j in range(1, n+1):
+            if word1[i-1] == word2[j-1]:
+                dp[j] = prev[j-1]
+            else:
+                dp[j] = 1 + min(prev[j],    # 删除
+                                dp[j-1],    # 插入
+                                prev[j-1])  # 替换
+    return dp[n]
+```
+
+**复杂度**：O(MN) 时间，O(N) 空间（滚动数组）
+
+**考察点**：三种操作的状态转移；滚动数组压缩空间
+
+---
+
