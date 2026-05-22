@@ -323,3 +323,39 @@ this 的值在调用时决定，不在定义时。规则优先级：new > call/a
 
 ---
 
+### Q10: 什么是重绘（Repaint）和回流（Reflow）？如何减少它们？
+
+**题目解析**：重绘回流是前端性能优化的核心知识，也是面试高频题。
+
+**题目讲解**：
+- **回流（Reflow/Layout）**：元素的几何属性（位置、大小）发生变化，需要重新计算布局，代价极高，会影响整个文档
+- **重绘（Repaint）**：元素外观（颜色、背景、visibility）发生变化，但位置大小不变，只需重新绘制，代价较低
+- **关系**：回流必然触发重绘，重绘不一定触发回流
+
+**触发回流的操作**：
+- 改变 width/height/margin/padding/border
+- 读取 `offsetWidth`/`scrollTop`/`clientHeight` 等（强制浏览器同步布局，flush）
+- DOM 增删、字体大小变化
+
+**优化策略**：
+1. **批量 DOM 操作**：用 DocumentFragment 或先将元素 `display: none` 再操作
+2. **避免强制同步布局**：不要在循环里交替读写 DOM 属性
+3. **使用 transform/opacity**：这两个属性改变只需 Composite，不触发 Layout 和 Paint
+4. **will-change**：提前告知浏览器元素将变化，提升到独立图层
+5. **CSS 动画替代 JS 动画**：CSS transform 动画可以在 Compositor 线程执行，不阻塞主线程
+6. **虚拟 DOM**：React/Vue 的 vDOM diff 批量更新，减少实际 DOM 操作次数
+
+**考察点**：
+1. 哪些 CSS 属性只触发 Composite（transform/opacity）
+2. 读写 DOM 的强制同步布局问题
+3. 浏览器图层（compositing layer）的概念
+
+**示例答案**：
+回流是最昂贵的渲染操作，当元素的几何属性（位置、大小）改变时触发，浏览器需要重新计算整个或部分布局树。重绘只更新外观（颜色等），不重新计算布局，开销相对小。最有效的优化是使用 `transform` 和 `opacity` 做动画——这两个属性的变化只需要 Composite 合成阶段，完全跳过 Layout 和 Paint，且在 GPU Compositor 线程处理，不阻塞主线程，动画非常流畅。代码层面要避免强制同步布局（Forced Synchronous Layout）：在 JavaScript 里先读 DOM 属性（`offsetWidth`）再写，浏览器被迫立刻 flush 布局计算，如果在循环里这样做会导致每次迭代都回流，性能极差。正确做法是"读完再批量写"。批量 DOM 更新可以用 DocumentFragment，或先 `display:none` 再操作、再显示。React 的虚拟 DOM diff 本质也是为了减少不必要的真实 DOM 操作，批量 patch。
+
+---
+
+## 四、网络
+
+---
+
