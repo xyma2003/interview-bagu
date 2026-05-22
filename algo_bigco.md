@@ -123,3 +123,30 @@ def longestValidParentheses(s: str) -> int:
 
 ---
 
+### Q75: 阿里 面试：单词拆分 · LeetCode 139
+
+**🏢 高频公司**：阿里、字节
+**难度**：中等 ⭐⭐
+
+**题目**：判断字符串能否由字典中的单词拼接而成。
+
+**题目讲解**（完全背包 DP）：
+```python
+def wordBreak(s: str, wordDict: list[str]) -> bool:
+    word_set = set(wordDict)
+    n = len(s)
+    dp = [False] * (n + 1)
+    dp[0] = True
+    for i in range(1, n + 1):
+        for j in range(i):
+            if dp[j] and s[j:i] in word_set:
+                dp[i] = True
+                break
+    return dp[n]
+```
+**复杂度**：O(N² × M)，N = len(s)，M = 平均单词长度
+
+**考察点**：dp[i] 的含义（前 i 个字符能否被拆分）；追问：打印所有可能的拆分方案（回溯）
+
+---
+
