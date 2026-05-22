@@ -1041,3 +1041,72 @@ class CircuitBreaker:
 
 ---
 
+### Q71: 如何设计 LLM 应用的多租户隔离（Multi-tenant）架构？
+
+**🏢 高频公司**：阿里、腾讯
+
+**题目讲解**：
+
+**多租户的隔离维度**：
+1. **数据隔离**：不同客户的知识库、向量数据、记忆不能混用
+2. **模型配置隔离**：不同客户可能有不同的 system prompt、模型、温度
+3. **限流隔离**：A 客户的高并发不影响 B 客户
+4. **成本归因**：精确追踪每个客户的 token 消耗和费用
+
+**架构方案**：
+
+**向量数据库隔离**：
+```python
+# 方案1：Collection 级隔离（Qdrant）
+client.create_collection(collection_name=f"tenant_{tenant_id}_knowledge")
+
+# 方案2：Metadata 过滤（共享集合，查询时加 filter）
+results = client.search(
+    collection_name="shared_knowledge",
+    query_vector=embedding,
+    query_filter={"tenant_id": tenant_id}  # 严格隔离
+)
+```
+
+**System Prompt 隔离**：
+```python
+def build_system_prompt(tenant_id: str) -> str:
+    tenant_config = config_db.get(tenant_id)
+    return f"""你是 {tenant_config.bot_name}，{tenant_config.persona}
+公司信息：{tenant_config.company_info}
+回答语言：{tenant_config.language}"""
+```
+
+**Rate Limiting 隔离**：
+```python
+# Redis 按 tenant_id 做限流
+async def check_rate_limit(tenant_id: str) -> bool:
+    key = f"rate:{tenant_id}:{int(time.time() // 60)}"
+    count = await redis.incr(key)
+    await redis.expire(key, 60)
+    limit = tenant_limits.get(tenant_id, DEFAULT_LIMIT)
+    return count <= limit
+```
+
+**成本归因**：
+```python
+# 每次 LLM 调用记录 tenant_id 和 token 使用量
+await usage_db.insert({
+    "tenant_id": tenant_id,
+    "model": model,
+    "input_tokens": response.usage.input_tokens,
+    "output_tokens": response.usage.output_tokens,
+    "timestamp": datetime.now()
+})
+```
+
+**考察点**：
+1. Collection 隔离 vs 共享 Collection + filter（成本 vs 严格隔离）
+2. 配置的热更新（不重启服务修改租户配置）
+3. 跨租户数据泄露的防御（注意 LLM 上下文污染）
+
+**示例答案**：
+多租户 LLM 架构的核心是数据和配置的严格隔离。向量数据库上，小租户用共享 Collection + metadata filter（省钱），大租户或安全要求高的给独立 Collection（强隔离）。System prompt 从数据库动态加载，每个租户有独立配置（bot 名字、人格、公司信息），热更新不需要重启服务。限流按 tenant_id 维度用 Redis 令牌桶，防止单个租户打垮整个服务。成本归因必须在 LLM 调用层记录，写入 ClickHouse，支持按租户、按日期、按模型多维度分析。最重要的安全原则：不同租户的对话上下文绝对不能混入，每次请求只携带当前租户的 system prompt 和知识库内容，禁止跨租户的任何信息传递。
+
+---
+
