@@ -359,3 +359,74 @@ dataclass 是标准库提供的轻量数据类，自动生成 `__init__/__repr__
 
 ---
 
+### Q56: 如何在 Python 异步代码中正确使用数据库？asyncpg vs psycopg2 有什么区别？
+
+**🏢 高频公司**：小红书、字节
+
+**题目讲解**：
+
+**问题**：同步数据库驱动（psycopg2）在异步框架（FastAPI + asyncio）里会阻塞事件循环：
+```python
+# ❌ 错误：psycopg2 是同步的，会阻塞 asyncio event loop
+@app.get("/users")
+async def get_users():
+    conn = psycopg2.connect(...)   # 阻塞！整个 event loop 暂停
+    cursor.execute("SELECT * FROM users")
+```
+
+**asyncpg（异步 PostgreSQL 驱动）**：
+```python
+import asyncpg
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def get_db():
+    conn = await asyncpg.connect(DATABASE_URL)
+    try:
+        yield conn
+    finally:
+        await conn.close()
+
+# 使用连接池
+pool = await asyncpg.create_pool(DATABASE_URL, min_size=5, max_size=20)
+
+@app.get("/users")
+async def get_users():
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("SELECT * FROM users WHERE active = $1", True)
+        return [dict(row) for row in rows]
+```
+
+**SQLAlchemy 2.0 异步（asyncio）**：
+```python
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+
+engine = create_async_engine("postgresql+asyncpg://user:pass@host/db")
+AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+@app.get("/users/{id}")
+async def get_user(id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == id))
+    return result.scalar_one_or_none()
+```
+
+**同步驱动的临时方案（run_in_executor）**：
+```python
+import asyncio
+# 在线程池里执行同步 DB 操作，不阻塞 event loop
+result = await asyncio.get_event_loop().run_in_executor(
+    None, sync_db_query, args
+)
+```
+
+**考察点**：
+1. asyncpg 比 psycopg2 快的原因（Binary Protocol，无 GIL，纯异步）
+2. 连接池在异步中的使用（`async with pool.acquire()`）
+3. FastAPI 的 Depends 注入异步 DB session
+
+**示例答案**：
+异步 Web 框架里必须用异步数据库驱动，否则任何一次 DB 查询都会阻塞整个 event loop，把异步的性能优势全部抵消。asyncpg 是 PostgreSQL 的异步原生驱动，使用 PostgreSQL 的二进制协议（比文本协议快），性能比 psycopg2 高 3-5 倍。连接池用 `asyncpg.create_pool` 创建，在 FastAPI 启动时初始化（`@app.on_event("startup")`），通过 Depends 注入到路由函数。如果项目里已有大量 SQLAlchemy ORM 代码，用 SQLAlchemy 2.0 的 asyncio 模式（切换 asyncpg 驱动），可以保留 ORM 的同时支持异步，迁移成本最低。
+
+---
+
