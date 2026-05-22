@@ -164,3 +164,51 @@ W_int8 = round(W / scale)
 
 ---
 
+### Q35: 如何评估一个 LLM 的能力？常用的 Benchmark 有哪些？
+
+**题目解析**：评估 LLM 能力是模型选型和质量保证的基础，考察候选人的工程化思维。
+
+**题目讲解**：
+**通用能力 Benchmark**：
+- **MMLU（Massive Multitask Language Understanding）**：57个学科的多选题，考察世界知识
+- **HumanEval / MBPP**：Python 代码生成，按通过率（pass@k）评估
+- **GSM8K / MATH**：数学推理（小学到竞赛级别）
+- **BIG-Bench**：多任务困难问题集
+- **HELM（Holistic Evaluation）**：综合评估框架
+
+**中文 Benchmark**：
+- **C-Eval**：中文综合学科知识评测
+- **CMMLU**：中文多学科理解
+- **AlignBench**：中文对齐能力评测
+
+**Agent 专项 Benchmark**：
+- **GAIA**：现实世界 AI 助手任务（需要工具使用、多步推理）
+- **SWE-bench**：解决真实 GitHub Issue（软件工程能力）
+- **WebArena / OSWorld**：Web/桌面操作任务
+- **AgentBench**：多环境 Agent 综合评测
+
+**业务场景评估**：
+- 领域专项数据集（自建）
+- LLM-as-Judge：用强模型（GPT-4/Claude）评分
+- 人工评估（A/B 对比盲测，最可靠但成本高）
+- ELO 排名（多模型对比，如 LMSYS Chatbot Arena）
+
+**评估陷阱**：
+- Benchmark 污染：训练数据包含测试集答案（数据泄漏）
+- 单一指标误导：某项高不等于全面好
+- 分布偏移：标准 benchmark 不代表你的业务场景
+
+**考察点**：
+1. 不同 benchmark 侧重不同能力（知识/推理/代码/Agent）
+2. 自定义业务评测集的重要性
+3. Benchmark 污染问题的识别
+
+**示例答案**：
+选模型不能只看 MMLU，要根据实际任务选 benchmark。代码生成看 HumanEval pass@1，数学推理看 GSM8K，Agent 能力看 GAIA 或 SWE-bench。但标准 benchmark 和真实业务场景往往有分布偏差，我的做法是：先用标准 benchmark 做初筛，缩小候选模型范围，再在自建的业务数据集上精细评估——把真实用户问题抽样，用 LLM-as-Judge 对各候选模型输出打分，最后对 Top 2-3 个模型做人工盲测（不知道哪个模型输出哪个答案）。Benchmark 污染是个真实问题，新 benchmark 发布 6 个月后就会被训练数据收录，排名迅速飙升但不代表真实提升。我们内部维护一批从未公开的测试用例，专门用于不受污染的内部评测。
+
+---
+
+## 十二、向量检索进阶
+
+---
+
