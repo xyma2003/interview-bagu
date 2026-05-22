@@ -607,3 +607,35 @@ def coinChange(coins: list[int], amount: int) -> int:
 
 ---
 
+### Q47: 最长递增子序列 · LeetCode 300
+
+**🏢 高频公司**：字节、腾讯（必考 DP）
+**难度**：中等 ⭐⭐
+
+**方法一：DP O(N²)**：
+```python
+def lengthOfLIS(nums: list[int]) -> int:
+    dp = [1] * len(nums)
+    for i in range(1, len(nums)):
+        for j in range(i):
+            if nums[j] < nums[i]:
+                dp[i] = max(dp[i], dp[j] + 1)
+    return max(dp)
+```
+
+**方法二：贪心+二分 O(N log N)**：
+```python
+import bisect
+def lengthOfLIS(nums: list[int]) -> int:
+    tails = []   # tails[i] = 长度为 i+1 的 LIS 的最小末尾元素
+    for x in nums:
+        pos = bisect.bisect_left(tails, x)
+        if pos == len(tails): tails.append(x)
+        else: tails[pos] = x
+    return len(tails)
+```
+
+**考察点**：`bisect_left` 的语义（第一个 `>= x` 的位置）；tails 不是实际 LIS，只是辅助计数
+
+---
+
