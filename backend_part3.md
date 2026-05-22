@@ -980,3 +980,80 @@ class Circle:
 
 ---
 
+### Q50: 谈谈 MySQL 的 EXPLAIN 输出，如何定位慢查询的根本原因？
+
+**🏢 高频公司**：所有大厂（必考 SQL 优化）
+
+**题目讲解**：
+```sql
+EXPLAIN SELECT u.name, o.total 
+FROM users u 
+JOIN orders o ON u.id = o.user_id 
+WHERE u.city = 'Beijing' 
+ORDER BY o.created_at DESC 
+LIMIT 10;
+```
+
+**EXPLAIN 关键字段详解**：
+```
+id   | select_type | table | type   | key         | key_len | rows  | Extra
+1    | SIMPLE      | u     | ref    | idx_city    | 132     | 5000  | Using index condition
+1    | SIMPLE      | o     | ref    | idx_user_id | 8       | 3     | Using filesort
+```
+
+- **type（最重要）**：
+  - `ALL` → 全表扫描（必须优化）
+  - `index` → 全索引扫描（好一点但仍可能慢）
+  - `range` → 索引范围扫描（可接受）
+  - `ref` → 非唯一索引等值查询（好）
+  - `eq_ref` → 唯一索引等值查询（JOIN 时最好）
+  - `const/system` → 主键等值（最快）
+
+- **Extra 关键信息**：
+  - `Using filesort` → 排序没走索引（额外排序操作，可能很慢）
+  - `Using temporary` → 用了临时表（GROUP BY / DISTINCT 时常见，很慢）
+  - `Using index` → 覆盖索引（只读索引不读行，很快）
+  - `Using index condition` → 索引条件下推（ICP）
+  - `Backward index scan` → 逆序索引扫描
+
+**慢查询定位流程**：
+```sql
+-- 1. 开启 slow_query_log，找出 > 1s 的查询
+SET GLOBAL slow_query_log = 'ON';
+SET GLOBAL long_query_time = 1;
+
+-- 2. EXPLAIN 分析执行计划，看 type 和 Extra
+EXPLAIN SELECT ...;
+
+-- 3. SHOW WARNINGS (MySQL 8.0) 看优化后的 SQL
+EXPLAIN SELECT ...; SHOW WARNINGS;
+
+-- 4. 针对性优化
+-- type=ALL → 加索引
+-- Using filesort → ORDER BY 字段加到索引
+-- Using temporary → 考虑 GROUP BY 优化
+```
+
+**索引失效常见原因**：
+```sql
+WHERE YEAR(created_at) = 2024      -- 函数包裹索引列，失效
+WHERE username != 'admin'          -- 不等于，通常失效（走全表更快）
+WHERE phone LIKE '%1234'           -- 前缀模糊，失效
+WHERE age + 1 = 18                 -- 表达式，失效
+WHERE phone = 13812345678          -- 类型不匹配（字符串列传数字），失效
+```
+
+**考察点**：
+1. `Using filesort` 不一定在文件系统排序（内存也是 filesort）
+2. `rows` 是估计值，不是精确值
+3. 覆盖索引（Using index）是最高效的查询方式
+
+**示例答案**：
+定位慢查询的标准流程：slow_query_log 找出慢 SQL → EXPLAIN 看执行计划 → 重点看 type（是否全表扫描）、key（是否走了预期索引）、Extra（是否有 filesort/temporary）。最常见的问题是 type=ALL（没有合适索引），加索引后看 type 变成 ref/range。Using filesort 表示 ORDER BY 没有用上索引，通常是排序字段不在索引里，或者 ORDER BY 和 WHERE 条件的联合索引顺序不对。Using temporary 通常出现在 GROUP BY 字段没索引的情况，非常慢，解决方案是给 GROUP BY 字段加索引或者改写查询。EXPLAIN ANALYZE（MySQL 8.0.18+）能看到实际执行时间，比 EXPLAIN 的估算更准确，是性能调优的利器。
+
+---
+
+*本篇共 9 题（Q42-Q50），与前两篇合计 50 道后端面试题。*
+
+---
+
