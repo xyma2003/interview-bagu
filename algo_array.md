@@ -657,3 +657,31 @@ def searchInsert(nums: list[int], target: int) -> int:
 
 ---
 
+### Q21: 在排序数组中查找元素的第一个和最后一个位置 · LeetCode 34
+
+**🏢 高频公司**：字节、腾讯（高频）
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def searchRange(nums: list[int], target: int) -> list[int]:
+    def lower_bound(nums, target):      # 第一个 >= target 的位置
+        l, r = 0, len(nums)
+        while l < r:
+            mid = (l + r) // 2
+            if nums[mid] < target: l = mid + 1
+            else: r = mid
+        return l
+    
+    left  = lower_bound(nums, target)
+    right = lower_bound(nums, target + 1) - 1
+    
+    if left <= right and left < len(nums) and nums[left] == target:
+        return [left, right]
+    return [-1, -1]
+```
+
+**考察点**：统一用 `lower_bound` 封装，right = lower_bound(target+1) - 1
+
+---
+
