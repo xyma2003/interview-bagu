@@ -58,3 +58,21 @@ def levelOrder(root) -> list[list[int]]:
 
 ---
 
+### Q28: 验证二叉搜索树 · LeetCode 98
+
+**🏢 高频公司**：字节、腾讯、阿里
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def isValidBST(root, lo=float('-inf'), hi=float('inf')) -> bool:
+    if not root: return True
+    if not (lo < root.val < hi): return False
+    return (isValidBST(root.left,  lo, root.val) and
+            isValidBST(root.right, root.val, hi))
+```
+
+**考察点**：传递上下界（不只是和父节点比），中序遍历结果必须严格递增
+
+---
+
