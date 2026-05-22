@@ -79,3 +79,28 @@ def setZeroes(matrix: list[list[int]]) -> None:
 
 ---
 
+### Q93: 最长公共前缀（Trie 优化）· LeetCode 14 进阶
+
+**题目讲解**（分治法）：
+```python
+def longestCommonPrefix(strs: list[str]) -> str:
+    def lcp(s1: str, s2: str) -> str:
+        i = 0
+        while i < len(s1) and i < len(s2) and s1[i] == s2[i]:
+            i += 1
+        return s1[:i]
+    
+    def divide(lo, hi) -> str:
+        if lo == hi: return strs[lo]
+        mid = (lo + hi) // 2
+        left  = divide(lo, mid)
+        right = divide(mid+1, hi)
+        return lcp(left, right)
+    
+    return divide(0, len(strs) - 1) if strs else ""
+```
+
+**考察点**：分治将问题拆为两半，每半求 LCP，合并；时间同样 O(S)，但更利于并行
+
+---
+
