@@ -105,3 +105,97 @@ return model_map[complexity.strip()]
 
 ---
 
+### Q75: 如何实现 Agent 的流式输出（Streaming）并转发给前端？完整实现链路是什么？
+
+**🏢 高频公司**：字节、腾讯、小红书
+
+**题目讲解**：
+**完整链路**：
+```
+Anthropic API (stream) → FastAPI (SSE) → 前端 (EventSource)
+```
+
+**后端实现（FastAPI + SSE）**：
+```python
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import anthropic
+import json
+
+app = FastAPI()
+client = anthropic.Anthropic()
+
+@app.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    async def generate():
+        with client.messages.stream(
+            model="claude-opus-4-6",
+            max_tokens=2048,
+            messages=[{"role": "user", "content": request.message}]
+        ) as stream:
+            for text in stream.text_stream:
+                # SSE 格式：data: {json}\n\n
+                yield f"data: {json.dumps({'delta': text})}\n\n"
+        yield "data: [DONE]\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",   # 禁用 Nginx 缓冲
+        }
+    )
+```
+
+**前端消费（React）**：
+```javascript
+const streamChat = async (message: string, onToken: (text: string) => void) => {
+  const response = await fetch('/chat/stream', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ message }),
+  })
+  
+  const reader = response.body!.getReader()
+  const decoder = new TextDecoder()
+  
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    
+    const chunk = decoder.decode(value)
+    const lines = chunk.split('\n').filter(l => l.startsWith('data: '))
+    for (const line of lines) {
+      const data = line.replace('data: ', '')
+      if (data === '[DONE]') return
+      const { delta } = JSON.parse(data)
+      onToken(delta)
+    }
+  }
+}
+```
+
+**LangGraph 流式**（含工具调用事件）：
+```python
+async for event in graph.astream_events(input, version="v2"):
+    if event["event"] == "on_chat_model_stream":
+        chunk = event["data"]["chunk"]
+        if chunk.content:
+            yield f"data: {chunk.content}\n\n"
+    elif event["event"] == "on_tool_start":
+        yield f"data: {json.dumps({'tool': event['name']})}\n\n"
+```
+
+**工程注意点**：
+- Nginx 需要设置 `proxy_buffering off` 或 `X-Accel-Buffering: no`
+- 用户取消请求时后端需要检测 disconnect 并取消 LLM 调用（节省 API 费用）
+- 工具调用期间没有流式文本，前端要显示"思考中..."占位
+
+**考察点**：
+1. SSE 协议格式（`data: xxx\n\n`）
+2. Nginx 缓冲禁用（否则 SSE 会等缓冲区满才发送）
+3. 用户断开连接时的 cancel 处理
+
+---
+
