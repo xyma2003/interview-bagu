@@ -1102,3 +1102,146 @@ class BudgetTracker:
 
 ---
 
+### Q90: 设计一个 AI 写作助手 Agent（面向小红书内容创作者）
+
+**🏢 高频公司**：小红书（内部创作者工具）、字节
+
+**题目解析**：
+内容创作是小红书的核心业务，AI 写作助手帮助创作者提效，考察 Agent 与创作流程的深度结合。
+
+---
+
+**一、需求拆解**
+
+**创作者痛点**：
+- 标题不吸引人，数据差
+- 正文结构乱，逻辑不清
+- 关键词埋入生硬，SEO 差
+- 多平台发布（小红书/微博/公众号）格式不同
+
+**Agent 能力**：
+- 给定主题 → 一键生成内容大纲
+- 草稿完善（补充细节/增加互动钩子）
+- 标题 A/B 测试建议（生成 5 个标题变体）
+- SEO 关键词建议和自然植入
+- 多平台适配（字数/格式/风格调整）
+- 爆款内容参考（RAG 检索同类热门内容）
+
+---
+
+**二、核心工作流**
+
+```
+用户输入：主题/关键词/内容类型
+    │
+    ▼
+[创作意图理解]
+  - 内容类型（测评/教程/日记/好物分享）
+  - 目标受众（学生/职场/宝妈）
+  - 风格偏好（干货/种草/故事性）
+    │
+    ▼
+[灵感激发层]
+  - 搜索同类热门内容（小红书内部数据 + RAG）
+  - 分析爆款共同特征（标题结构/封面规律/互动点）
+    │
+    ▼
+[大纲生成] → 用户确认/修改
+    │
+    ▼
+[正文生成]（流式输出，用户可实时干预）
+    │
+    ▼
+[多维度优化]
+  ├── 标题优化（生成 5 个变体，预估点击率）
+  ├── 关键词植入（SEO 优化，自然度检查）
+  ├── 互动钩子添加（问题/投票/话题标签）
+  └── 多平台适配（字数/格式转换）
+    │
+    ▼
+一键发布 or 导出
+```
+
+---
+
+**三、关键技术**
+
+**3.1 爆款特征学习（RAG + 结构化知识）**
+
+```python
+# 索引热门笔记，提取爆款规律
+class ViralContentKnowledge:
+    def get_template(self, content_type: str, category: str) -> ContentTemplate:
+        # 检索同类热门内容的结构模板
+        examples = self.rag.search(f"{content_type} {category} 爆款", k=5)
+        pattern = analyze_common_pattern(examples)
+        return ContentTemplate(
+            title_patterns=pattern.title_structures,
+            opening_hooks=pattern.opening_strategies,
+            key_sections=pattern.section_types,
+            cta_patterns=pattern.call_to_action_styles,
+        )
+```
+
+**3.2 个性化风格保留**
+
+```python
+# 分析用户历史作品，建立写作风格模型
+def extract_writing_style(user_posts: list[Post]) -> StyleProfile:
+    return StyleProfile(
+        tone=analyze_tone(user_posts),           # 活泼/严肃/幽默
+        avg_sentence_length=calc_avg_len(user_posts),
+        emoji_usage=calc_emoji_frequency(user_posts),
+        common_phrases=extract_phrases(user_posts),
+        preferred_structure=analyze_structure(user_posts),
+    )
+```
+
+**3.3 标题 CTR 预估**
+
+```python
+# 用历史数据训练的标题评分模型，预估点击率
+def score_title(title: str, category: str) -> TitleScore:
+    features = {
+        "has_number": bool(re.search(r'\d', title)),
+        "has_emoji": bool(re.search(r'[\U00010000-\U0010ffff]', title)),
+        "length": len(title),
+        "has_question": '？' in title or '?' in title,
+        "category_match": compute_relevance(title, category),
+        "sentiment": analyze_sentiment(title),
+    }
+    return model.predict(features)
+```
+
+---
+
+**四、难点与权衡**
+
+| 难点 | 解决方案 |
+|------|---------|
+| 生成内容太"AI 味" | Fine-tuning 用户自己的笔记风格；让用户描述自己的风格关键词 |
+| 关键词植入生硬 | 先写完再插入，Natural Language Paraphrasing 保证流畅度 |
+| 抄袭风险（RAG 参考爆款）| 只参考结构不参考具体词句；输出前做重复度检测 |
+| 创作者对 AI 依赖过度 | 强调"辅助"定位，不提供"一键复制"，要求用户参与修改 |
+| 平台规则变化 | 规则知识库 RAG 化，运营人员随时更新 |
+
+**考察点**：
+1. RAG 知识库用于学习爆款规律（不只是问答）
+2. 个性化风格的提取和保留
+3. 多轮协作的工作流（生成→确认→优化，不是一次性输出）
+4. 平台规则合规检查
+
+**示例答案**：
+
+小红书写作助手 Agent 的核心是**"辅助"而非"替代"**——最好的体验是创作者觉得"Agent 懂我，帮我把想说的说得更好"。
+
+爆款学习用 RAG：索引平台热门笔记，提取结构模板（标题规律/开篇钩子/常用句式/话题标签），根据用户的内容类型（测评/教程/好物）检索对应模板作为参考。注意是参考结构而非内容，防抄袭。
+
+个性化是差异化关键：分析用户历史 20 篇笔记，提取写作风格（语气/emoji 密度/句子长度/惯用开篇词），生成内容时注入风格约束，让 AI 写出来的内容和用户平时的风格一致，降低"AI 味"。
+
+多轮协作工作流：大纲确认（用户可以调整方向）→ 正文流式生成（用户可以打断修改）→ 优化阶段（标题变体+关键词建议+互动钩子）→ 多平台适配。每个阶段都是用户可控的，Agent 不做独裁者。
+
+标题是转化关键，提供 5 个变体并预估点击率（用历史数据训练的特征模型），让用户自己选择或组合，效果远好于 AI 直接给一个"最优标题"。
+
+---
+
