@@ -764,3 +764,51 @@ def topKFrequent(nums: list[int], k: int) -> list[int]:
 
 ---
 
+### Q25: 数组中的第 K 个最大元素 · LeetCode 215
+
+**🏢 高频公司**：字节（必考）、腾讯、阿里
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+
+**方法一：最小堆，O(N log K)**：
+```python
+def findKthLargest(nums: list[int], k: int) -> int:
+    import heapq
+    return heapq.nlargest(k, nums)[-1]
+```
+
+**方法二：快速选择（QuickSelect），平均 O(N)**：
+```python
+import random
+def findKthLargest(nums: list[int], k: int) -> int:
+    target = len(nums) - k   # 转为找第 target 小
+    def quickselect(l, r):
+        pivot_idx = random.randint(l, r)
+        nums[pivot_idx], nums[r] = nums[r], nums[pivot_idx]
+        pivot = nums[r]
+        store = l
+        for i in range(l, r):
+            if nums[i] <= pivot:
+                nums[store], nums[i] = nums[i], nums[store]
+                store += 1
+        nums[store], nums[r] = nums[r], nums[store]
+        if store == target: return nums[store]
+        elif store < target: return quickselect(store+1, r)
+        else: return quickselect(l, store-1)
+    return quickselect(0, len(nums)-1)
+```
+
+**考察点**：
+1. 堆方案 O(N log K) vs 快速选择 O(N) 平均（最坏 O(N²)）
+2. 随机化 pivot 防止最坏情况
+
+**面试官更想听**：
+主动说出快速选择 + 随机 pivot，分析平均 O(N) 的原因（每次期望将数组减半）。
+
+---
+
+*本文件共 25 题，覆盖数组 / 滑动窗口 / 双指针 / 二分查找 / 单调栈。*
+
+---
+
