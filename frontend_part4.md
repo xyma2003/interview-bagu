@@ -254,3 +254,60 @@ async ensureValidToken() {
 
 ---
 
+### Q65: 浏览器的 Performance API 有哪些常用方法？如何精确测量页面性能？
+
+**🏢 高频公司**：字节、腾讯
+
+**题目讲解**：
+
+**Navigation Timing（页面加载时序）**：
+```javascript
+const timing = performance.getEntriesByType('navigation')[0]
+const metrics = {
+  DNS:        timing.domainLookupEnd - timing.domainLookupStart,
+  TCP:        timing.connectEnd - timing.connectStart,
+  TTFB:       timing.responseStart - timing.requestStart,
+  Download:   timing.responseEnd - timing.responseStart,
+  DOMParse:   timing.domContentLoadedEventEnd - timing.responseEnd,
+  Total:      timing.loadEventEnd - timing.startTime,
+}
+```
+
+**User Timing（自定义测量）**：
+```javascript
+// 标记时间点
+performance.mark('hero-image-start')
+await loadHeroImage()
+performance.mark('hero-image-end')
+
+// 测量两点间的时间
+performance.measure('hero-image-load', 'hero-image-start', 'hero-image-end')
+
+const measure = performance.getEntriesByName('hero-image-load')[0]
+console.log(`图片加载: ${measure.duration.toFixed(2)}ms`)
+```
+
+**PerformanceObserver（实时监听）**：
+```javascript
+// 监听 LCP
+new PerformanceObserver(list => {
+  const entries = list.getEntries()
+  const lcp = entries[entries.length - 1]
+  console.log('LCP:', lcp.startTime, 'ms', '元素:', lcp.element)
+}).observe({ type: 'largest-contentful-paint', buffered: true })
+
+// 监听长任务（>50ms 阻塞主线程）
+new PerformanceObserver(list => {
+  for (const entry of list.getEntries()) {
+    console.warn(`长任务: ${entry.duration.toFixed(0)}ms`, entry)
+  }
+}).observe({ entryTypes: ['longtask'] })
+```
+
+**考察点**：
+1. `buffered: true` 获取已发生的历史性能条目
+2. 长任务对 INP（交互响应）的影响
+3. `performance.now()` vs `Date.now()`（前者微秒精度，后者毫秒）
+
+---
+
