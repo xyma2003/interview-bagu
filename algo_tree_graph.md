@@ -122,3 +122,26 @@ def lowestCommonAncestor(root, p, q):
 
 ---
 
+### Q31: 从前序与中序遍历序列构造二叉树 · LeetCode 105
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def buildTree(preorder: list[int], inorder: list[int]):
+    if not preorder: return None
+    root_val = preorder[0]
+    root = TreeNode(root_val)
+    mid = inorder.index(root_val)
+    root.left  = buildTree(preorder[1:1+mid], inorder[:mid])
+    root.right = buildTree(preorder[1+mid:],  inorder[mid+1:])
+    return root
+```
+
+**优化**：用哈希表存 inorder 值→索引，避免每次 `index()` 的 O(N)，总体 O(N)
+
+**考察点**：前序第一个 = 根，中序中根的位置划分左右子树
+
+---
+
