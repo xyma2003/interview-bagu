@@ -456,3 +456,42 @@ def solve(board: list[list[str]]) -> None:
 
 ---
 
+### Q42: 实现 Trie（前缀树）· LeetCode 208
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+class Trie:
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+    
+    def insert(self, word: str) -> None:
+        node = self
+        for c in word:
+            if c not in node.children:
+                node.children[c] = Trie()
+            node = node.children[c]
+        node.is_end = True
+    
+    def search(self, word: str) -> bool:
+        node = self._find(word)
+        return node is not None and node.is_end
+    
+    def startsWith(self, prefix: str) -> bool:
+        return self._find(prefix) is not None
+    
+    def _find(self, s: str):
+        node = self
+        for c in s:
+            if c not in node.children: return None
+            node = node.children[c]
+        return node
+```
+
+**考察点**：Trie 的插入/搜索/前缀查找；追问：用数组替代字典（26 个字母时更快）
+
+---
+
