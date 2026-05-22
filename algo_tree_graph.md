@@ -693,3 +693,45 @@ def canPartition(nums: list[int]) -> bool:
 
 ---
 
+### Q50: 买卖股票的最佳时机 系列
+
+**🏢 高频公司**：字节、腾讯（必考）
+**难度**：简单→困难
+
+**LC 121（只能交易一次）**：
+```python
+def maxProfit(prices: list[int]) -> int:
+    min_price, max_profit = float('inf'), 0
+    for p in prices:
+        min_price = min(min_price, p)
+        max_profit = max(max_profit, p - min_price)
+    return max_profit
+```
+
+**LC 122（不限次数，相邻才能买卖）**：
+```python
+def maxProfit(prices: list[int]) -> int:
+    return sum(max(prices[i]-prices[i-1], 0) for i in range(1, len(prices)))
+```
+
+**LC 123（最多两次交易）**：
+```python
+def maxProfit(prices: list[int]) -> int:
+    buy1 = buy2 = float('-inf')
+    sell1 = sell2 = 0
+    for p in prices:
+        buy1  = max(buy1,  -p)
+        sell1 = max(sell1, buy1  + p)
+        buy2  = max(buy2,  sell1 - p)
+        sell2 = max(sell2, buy2  + p)
+    return sell2
+```
+
+**考察点**：状态机 DP（持有/不持有）；追问 LC 188（最多 k 次）的通用解法
+
+---
+
+*本文件共 25 题（Q26-Q50），覆盖树 / BFS / DFS / 图 / 回溯 / DP 经典题。*
+
+---
+
