@@ -810,3 +810,43 @@ interface 和 type 大部分情况可以互换，核心区别是：interface 支
 
 ---
 
+### Q24: 如何解释 TypeScript 的类型守卫（Type Guard）？
+
+**题目解析**：类型守卫是实际项目中处理联合类型的常用手段，考察候选人的 TS 实战能力。
+
+**题目讲解**：
+**问题**：处理联合类型时，需要判断变量是哪个具体类型才能安全访问其属性。
+
+**类型守卫的几种方式**：
+
+1. **typeof**：`typeof x === 'string'` → 块内 x 是 string
+2. **instanceof**：`x instanceof Date` → 块内 x 是 Date
+3. **in 操作符**：`'name' in x` → 块内 x 有 name 属性
+4. **字面量判断**：联合类型有 discriminant（区分字段）：`if (shape.kind === 'circle')`
+5. **自定义类型守卫**（User-Defined Type Guard）：
+   ```typescript
+   function isUser(obj: any): obj is User {
+     return obj && typeof obj.name === 'string' && typeof obj.id === 'number';
+   }
+   ```
+
+**可辨识联合（Discriminated Union）**：
+```typescript
+type Shape = { kind: 'circle'; radius: number } | { kind: 'rect'; width: number; height: number };
+// kind 字段就是 discriminant，switch(shape.kind) 可以精确类型收窄
+```
+
+**考察点**：
+1. 类型收窄（Type Narrowing）的原理
+2. 自定义类型守卫 `is` 语法
+3. Exhaustive Check（穷举检查）配合 `never` 类型
+
+**示例答案**：
+类型守卫是 TypeScript 在运行时类型判断后，自动收窄变量类型的机制。在 `if (typeof x === 'string')` 块内，TypeScript 知道 x 是 string 类型，可以安全调用 string 方法。自定义类型守卫用 `x is SomeType` 返回类型声明，函数返回 true 时告诉 TypeScript 参数是该类型。实际项目里最推荐的是可辨识联合：在联合类型的每个成员上加一个 `kind` 或 `type` 字段（字面量类型），然后 switch/if 判断这个字段，TS 能精确收窄到对应分支的类型，IDE 有完整补全。可辨识联合还能配合穷举检查：在 default 分支 `const _: never = shape` 如果忘记处理某个 case，TS 会报错（因为此时 shape 不是 never），非常适合处理枚举值和 API 响应的 kind 字段。
+
+---
+
+*本题库持续更新，当前版本涵盖 24 道核心前端面试题，覆盖 HTML/CSS / JS / 浏览器 / 网络 / React / Vue / 性能 / 工程化 / TypeScript。*
+
+---
+
