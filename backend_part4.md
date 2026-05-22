@@ -430,3 +430,69 @@ result = await asyncio.get_event_loop().run_in_executor(
 
 ---
 
+### Q57: 什么是 CQRS 模式？它解决了什么问题？
+
+**🏢 高频公司**：阿里、字节（系统设计进阶）
+
+**题目讲解**：
+**CQRS（Command Query Responsibility Segregation，命令查询职责分离）**：
+- **Command**（命令）：改变状态的操作（创建/更新/删除），写入主数据库
+- **Query**（查询）：读取数据，不改变状态，从读库（或专用查询模型）读取
+
+**传统单一模型的问题**：
+- 读写操作用同一数据模型，读多写少时性能不均衡
+- 复杂查询（多表 JOIN、聚合统计）污染写入的核心模型
+- 不同的扩展需求（读横向扩展 vs 写纵向扩展）
+
+**CQRS 架构**：
+```python
+# 写侧（Command Handler）
+class CreateOrderCommand:
+    user_id: int
+    items: list[OrderItem]
+
+class CreateOrderHandler:
+    def handle(self, cmd: CreateOrderCommand) -> str:
+        order = Order.create(cmd.user_id, cmd.items)
+        self.order_repo.save(order)
+        self.event_bus.publish(OrderCreatedEvent(order.id))
+        return order.id
+
+# 读侧（Query Handler）- 可以是不同的数据库/模型
+class GetUserOrdersQuery:
+    user_id: int
+
+class GetUserOrdersHandler:
+    def handle(self, query: GetUserOrdersQuery) -> list[OrderSummary]:
+        # 直接从 Elasticsearch 或 ClickHouse 读取（针对查询优化的存储）
+        return self.search_client.query(user_id=query.user_id)
+```
+
+**与 Event Sourcing 的配合**：
+- Command 产生 Event，Event 驱动写入主数据库
+- Event 同步到读模型（Elasticsearch/Redis/ClickHouse）
+- 读模型可以随时从 Event Log 重建
+
+**何时使用**：
+- 读写比例悬殊（读 >> 写）
+- 读写有不同的性能/扩展需求
+- 业务逻辑复杂，读写分离有助于隔离
+
+**不适用场景**：
+- 简单 CRUD 应用（引入过度复杂性）
+- 团队对 CQRS 不熟悉（学习曲线）
+
+**考察点**：
+1. CQRS 与读写分离（主从复制）的区别（CQRS 是架构模式，读写分离是数据库技术）
+2. 最终一致性（读模型可能延迟几百毫秒才同步写模型数据）
+3. Event Sourcing 与 CQRS 的关系
+
+**示例答案**：
+CQRS 把读操作和写操作的模型、存储彻底分离。写侧用规范化的主数据库（保证数据一致性），读侧用针对查询优化的存储（Elasticsearch 用于全文搜索，ClickHouse 用于统计分析，Redis 用于高频查询缓存）。两侧通过事件（Event）同步，写操作完成后发布事件，读模型订阅事件更新自己的视图。这解决了"用一套数据库同时满足复杂写入逻辑和复杂查询需求"的矛盾——电商场景里，下单写入要满足事务和一致性（MySQL），但"按用户/商品/时间段统计销售额"在 MySQL 上极慢，用 ClickHouse 的列式存储秒级返回。代价是最终一致性和系统复杂度，适合读写差异大、查询模式多样的业务场景，简单 CRUD 不值得引入。
+
+---
+
+*本篇共 7 题（Q51-Q57），与前三篇合计 57 道后端面试题。*
+
+---
+
