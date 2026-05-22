@@ -434,3 +434,53 @@ type Handler = `on${Capitalize<EventName>}`
 
 ---
 
+### Q68: 浏览器的 Preload、Prefetch、Preconnect 有什么区别？
+
+**🏢 高频公司**：字节、腾讯、小红书
+
+**题目讲解**：
+
+| 提示 | 优先级 | 用途 | 触发时机 |
+|------|--------|------|---------|
+| `preload` | 高 | 当前页面即将需要的资源 | 立即下载 |
+| `prefetch` | 低 | 下一页可能需要的资源 | 浏览器空闲时下载 |
+| `preconnect` | — | 提前建立到某域名的连接 | 立即建连（DNS+TCP+TLS）|
+| `dns-prefetch` | — | 仅预解析 DNS | 立即解析 |
+
+```html
+<!-- preload：关键资源，当前页面一定用 -->
+<link rel="preload" href="/fonts/Inter.woff2" as="font" crossorigin>
+<link rel="preload" href="/hero.jpg" as="image">
+<link rel="preload" href="/critical.js" as="script">
+
+<!-- prefetch：下一页可能用的资源 -->
+<link rel="prefetch" href="/next-page.js">
+
+<!-- preconnect：提前建连（适合 CDN、API 服务器） -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://api.example.com" crossorigin>
+
+<!-- dns-prefetch：只解析 DNS，比 preconnect 更轻量 -->
+<link rel="dns-prefetch" href="https://third-party.com">
+```
+
+**`preload` 的 `as` 属性**：告诉浏览器资源类型（影响优先级和缓存）
+- `as="font"`：字体，高优先级
+- `as="image"`：图片
+- `as="script"`：脚本
+- `as="style"`：样式
+
+**考察点**：
+1. preload 忘加 `as` 属性的后果（被当作低优先级 XHR）
+2. preload 字体必须加 `crossorigin`（即使同域，字体请求是 CORS）
+3. prefetch 的使用场景（分页导航的下一页）
+
+**示例答案**：
+三者都是"给浏览器的提示"，但优先级和时机不同。preload 告诉浏览器"这个资源现在就要用"，提升资源获取优先级，适合首屏的关键字体、图片、脚本；不用 preload 时浏览器要等到 CSS/HTML 解析到引用位置才开始下载，用了 preload 则立即并行下载。prefetch 是"未来可能需要"，低优先级，浏览器空闲时下载存入缓存，适合预加载下一页路由的 JS 包（React.lazy 的 prefetch 注释 `/* webpackPrefetch: true */`）。preconnect 不下载资源，只建立 TCP+TLS 连接（耗时 100-200ms），适合 Google Fonts、CDN 等必定会用到的外部域名。
+
+---
+
+*本篇共 8 题（Q61-Q68），与前三篇合计 68 道前端面试题。*
+
+---
+
