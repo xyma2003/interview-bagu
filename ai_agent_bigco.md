@@ -584,3 +584,55 @@ async with redis_lock(key):
 
 ---
 
+### Q59: 字节 面试：如何优化 RAG 的"上下文长度利用率"？Lost in the Middle 问题如何解决？
+
+**🏢 高频公司**：字节、小红书、MiniMax
+
+**题目解析**：
+LLM 对输入 context 的利用并不均匀，这是 RAG 精度的重要工程问题，考察候选人的 context 工程能力。
+
+**题目讲解**：
+**Lost in the Middle 问题**：
+Liu et al. 2023 研究发现：LLM 对放在 context 中间的信息注意力显著低于开头和结尾。
+```
+召回率: 开头文档(90%) > 结尾文档(85%) >> 中间文档(55%)
+```
+
+**优化策略**：
+
+1. **位置优化（Placement）**：
+   - 最相关的文档放在 context 开头或结尾（而非中间）
+   - 按相关性排序：最相关的放首位，次相关放末位，不相关的放中间
+   - 实验验证：这个策略在多数 LLM 上提升 5-15% 的引用准确率
+
+2. **压缩 Context（减少无用内容）**：
+   - LLMLingua：用小模型（GPT-2/LLaMA-small）识别 context 中信息熵低的 token，压缩 3-5 倍
+   - 提取式摘要：只保留每段 context 里的关键句子
+   - 按问题相关性重写：让 LLM 先对检索到的文档做"针对问题的摘要"，再拼接
+
+3. **分批处理（Map-Reduce）**：
+   - 文档太多时，分批让模型分别回答，再合并答案
+   - 避免所有文档都塞进一个 context
+
+4. **Context 结构化**：
+   - 用 XML 标签明确标注每段 context 的来源和类型：
+     ```xml
+     <doc source="product_manual" relevance="0.92">...</doc>
+     <doc source="faq" relevance="0.81">...</doc>
+     ```
+   - 帮助模型定位和区分不同来源
+
+5. **增加文档编号引导**：
+   - 在文档前加 `[1]`, `[2]` 编号，在 system prompt 里要求"请引用 [文档编号] 作为来源"
+   - 引导模型主动关注所有文档
+
+**考察点**：
+1. 实验验证 Lost in the Middle 对你的具体 LLM 的影响程度
+2. LLMLingua 的压缩算法（PPL-based token 选择）
+3. context 压缩 vs 质量损失的 trade-off
+
+**示例答案**：
+Lost in the Middle 是真实存在的问题，我们在内部测试中验证：把最关键的文档放在 context 中间，召回率比放在开头低约 15%。我们的解决方案是三层：第一层是位置优化，Reranker 打分最高的文档放开头，次高的放结尾，分数低的放中间（不得不放时）；第二层是 context 压缩，用 LLMLingua 对检索到的文档做 token 级别的压缩（保留高 PPL 的重要 token），压缩比 3x 时基本无质量损失，但注入的信息密度大幅提升；第三层是结构化标注，每段 context 加 XML 标签和相关性分数，在 system prompt 里要求模型遍历所有文档后再回答，防止"看到第一个文档就停止阅读"。这三层组合后，我们的 RAG 系统在长文档检索任务上 Recall@5 从 72% 提升到 89%。
+
+---
+
