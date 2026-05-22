@@ -320,3 +320,18 @@ def numSquares(n: int) -> int:
 
 ---
 
+### Q84: 腾讯 面试：岛屿的最大面积 · LeetCode 695
+
+**题目讲解**：
+```python
+def maxAreaOfIsland(grid: list[list[int]]) -> int:
+    rows, cols = len(grid), len(grid[0])
+    def dfs(r, c) -> int:
+        if not (0<=r<rows and 0<=c<cols) or grid[r][c] != 1: return 0
+        grid[r][c] = 0
+        return 1 + sum(dfs(r+dr, c+dc) for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)])
+    return max(dfs(r, c) for r in range(rows) for c in range(cols))
+```
+
+---
+
