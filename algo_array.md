@@ -708,3 +708,30 @@ def isValid(s: str) -> bool:
 
 ---
 
+### Q23: 最大矩形 · LeetCode 84（柱状图中最大的矩形）
+
+**🏢 高频公司**：字节（困难必考）
+**难度**：困难 ⭐⭐⭐
+
+**题目讲解**：
+单调栈（维护递增栈，遇到比栈顶小的高度时弹出并计算面积）：
+```python
+def largestRectangleArea(heights: list[int]) -> int:
+    heights = [0] + heights + [0]  # 哨兵
+    stack = [0]
+    ans = 0
+    for i in range(1, len(heights)):
+        while heights[i] < heights[stack[-1]]:
+            h = heights[stack.pop()]
+            w = i - stack[-1] - 1
+            ans = max(ans, h * w)
+        stack.append(i)
+    return ans
+```
+
+**复杂度**：O(N) 时间，O(N) 空间
+
+**考察点**：单调栈经典应用；宽度计算 `w = i - stack[-1] - 1`（两个"边界"的距离）
+
+---
+
