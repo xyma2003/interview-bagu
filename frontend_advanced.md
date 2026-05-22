@@ -265,3 +265,45 @@ React 18 最重要的变化是把 Concurrent Mode 从可选变成默认——只
 
 ---
 
+### Q31: 如何实现 React 的虚拟列表（Virtual List）？Intersection Observer 和固定高度方案的区别是什么？
+
+**题目解析**：虚拟列表是大数据量渲染的核心性能优化，考察候选人的前端性能工程能力。
+
+**题目讲解**：
+**虚拟列表原理**：
+只渲染视口内可见的少量 DOM 节点（10-20个），通过 CSS 定位模拟完整列表的滚动行为，避免一次性渲染 10000 个 DOM 节点。
+
+**固定行高虚拟列表**：
+```
+可见 item 数 = Math.ceil(containerHeight / itemHeight) + 缓冲区
+startIndex = Math.floor(scrollTop / itemHeight)
+endIndex = startIndex + 可见数量
+paddingTop = startIndex * itemHeight  // 撑开上方空间
+paddingBottom = (totalCount - endIndex) * itemHeight  // 撑开下方空间
+```
+
+**动态行高虚拟列表**（更复杂）：
+- 用 ResizeObserver 测量每行真实高度，存储高度映射表
+- 用二分查找找到 startIndex
+- 需要预估高度（首次渲染），实际高度渲染后更新
+
+**现有库**：
+- `react-window`（轻量，固定行高）
+- `react-virtuoso`（动态行高，功能更全）
+- `@tanstack/virtual`（headless，自由定制）
+
+**与 Intersection Observer 的区别**：
+- IntersectionObserver：检测元素是否进入视口，适合"懒加载"（渐进加载 DOM）
+- 虚拟列表：DOM 始终只有可见数量，不渲染不可见的节点
+- 二者目标不同：IO 减少无用加载，虚拟列表减少 DOM 节点数
+
+**考察点**：
+1. 固定高度和动态高度的实现复杂度差异
+2. 滚动容器的 `overflow: auto` 配合 `position: absolute` 的定位机制
+3. 缓冲区（overscan）的必要性（防止快速滚动时闪烁）
+
+**示例答案**：
+虚拟列表的核心思路：用一个全高度的外层容器（`height = totalCount × itemHeight`）撑开滚动区域，内部只渲染当前可见的 item，通过 `paddingTop` 或绝对定位把可见 item 放在正确位置。监听容器的 `onScroll` 事件，根据 `scrollTop` 计算 startIndex 和 endIndex，更新渲染的子集。固定行高实现最简单，公式直接，性能好；动态行高需要维护一个高度数组，每个 item 渲染后用 ResizeObserver 测量真实高度回填，用二分查找计算 startIndex，复杂度显著提升，通常直接用 react-virtuoso 库省事。"渲染 DOM 但 visibility:hidden 隐藏"不是虚拟列表，DOM 节点数不减少，性能没有改善。IntersectionObserver 的图片懒加载是"按需初始化 DOM"，和虚拟列表的"只保留可见 DOM"思路不同但可以组合使用——虚拟列表减少 DOM 数，每个可见 item 里的图片再用 IO 懒加载。
+
+---
+
