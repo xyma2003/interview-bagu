@@ -430,3 +430,52 @@ Prompt 版本管理和代码版本管理同等重要——一个错误的 prompt
 
 ---
 
+### Q80: 如何评估一个 AI Agent 的自主性（Autonomy Level）？该如何根据风险选择自主程度？
+
+**🏢 高频公司**：字节、MiniMax
+
+**题目讲解**：
+**自主性等级（参考自动驾驶分级）**：
+
+| Level | 描述 | 适用场景 |
+|-------|------|---------|
+| L0 | 每步都需人工确认 | 金融交易、法律文书 |
+| L1 | 低风险操作自动执行，高风险人工确认 | 企业工作流 |
+| L2 | 人工设置规则和边界，Agent 在范围内自主 | 客服、内容生成 |
+| L3 | Agent 自主完成任务，人工只做最终审核 | 代码生成、数据分析 |
+| L4 | 完全自主，仅在异常时通知 | 监控巡检、定时报告 |
+
+**风险评估矩阵**：
+```python
+def assess_autonomy_level(action: str) -> int:
+    risk_factors = {
+        "reversible": action in REVERSIBLE_ACTIONS,   # 可撤销
+        "impact_scope": get_impact_scope(action),      # 影响范围
+        "cost": estimate_cost(action),                 # 费用
+        "data_sensitivity": check_sensitivity(action), # 数据敏感性
+    }
+    
+    if not risk_factors["reversible"] or risk_factors["cost"] > 100:
+        return 0  # 必须人工确认
+    elif risk_factors["impact_scope"] == "single_user":
+        return 3  # 可以自主执行
+    else:
+        return 1  # 需要人工确认
+```
+
+**实践原则**：
+1. **最小权限**：Agent 只请求完成任务所必要的权限
+2. **渐进授权**：先在沙盒环境测试，再逐步扩大权限
+3. **审计日志**：所有操作记录，支持事后审查
+4. **硬性边界**：某些操作无论何种情况都不自动执行（如删除生产数据）
+
+**考察点**：
+1. 自主性 vs 可靠性 vs 速度的三角取舍
+2. 不可逆操作的特殊处理
+3. 自主性等级与用户信任度的关系
+
+**示例答案**：
+Agent 自主性不是越高越好，要根据操作风险动态调整。核心判断维度是：操作是否可逆（发邮件不可逆 vs 生成草稿可逆）、影响范围（单用户 vs 全系统）、资金成本（$1 查询 vs $1000 采购）。我用"风险矩阵"决定自主级别：只读操作（查询/分析）完全自主；低成本可逆写操作（创建草稿/发送内部消息）L2-L3 级自主；高风险不可逆操作（发布内容/资金操作/删除数据）强制 HITL 确认。在 LangGraph 里用 interrupt() 实现动态 HITL：Agent 在执行前调用风险评估函数，高于阈值则暂停等待用户确认，低于阈值则自动继续。用户可以通过配置自己的风险偏好调整阈值，实现个性化的自主性管理。
+
+---
+
