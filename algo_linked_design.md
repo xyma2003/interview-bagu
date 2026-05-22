@@ -89,3 +89,32 @@ def mergeTwoLists(l1, l2):
 
 ---
 
+### Q54: 合并 K 个升序链表 · LeetCode 23
+
+**🏢 高频公司**：字节（必考）、腾讯
+**难度**：困难 ⭐⭐⭐
+
+**题目讲解**：
+```python
+import heapq
+
+def mergeKLists(lists):
+    dummy = curr = ListNode(0)
+    heap = []
+    for i, node in enumerate(lists):
+        if node:
+            heapq.heappush(heap, (node.val, i, node))
+    while heap:
+        val, i, node = heapq.heappop(heap)
+        curr.next = node; curr = curr.next
+        if node.next:
+            heapq.heappush(heap, (node.next.val, i, node.next))
+    return dummy.next
+```
+
+**复杂度**：O(N log K)，N 为总节点数，K 为链表数
+
+**考察点**：最小堆（用 `i` 作为二级排序避免 ListNode 比较报错）；分治合并也是 O(N log K)
+
+---
+
