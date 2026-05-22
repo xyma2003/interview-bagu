@@ -401,3 +401,29 @@ def findMin(nums: list[int]) -> int:
 
 ---
 
+### Q11: 合并区间 · LeetCode 56
+
+**🏢 高频公司**：字节、阿里
+**难度**：中等 ⭐⭐
+
+**题目**：合并所有重叠区间。
+
+**题目讲解**：
+```python
+def merge(intervals: list[list[int]]) -> list[list[int]]:
+    intervals.sort(key=lambda x: x[0])
+    res = [intervals[0]]
+    for start, end in intervals[1:]:
+        if start <= res[-1][1]:           # 有重叠
+            res[-1][1] = max(res[-1][1], end)
+        else:
+            res.append([start, end])
+    return res
+```
+
+**复杂度**：时间 O(N log N)，空间 O(N)
+
+**考察点**：排序后贪心合并，注意 `max(res[-1][1], end)` 处理完全包含的情况
+
+---
+
