@@ -207,3 +207,48 @@ Redis Cluster 用 16384 个虚拟 slot 做数据分片，每个 key 通过 CRC16
 
 ---
 
+### Q24: Python 的 asyncio 是如何工作的？async/await 和多线程有什么区别？
+
+**题目解析**：asyncio 是 Python 高性能 I/O 的核心，考察候选人对 Python 异步编程的深度理解。
+
+**题目讲解**：
+**asyncio 的核心组件**：
+- **Event Loop**：事件循环，单线程运行，调度协程和 I/O 回调
+- **Coroutine（协程）**：`async def` 定义，`await` 暂停并交还控制权给 event loop
+- **Task**：将协程包装为 Task（类似 Future），可以并发调度
+- **Future**：未来的结果容器，协程/回调完成后设置结果
+
+**执行流程**：
+```
+Event Loop 取出就绪协程
+→ 执行到下一个 await（I/O 等待点）
+→ 注册 I/O 事件回调（epoll）
+→ 取出下一个就绪协程
+→ I/O 完成，回调触发，恢复等待该 I/O 的协程
+```
+
+**async/await vs 多线程**：
+| | asyncio | 多线程 |
+|---|---|---|
+| 并发方式 | 单线程协作式调度 | 多线程抢占式调度 |
+| GIL | 不受 GIL 影响（单线程）| 受 GIL 限制 |
+| 适合场景 | I/O 密集（网络/数据库）| I/O 密集（但没 asyncio 高效）|
+| CPU 密集 | ❌（单线程，会阻塞）| ❌（GIL 限制并行）|
+| 并发量 | 数千协程，内存小 | 数百线程，内存大 |
+| 代码复杂性 | 全链路 async（传染性）| 相对简单 |
+
+**常见陷阱**：
+- `time.sleep()` 阻塞 event loop，应用 `await asyncio.sleep()`
+- CPU 密集操作阻塞 event loop，用 `loop.run_in_executor()` 交给线程池
+- `asyncio.gather()` 并发多个协程，任一抛出异常会取消其他（用 `return_exceptions=True`）
+
+**考察点**：
+1. Event Loop 的单线程本质（不真正并行 CPU）
+2. `asyncio.gather` vs `asyncio.wait` 的区别
+3. 同步代码和异步代码的互操作（asyncio.to_thread, run_in_executor）
+
+**示例答案**：
+asyncio 是单线程的协作式并发：Event Loop 维护一个就绪协程队列，遇到 await（I/O等待点）时协程主动让出控制权，Event Loop 切换到下一个就绪的协程，I/O 完成时（epoll 回调）唤醒等待该 I/O 的协程。相比多线程，asyncio 在 I/O 密集场景下能同时维护数千个并发"连接"，内存占用极小（协程很轻量），且没有线程切换开销和锁竞争。不需要加锁，因为单线程内协程调度是可控的（不会在任意点被打断）。主要限制是 CPU 密集操作会阻塞整个 Event Loop，解决办法是 `await loop.run_in_executor(None, cpu_bound_func)` 把 CPU 操作丢到线程池。实际项目里，aiohttp/httpx（异步 HTTP 客户端）、asyncpg（异步 PostgreSQL）、aiomysql 等库都是 asyncio 生态的，要发挥 asyncio 的优势需要整条链路都是 async。FastAPI 天然支持 asyncio，路由函数加 async def 即可享受并发。
+
+---
+
