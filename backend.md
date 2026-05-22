@@ -528,3 +528,34 @@ Snowflake 生成的 ID 是 64 位整数，结构是：1 bit 符号位（始终 0
 
 ---
 
+### Q14: Python 的 GIL 是什么？它对多线程并发有什么影响？
+
+**题目解析**：GIL 是 Python 最常被问到的特性，也是很多开发者误解的地方。
+
+**题目讲解**：
+**GIL（Global Interpreter Lock）**：
+- CPython 解释器的一个互斥锁，在任意时刻只允许一个线程执行 Python 字节码
+- 保护 Python 对象的引用计数不被并发修改（内存安全）
+
+**对多线程的影响**：
+- **CPU 密集型任务**：多线程无法真正并行（GIL 串行化），性能甚至比单线程差（线程切换开销）
+- **I/O 密集型任务**：线程在 I/O 等待时会释放 GIL，其他线程可以运行，多线程有效果（但远不如协程）
+
+**绕过 GIL 的方案**：
+1. **multiprocessing**：多进程，每个进程有独立 GIL，真正并行 CPU 运算
+2. **concurrent.futures.ProcessPoolExecutor**：多进程的高级封装
+3. **Cython / C 扩展**：可以在不需要 GIL 的代码段释放 GIL（NumPy 就是这样实现并行计算的）
+4. **asyncio（协程）**：适合 I/O 密集型，单线程内切换，无 GIL 问题
+
+**Python 3.12+ 的改进**：sub-interpreter 支持每个解释器独立 GIL，为未来去除 GIL 做铺垫（PEP 703 在实验中）。
+
+**考察点**：
+1. GIL 存在的原因（保护引用计数）
+2. CPU 密集 vs I/O 密集的不同影响
+3. 多进程 vs 多线程的选择
+
+**示例答案**：
+GIL 是 CPython 的一把全局锁，任意时刻只有一个线程能执行 Python 字节码，保护解释器内部的引用计数不被并发破坏。对于 CPU 密集任务，GIL 导致多线程实际上是串行的，性能没有提升甚至因切换开销更慢——应该用 `multiprocessing` 或 `ProcessPoolExecutor`，多进程各有独立 GIL 可以真正并行。I/O 密集任务（网络请求、文件读写）线程在等待 I/O 时会释放 GIL，其他线程可以运行，多线程有一定效果，但更推荐 asyncio 协程，切换代价更小、代码更清晰。NumPy/scipy 等科学计算库在 C 扩展里临时释放 GIL，所以 NumPy 的矩阵运算是真正多核并行的，这也是 Python 在数据科学领域仍然高效的原因。Python 3.13 正在实验性支持"无 GIL 模式"，未来有望真正解决这个限制。
+
+---
+
