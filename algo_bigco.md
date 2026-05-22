@@ -303,3 +303,20 @@ def maximalSquare(matrix: list[list[str]]) -> int:
 
 ---
 
+### Q83: 字节 面试：完全平方数 · LeetCode 279
+
+**题目讲解**（完全背包 DP）：
+```python
+def numSquares(n: int) -> int:
+    dp = [float('inf')] * (n + 1)
+    dp[0] = 0
+    squares = [i*i for i in range(1, int(n**0.5)+1)]
+    for i in range(1, n + 1):
+        for sq in squares:
+            if sq > i: break
+            dp[i] = min(dp[i], dp[i - sq] + 1)
+    return dp[n]
+```
+
+---
+
