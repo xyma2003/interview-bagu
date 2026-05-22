@@ -881,3 +881,73 @@ Sass/Less mixin 封装 transform 方案，按 DPR 自动适配：
 
 ---
 
+### Q48: 阿里 面试：Next.js 的 SSR、SSG、ISR 有什么区别？各自适用什么场景？
+
+**🏢 高频公司**：阿里、字节（有大量 Next.js 项目）
+
+**题目解析**：
+Next.js 是现代全栈 React 框架，SSR/SSG/ISR 的区别是面试高频题，考察候选人对渲染策略的理解。
+
+**题目讲解**：
+
+| 渲染方式 | 时机 | 适用场景 | 数据新鲜度 |
+|---------|------|---------|----------|
+| CSR（Client Side Rendering）| 浏览器实时 | 后台管理、用户专属页 | 实时 |
+| SSR（Server Side Rendering）| 请求时服务端实时渲染 | 个性化内容、实时数据 | 实时 |
+| SSG（Static Site Generation）| 构建时生成 | 博客、文档、营销页 | 构建时快照 |
+| ISR（Incremental Static Regeneration）| 构建+按需重生成 | 电商商品页、新闻 | 定时或按需更新 |
+
+**SSR（`getServerSideProps`）**：
+```javascript
+export async function getServerSideProps(context) {
+  const { id } = context.params;
+  const data = await fetchUser(id);  // 每次请求都执行
+  return { props: { data } };
+}
+```
+- 每个请求都服务端执行，数据最新
+- TTFB 较高（需要等服务端数据请求完成）
+- SEO 友好
+
+**SSG（`getStaticProps`）**：
+```javascript
+export async function getStaticProps() {
+  const posts = await fetchPosts();  // 只在构建时执行一次
+  return { props: { posts } };
+}
+```
+- 构建时生成静态 HTML，CDN 缓存，极快
+- 数据是构建时快照，适合不频繁变化的内容
+
+**ISR（`revalidate` 参数）**：
+```javascript
+export async function getStaticProps() {
+  const data = await fetchData();
+  return {
+    props: { data },
+    revalidate: 60  // 60 秒后下次请求触发重新生成
+  };
+}
+```
+- Stale-While-Revalidate：先返回旧缓存，后台重新生成
+- 兼顾性能（静态）和数据新鲜度
+
+**App Router（Next.js 13+）**：
+- React Server Components 默认 SSR
+- `fetch` 自带缓存和 revalidate 语义
+- `cache: 'no-store'`（动态）vs `next: { revalidate: 60 }`（ISR）
+
+**考察点**：
+1. ISR 的"陈旧同时重新验证"语义（类似 HTTP stale-while-revalidate）
+2. 混合策略：同一个应用不同页面用不同渲染方式
+3. App Router vs Pages Router 的差异
+
+**示例答案**：
+SSR、SSG、ISR 的本质是"数据获取在什么时候执行"。SSR 每次请求执行，适合内容和用户强相关（登录态、个性化推荐）；SSG 只在构建时执行，适合内容几乎不变（文档、博客），CDN 直接缓存，性能极好；ISR 是 SSG 的增强，加了定时重新生成（`revalidate: 60` 表示 60 秒后下次请求会触发后台重新生成），返回给用户的是旧版本（不阻塞），后台更新完成后的新请求才拿到新内容，是"Stale While Revalidate"语义，非常适合电商商品页（价格/库存可以接受几十秒延迟）。实际项目里经常混用：营销首页 SSG（全静态）、商品详情 ISR（revalidate: 30）、用户购物车 SSR（实时）。Next.js 13+ App Router 里这些变成 fetch 的参数，`cache: 'force-cache'` 相当于 SSG，`next: {revalidate: 60}` 相当于 ISR，`cache: 'no-store'` 相当于 SSR，更细粒度。
+
+---
+
+*本专项题库覆盖字节/腾讯/小红书/阿里的前端高频题，共 12 题（Q37-Q48），与基础+进阶篇合计约 48 道前端面试题。*
+
+---
+
