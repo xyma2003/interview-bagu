@@ -557,3 +557,38 @@ React 性能优化的核心是"减少不必要的重渲染"。首先用 React De
 
 ---
 
+### Q17: Vue 2 和 Vue 3 的响应式原理有什么区别？
+
+**题目解析**：Vue 响应式原理是 Vue 框架的核心，也是面试必考知识。
+
+**题目讲解**：
+**Vue 2：Object.defineProperty**
+- 遍历对象每个属性，用 `Object.defineProperty` 将其改为 getter/setter
+- 依赖收集：getter 中记录依赖（Dep/Watcher），setter 中通知更新
+- **局限性**：
+  - 无法检测属性的新增/删除（需要 `Vue.set`/`Vue.delete`）
+  - 无法检测数组通过索引的直接修改（`arr[0] = val`），需重写数组方法
+  - 初始化时需要递归遍历整个对象，性能代价大
+
+**Vue 3：ES6 Proxy**
+- 用 `new Proxy(target, handler)` 代理整个对象，拦截所有操作（get/set/deleteProperty/has 等）
+- **优势**：
+  - 懒代理（lazy）：子对象在访问时才代理，而不是初始化时全部遍历
+  - 天然支持属性新增/删除、数组下标修改
+  - 可以拦截更多操作（in 操作符、for...in 等）
+  - 性能更好，代码更简洁
+
+**Vue 3 的 Ref 与 Reactive**：
+- `reactive`：Proxy 代理对象，深度响应
+- `ref`：将值包裹为 `{value: T}`，value 被 Proxy 代理（基本类型也能响应式）
+
+**考察点**：
+1. Object.defineProperty 的三大局限
+2. Proxy 的 handler 拦截机制
+3. Vue 3 的 ref vs reactive 选择
+
+**示例答案**：
+Vue 2 用 Object.defineProperty 把对象每个属性转为 getter/setter，getter 里收集依赖（哪些组件用了这个属性），setter 里触发更新通知。这个方案有三个已知缺陷：不能检测属性新增/删除（必须用 Vue.set）、数组下标直接修改不触发更新（Vue 2 重写了 push/pop 等方法绕过）、初始化时递归遍历整个对象开销大。Vue 3 换成 ES6 Proxy，对整个对象做代理，get/set/deleteProperty 等操作都能被拦截，天然支持属性新增删除和数组下标修改，还支持懒代理（嵌套对象在访问时才创建 Proxy）。响应式系统内部用 `WeakMap<target, Map<key, Set<effect>>>` 的三层结构追踪依赖，WeakMap 保证对象被 GC 时自动清理依赖。
+
+---
+
