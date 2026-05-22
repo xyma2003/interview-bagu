@@ -668,3 +668,28 @@ def minDistance(word1: str, word2: str) -> int:
 
 ---
 
+### Q49: 分割等和子集 · LeetCode 416
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目**：判断能否将数组分割成两个等和子集（0/1 背包）。
+
+**题目讲解**：
+```python
+def canPartition(nums: list[int]) -> bool:
+    total = sum(nums)
+    if total % 2 != 0: return False
+    target = total // 2
+    dp = [False] * (target + 1)
+    dp[0] = True
+    for num in nums:
+        for j in range(target, num - 1, -1):   # 逆序（0/1 背包）
+            dp[j] = dp[j] or dp[j - num]
+    return dp[target]
+```
+
+**考察点**：转化为 0/1 背包；逆序遍历防止同一物品被用多次
+
+---
+
