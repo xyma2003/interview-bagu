@@ -151,3 +151,40 @@ JavaScript 单线程通过 Event Loop 实现异步。执行栈处理同步代码
 
 ---
 
+### Q5: 请解释 JavaScript 的原型链，以及 `__proto__`、`prototype`、`Object.getPrototypeOf` 的关系
+
+**题目解析**：原型链是 JavaScript 面向对象的基础，也是很多面试官拉开差距的考察点。
+
+**题目讲解**：
+- **`prototype`**：只有函数对象有，是函数作为构造函数时创建实例的原型对象
+- **`__proto__`**：每个对象都有（除 null），指向其原型（等同于 `Object.getPrototypeOf(obj)`，`__proto__` 是非标准访问器）
+- **原型链**：对象查找属性时，先找自身，找不到沿 `__proto__` 向上查找，直到 `null`
+
+```javascript
+function Person(name) { this.name = name; }
+Person.prototype.greet = function() { return 'Hi ' + this.name; };
+
+const p = new Person('Alice');
+p.__proto__ === Person.prototype  // true
+Person.prototype.__proto__ === Object.prototype  // true
+Object.prototype.__proto__ === null  // true（链的终点）
+```
+
+**new 操作符做了什么**：
+1. 创建空对象 `obj = {}`
+2. 设置原型 `obj.__proto__ = Constructor.prototype`
+3. 执行构造函数（this 指向 obj）
+4. 若构造函数返回对象，则返回该对象；否则返回 obj
+
+**instanceof 原理**：沿左侧对象的原型链查找，是否存在右侧构造函数的 prototype。
+
+**考察点**：
+1. prototype 和 __proto__ 的区别
+2. new 的四个步骤
+3. instanceof 的判断原理
+
+**示例答案**：
+JavaScript 里每个对象都有一个内部属性指向它的原型对象（可通过 `__proto__` 访问，标准做法是 `Object.getPrototypeOf()`）。函数对象有 `prototype` 属性，当函数作为构造函数用 new 调用时，创建的实例对象的 `__proto__` 会指向该函数的 `prototype`。属性查找遵循原型链：先找对象自身属性，没有就沿 `__proto__` 向上找，直到 `Object.prototype`，再往上是 null，查找结束。new 做了四件事：创建空对象、设置原型链指向构造函数的 prototype、以新对象为 this 执行构造函数、返回该对象。继承本质就是操纵原型链——ES6 的 class extends 只是语法糖，底层仍是原型链。
+
+---
+
