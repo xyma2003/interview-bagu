@@ -839,3 +839,34 @@ Query → Relevance Check → (needs retrieval?) → Retrieval → Relevance Gra
 
 ---
 
+### Q26: 什么是 MCP（Model Context Protocol）？它解决了什么问题？
+
+**题目解析**：MCP 是 Anthropic 发布的工具调用标准协议，是当前 AI 工具生态的热点，考察候选人的技术跟进能力。
+
+**题目讲解**：
+**MCP 是什么**：
+Model Context Protocol 是 Anthropic 开源的标准化协议，定义了 AI 模型如何与外部工具、数据源通信的统一接口规范。
+
+**解决的问题**：
+- 传统 Tool Use：每个应用都要为每个工具写适配代码，工具定义分散、不可复用
+- MCP：定义标准的 Server/Client 架构，工具作为独立的 MCP Server 运行，任何支持 MCP 的 AI 客户端（Claude Desktop、自定义 Agent）都可以接入
+
+**架构**：
+- **MCP Server**：提供工具/资源/提示词的服务端，可以是本地进程（stdio 通信）或远程服务（HTTP/SSE）
+- **MCP Client**：AI 应用（Claude Desktop、LangChain 等）集成 MCP Client，自动发现并调用 Server 提供的工具
+- **传输层**：stdio（本地进程间）或 HTTP+SSE（远程服务）
+
+**工具生态**：
+- 文件系统操作、GitHub、数据库、Slack、浏览器控制等都有官方/社区 MCP Server
+- 开发者只需实现 MCP Server，一次接入，所有支持 MCP 的 AI 产品都能使用
+
+**考察点**：
+1. MCP 解决的核心痛点（标准化 vs 碎片化）
+2. MCP Server/Client 的通信机制
+3. 与传统 Function Calling 的关系（MCP 是 Function Calling 的标准化封装）
+
+**示例答案**：
+MCP 解决了 AI 工具生态碎片化的问题。在没有 MCP 之前，如果想让 AI Agent 调用 GitHub API，你需要在自己的代码里手写工具定义（JSON Schema）和执行逻辑，换一个 AI 框架就得重写一遍。MCP 定义了一套标准协议，工具提供者实现 MCP Server（暴露 tools/resources/prompts），AI 应用集成 MCP Client，两者通过标准协议通信。好比 USB 接口，设备只需符合 USB 规范，所有支持 USB 的电脑都能识别。架构上，本地 MCP Server 通过 stdio 与 Client 通信（启动一个子进程），远程 Server 通过 HTTP+SSE。Claude Desktop 天然支持 MCP，配置 `claude_desktop_config.json` 就能加载各种 MCP Server。从开发者角度，用 Python SDK（`@server.tool()` 装饰器）定义工具，几十行代码就能发布一个 MCP Server，接入所有 MCP 兼容的 AI 产品。MCP 本质上是 Function Calling 的标准化封装，让工具可以独立部署、复用和分发。
+
+---
+
