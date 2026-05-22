@@ -37,3 +37,30 @@ def majorityElement(nums: list[int]) -> list[int]:
 
 ---
 
+### Q72: 字节 面试：最长连续序列 · LeetCode 128
+
+**🏢 高频公司**：字节（必考）、腾讯
+**难度**：中等 ⭐⭐
+
+**题目**：找出数组中最长连续整数序列的长度，要求 O(N)。
+
+**题目讲解**：
+```python
+def longestConsecutive(nums: list[int]) -> int:
+    num_set = set(nums)
+    ans = 0
+    for n in num_set:
+        if n - 1 not in num_set:   # 只从序列起点开始计数
+            cur = n
+            streak = 1
+            while cur + 1 in num_set:
+                cur += 1; streak += 1
+            ans = max(ans, streak)
+    return ans
+```
+**复杂度**：O(N) —— 每个数字最多被访问两次
+
+**考察点**：先判断是否是序列起点（n-1 不在 set），避免重复计算
+
+---
+
