@@ -126,3 +126,41 @@ W_int8 = round(W / scale)
 
 ---
 
+### Q34: LLM 的 Context Window 是如何扩展的？长上下文的技术挑战是什么？
+
+**题目解析**：长上下文是 LLM 的核心发展方向，考察候选人对技术前沿的了解。
+
+**题目讲解**：
+**Position Encoding 的限制**：
+原始 Transformer 使用绝对位置编码，训练时最长序列长度固定，推理时不能超过该长度。
+
+**长上下文扩展方案**：
+
+1. **RoPE（Rotary Position Embedding）**：
+   - 相对位置编码，通过旋转矩阵编码位置，更自然地泛化到未见过的长度
+   - 基础：Claude/LLaMA/Qwen 等都采用 RoPE
+   - 扩展：调整 RoPE 的 base（频率）可以在不重新训练的情况下扩展上下文
+
+2. **YaRN（Yet another RoPE extensioN）**：
+   - 通过修改 RoPE 的频率缩放，配合少量长上下文数据微调，达到更好的长上下文性能
+
+3. **FlashAttention**：
+   - 解决计算效率问题，把标准 Attention 的 O(N²) 内存降到 O(N)（IO-aware 算法，利用 GPU 显存层级）
+   - FlashAttention-2/3 在长序列上速度提升 2-4 倍
+
+**长上下文的技术挑战**：
+1. **KV Cache 显存**：128K token 上下文，KV Cache 需要 GB 级显存
+2. **Lost in the Middle**：研究表明 LLM 对文档中间部分的信息注意力显著下降
+3. **推理延迟**：Attention 计算 O(N²)，序列翻倍延迟翻 4 倍
+4. **训练数据**：足够长的高质量训练文档难以获取
+
+**考察点**：
+1. RoPE 相比绝对位置编码的优势
+2. FlashAttention 的内存优化原理（分块计算避免显存 O(N²)）
+3. Lost in the Middle 现象对 RAG 设计的影响
+
+**示例答案**：
+上下文长度的核心限制来自位置编码和 KV Cache 显存。RoPE 通过旋转矩阵编码相对位置，相比绝对位置编码更容易泛化到更长序列；通过调整 RoPE 的旋转频率 base，可以将 4K context 的模型扩展到 32K 甚至更长，配合少量长文本微调效果很好。FlashAttention 解决的是计算效率：标准 Attention 会产生 N×N 的中间矩阵，128K 序列需要 64GB 就放不下，FlashAttention 用分块计算（tiling）把中间结果保留在更快的 SRAM 里，显存占用降到线性，速度快 2-4 倍。即使有了 200K 上下文，Lost in the Middle 仍然是实际问题——信息在文档中间时模型召回率显著低于开头和结尾，所以 RAG 做多文档上下文注入时，最重要的文档应该放在 context 开头或结尾。KV Cache 是另一个瓶颈，128K token 的 KV Cache 在 70B 模型上需要约 10GB 显存，限制了并发能力。
+
+---
+
