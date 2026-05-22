@@ -199,3 +199,72 @@ async for event in graph.astream_events(input, version="v2"):
 
 ---
 
+### Q76: 什么是对话历史管理策略？如何防止 Context Window 溢出？
+
+**🏢 高频公司**：字节、阿里
+
+**题目讲解**：
+**问题**：多轮对话中消息历史不断增长，最终超过 context window 上限。
+
+**策略一：滑动窗口（简单）**：
+```python
+def trim_messages(messages: list, max_tokens: int = 100000) -> list:
+    import tiktoken
+    enc = tiktoken.get_encoding("cl100k_base")
+    
+    total = 0
+    trimmed = []
+    for msg in reversed(messages):
+        tokens = len(enc.encode(msg["content"]))
+        if total + tokens > max_tokens:
+            break
+        trimmed.insert(0, msg)
+        total += tokens
+    return trimmed
+```
+- 简单直接，丢失早期对话
+- 适合短期任务
+
+**策略二：摘要压缩（推荐）**：
+```python
+async def compress_history(messages: list, keep_recent: int = 10) -> list:
+    if len(messages) <= keep_recent:
+        return messages
+    
+    old_messages = messages[:-keep_recent]
+    recent_messages = messages[-keep_recent:]
+    
+    # 用 LLM 摘要早期对话
+    summary_prompt = f"请用 200 字以内总结以下对话的关键信息：\n{format_messages(old_messages)}"
+    summary = await llm.generate(summary_prompt)
+    
+    system_summary = {
+        "role": "system",
+        "content": f"[对话摘要]\n{summary}"
+    }
+    return [system_summary] + recent_messages
+```
+
+**策略三：记忆提取（适合长期对话）**：
+- 每 N 轮提取关键事实存入记忆库
+- 下次对话按需检索注入，而非保留完整历史
+
+**混合策略（生产推荐）**：
+```python
+def manage_context(messages, system_prompt, max_tokens=180000):
+    # 1. 系统提示 + 最近 20 条：直接保留
+    # 2. 20-100 条：用 LLM 摘要
+    # 3. 100 条以前：提取为记忆，按需检索
+    ...
+```
+
+**考察点**：
+1. 摘要压缩的时机（异步 vs 同步）
+2. 摘要质量对后续对话的影响
+3. 不同场景的最优策略
+
+**示例答案**：
+Context Window 管理是多轮 Agent 的必要工程。滑动窗口最简单但丢失信息；摘要压缩更智能，把早期对话用 LLM 浓缩成 200-500 字的摘要置于系统提示前，保留近期完整对话——实测早期对话的"关键信息保留率"约 80%，而 token 节省 70%+。实现上摘要要异步触发（不阻塞用户响应），可以在每次对话结束后异步压缩一次。Claude 200K context 虽然很长，但每次都传完整历史成本极高，且 Lost in the Middle 问题对长历史尤为显著，主动管理 context 既省钱又提升质量。
+
+---
+
