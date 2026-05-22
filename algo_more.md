@@ -190,3 +190,22 @@ def searchMatrix(matrix: list[list[int]], target: int) -> bool:
 
 ---
 
+### Q97: 找到所有数字消失的数字 · LeetCode 448
+
+**🏢 高频公司**：腾讯
+**难度**：简单 ⭐
+
+**题目讲解**（原地标记，O(N) 时间 O(1) 空间）：
+```python
+def findDisappearedNumbers(nums: list[int]) -> list[int]:
+    for n in nums:
+        idx = abs(n) - 1
+        if nums[idx] > 0:
+            nums[idx] = -nums[idx]   # 标记 idx+1 出现过
+    return [i+1 for i, v in enumerate(nums) if v > 0]
+```
+
+**考察点**：用负号标记"出现过"，不需要额外数组；最后正数位置对应消失的数字
+
+---
+
