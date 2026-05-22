@@ -137,3 +137,72 @@ i18n 的核心是文本外化（把硬编码字符串替换为 key）+ 动态加
 
 ---
 
+### Q63: 如何实现前端无感刷新 Token（Silent Refresh）？
+
+**🏢 高频公司**：腾讯、阿里
+
+**题目讲解**：
+
+**问题**：Access Token 有效期短（15 分钟），用户长时间操作时 Token 过期，体验差。
+
+**解决方案：Silent Refresh**：
+```javascript
+class TokenManager {
+  private refreshTimer: number | null = null
+  
+  setToken(accessToken: string, expiresIn: number, refreshToken: string) {
+    this.accessToken = accessToken
+    this.refreshToken = refreshToken
+    
+    // 在过期前 60 秒自动刷新
+    const refreshAt = (expiresIn - 60) * 1000
+    this.refreshTimer = setTimeout(() => this.doRefresh(), refreshAt)
+  }
+  
+  async doRefresh() {
+    try {
+      const { access_token, expires_in } = await api.refreshToken(this.refreshToken)
+      this.setToken(access_token, expires_in, this.refreshToken)
+    } catch (err) {
+      // Refresh Token 也过期了，强制重新登录
+      this.logout()
+    }
+  }
+  
+  // 请求拦截器：Token 过期时自动刷新后重试
+  async request(config: RequestConfig) {
+    if (this.isExpired()) {
+      await this.doRefresh()
+    }
+    return fetch(config.url, { 
+      ...config, 
+      headers: { Authorization: `Bearer ${this.accessToken}` }
+    })
+  }
+}
+```
+
+**并发请求的 Token 刷新（防止多次刷新）**：
+```javascript
+private refreshPromise: Promise<void> | null = null
+
+async ensureValidToken() {
+  if (!this.isExpired()) return
+  
+  // 如果已有刷新请求，等待它完成（不重复刷新）
+  if (!this.refreshPromise) {
+    this.refreshPromise = this.doRefresh().finally(() => {
+      this.refreshPromise = null
+    })
+  }
+  return this.refreshPromise
+}
+```
+
+**考察点**：
+1. 定时刷新（提前 60s）vs 失败重试（401 时刷新）
+2. 并发请求时只刷新一次的实现
+3. Refresh Token 本身过期的处理（静默登出）
+
+---
+
