@@ -643,3 +643,43 @@ LLM 红队测试是在 AI 应用上线前主动寻找安全漏洞的过程，类
 
 ---
 
+### Q46: 什么是 Dify？它与 LangChain/LangGraph 的定位有什么不同？
+
+**题目解析**：Dify 是国内流行的 LLMOps 平台，考察候选人对 LLM 应用生态的全面了解。
+
+**题目讲解**：
+**Dify 定位**：
+- **LLMOps 平台**：提供可视化的 Workflow 编排、Prompt 管理、数据集（RAG）、模型接入、监控
+- 面向"构建 AI 应用"的工程师和非技术用户，降低开发门槛
+- 开源（self-hosted）或云服务
+
+**Dify vs LangChain/LangGraph**：
+| | LangChain/LangGraph | Dify |
+|---|---|---|
+| 定位 | 开发框架（SDK）| LLMOps 平台（含可视化 UI）|
+| 使用方式 | Python 代码 | 可视化拖拽 + 代码 |
+| 适合用户 | 有工程能力的开发者 | 开发者 + 业务人员 |
+| 可视化工作流 | 有限（LangSmith 可观测）| 完整可视化编排 |
+| RAG | 需要自己集成向量库 | 内置数据集管理 + 向量化 |
+| Prompt 管理 | 无内置管理 | 内置版本管理、A/B 测试 |
+
+**Dify 的 Workflow**：
+- 类似 n8n / Zapier 的节点式编排，但专为 LLM 优化
+- 内置 LLM 节点、代码节点、HTTP 节点、知识库检索节点等
+- 支持条件分支和循环
+
+**适用场景**：
+- 企业内部 AI 应用快速构建（知识库问答、文档摘要）
+- 非技术团队能自己调整 prompt 和 workflow
+- 需要可视化看 LLM 应用运行状态
+
+**考察点**：
+1. LLMOps 的概念（像 MLOps 一样管理 LLM 应用的全生命周期）
+2. Dify 的 RAG 能力与自建 RAG 的对比
+3. 选择平台 vs 自研的权衡
+
+**示例答案**：
+Dify 是 LLMOps 平台，而 LangChain 是开发框架——这是最根本的区别。Dify 给你一个 Web UI，在里面可视化地拖拽节点（LLM节点、检索节点、代码节点）组成 Workflow，配置提示词、接入知识库，非技术的产品同学也能改 prompt 和流程，降低了协作成本。LangChain/LangGraph 是纯代码框架，灵活性更高，可以做任何自定义逻辑，适合复杂 Agent 的精细控制。工程上两者可以配合：用 Dify 快速验证 prompt 策略和 RAG 效果（它的 Debug 界面很方便看每一步的输入输出），确认后如果需要更复杂的逻辑再用 LangGraph 实现。Dify 的 RAG 内置了向量化、分块、检索、Rerank，对于标准 Q&A 场景够用，但高度定制化的 RAG（自定义分块策略、多步检索）还是需要自建。我们团队的实践是内部知识库问答用 Dify（业务同学可以自己维护文档和测试效果），对外的复杂 AI 产品用 LangGraph 自建。
+
+---
+
