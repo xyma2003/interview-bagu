@@ -495,3 +495,27 @@ class Trie:
 
 ---
 
+### Q43: 克隆图 · LeetCode 133
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def cloneGraph(node):
+    if not node: return None
+    visited = {}
+    def dfs(n):
+        if n in visited: return visited[n]
+        clone = Node(n.val)
+        visited[n] = clone
+        for neighbor in n.neighbors:
+            clone.neighbors.append(dfs(neighbor))
+        return clone
+    return dfs(node)
+```
+
+**考察点**：哈希表记录已克隆节点（处理环形图）
+
+---
+
