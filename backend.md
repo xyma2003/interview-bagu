@@ -559,3 +559,64 @@ GIL 是 CPython 的一把全局锁，任意时刻只有一个线程能执行 Pyt
 
 ---
 
+### Q15: Python 的装饰器是什么？如何实现带参数的装饰器？
+
+**题目解析**：装饰器是 Python 最常用的高级特性，理解它体现候选人对 Python 函数式编程的掌握程度。
+
+**题目讲解**：
+**装饰器本质**：
+- 一个接受函数并返回新函数的高阶函数
+- `@decorator` 是 `func = decorator(func)` 的语法糖
+
+**基础装饰器**：
+```python
+from functools import wraps
+
+def log_time(func):
+    @wraps(func)  # 保留原函数的 __name__、__doc__ 等元信息
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        print(f"{func.__name__} took {time.time()-start:.2f}s")
+        return result
+    return wrapper
+```
+
+**带参数的装饰器（工厂函数）**：
+```python
+def retry(max_attempts=3, delay=1.0):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for i in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if i == max_attempts - 1:
+                        raise
+                    time.sleep(delay)
+        return wrapper
+    return decorator
+
+@retry(max_attempts=5, delay=0.5)
+def fetch_data(): ...
+```
+
+**类装饰器**：实现 `__call__` 方法的类也可以作为装饰器，适合需要维护状态的场景（如计数）。
+
+**常见内置装饰器**：`@staticmethod`、`@classmethod`、`@property`、`@functools.lru_cache`
+
+**考察点**：
+1. `@wraps` 的必要性（保留元信息，否则文档/反射会错乱）
+2. 带参数的装饰器是"装饰器工厂"（三层嵌套）
+3. 装饰器的应用场景（缓存、权限验证、重试、日志、限流）
+
+**示例答案**：
+装饰器的本质是高阶函数：接收一个函数，返回一个增强版函数，`@decorator` 语法等价于 `func = decorator(func)`。不带参数的装饰器是两层嵌套（装饰器函数 + wrapper 函数），带参数的是三层：最外层接收参数返回真正的装饰器，真正的装饰器再包装函数。`@wraps(func)` 是重要细节，它把原函数的 `__name__`、`__doc__`、`__annotations__` 等属性复制到 wrapper，否则调试和反射会拿到 wrapper 的名字而非原函数名，logging/tracing 都会出问题。实际项目里装饰器用途很广：`@retry` 自动重试、`@lru_cache` 缓存、`@login_required` 权限校验、`@transaction` 数据库事务封装。在 FastAPI/Flask 里，`@app.route('/path')` 本质也是带参数的装饰器，路由信息通过参数传入。
+
+---
+
+## 七、分布式系统
+
+---
+
