@@ -311,3 +311,59 @@ new PerformanceObserver(list => {
 
 ---
 
+### Q66: 什么是渐进式增强（Progressive Enhancement）和优雅降级（Graceful Degradation）？
+
+**🏢 高频公司**：阿里、腾讯
+
+**题目讲解**：
+
+**渐进式增强（Progressive Enhancement）**：
+从最基础的功能开始构建，逐层添加增强特性：
+1. HTML 语义结构（所有浏览器可用）
+2. CSS 样式增强（支持 CSS 的浏览器）
+3. JavaScript 交互（支持 JS 的浏览器）
+4. 高级 API（支持最新特性的浏览器）
+
+**优雅降级（Graceful Degradation）**：
+先针对现代浏览器开发完整功能，再为旧浏览器提供兜底方案。
+
+**现代实践（CSS Feature Detection）**：
+```css
+/* @supports 检测特性支持 */
+@supports (display: grid) {
+  .container { display: grid; }
+}
+
+@supports not (display: grid) {
+  .container { display: flex; }
+}
+
+/* CSS 自定义属性（变量）降级 */
+.element {
+  color: #007bff;                    /* 旧浏览器 fallback */
+  color: var(--primary-color, #007bff);  /* 现代浏览器用变量 */
+}
+```
+
+**JavaScript 特性检测**：
+```javascript
+// 不要用浏览器嗅探，要用特性检测
+if ('IntersectionObserver' in window) {
+  // 使用 IO
+} else {
+  // 降级到 scroll 事件
+}
+
+// 或者动态加载 polyfill
+if (!window.ResizeObserver) {
+  await import('resize-observer-polyfill')
+}
+```
+
+**考察点**：
+1. 两种策略的选择依据（新项目 PE，老项目 GD）
+2. Can I Use 检查特性支持
+3. Babel 和 PostCSS 的自动降级
+
+---
+
