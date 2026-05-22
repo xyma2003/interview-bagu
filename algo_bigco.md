@@ -64,3 +64,35 @@ def longestConsecutive(nums: list[int]) -> int:
 
 ---
 
+### Q73: 腾讯 面试：滑动窗口最大值 · LeetCode 239
+
+**🏢 高频公司**：腾讯、字节（困难高频）
+**难度**：困难 ⭐⭐⭐
+
+**题目**：给定数组和窗口大小 k，返回每个滑动窗口的最大值。
+
+**题目讲解**（单调递减双端队列）：
+```python
+from collections import deque
+
+def maxSlidingWindow(nums: list[int], k: int) -> list[int]:
+    dq = deque()   # 存下标，维护单调递减（队首是当前窗口最大值的下标）
+    res = []
+    for i, x in enumerate(nums):
+        # 移出窗口外的元素
+        while dq and dq[0] < i - k + 1:
+            dq.popleft()
+        # 维护单调性：移出所有比当前值小的
+        while dq and nums[dq[-1]] < x:
+            dq.pop()
+        dq.append(i)
+        if i >= k - 1:
+            res.append(nums[dq[0]])
+    return res
+```
+**复杂度**：O(N) 时间，O(K) 空间
+
+**考察点**：单调双端队列；队首是窗口最大值，入队前清理比当前值小的元素
+
+---
+
