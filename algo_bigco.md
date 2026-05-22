@@ -281,3 +281,25 @@ def removeNthFromEnd(head, n: int):
 
 ---
 
+### Q82: 腾讯 面试：最大正方形 · LeetCode 221
+
+**题目讲解**（DP）：
+```python
+def maximalSquare(matrix: list[list[str]]) -> int:
+    m, n = len(matrix), len(matrix[0])
+    dp = [[0]*n for _ in range(m)]
+    ans = 0
+    for i in range(m):
+        for j in range(n):
+            if matrix[i][j] == '1':
+                if i == 0 or j == 0:
+                    dp[i][j] = 1
+                else:
+                    dp[i][j] = min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1
+                ans = max(ans, dp[i][j] ** 2)
+    return ans
+```
+**考察点**：`dp[i][j]` = 以 (i,j) 为右下角的最大正方形边长；瓶颈是三个方向的最小值
+
+---
+
