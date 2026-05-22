@@ -91,3 +91,50 @@ WeakMap 解决了"给对象附加额外数据，但不阻止 GC 回收该对象"
 
 ---
 
+### Q27: Proxy 和 Reflect 的关系是什么？有哪些实际应用场景？
+
+**题目解析**：Proxy 是 ES6 最强大的元编程特性，也是 Vue 3 响应式的底层，考察候选人的 JavaScript 高级能力。
+
+**题目讲解**：
+**Proxy**：
+```javascript
+const proxy = new Proxy(target, handler);
+// handler 是一组陷阱（trap）的集合：get/set/has/deleteProperty/apply/construct等
+```
+
+**Reflect**：
+- 与 Proxy handler 的 trap 一一对应的方法集合
+- 提供了执行"默认行为"的标准方式
+- 在 Proxy trap 里调用 `Reflect.xxx` 执行默认操作，避免手写底层行为
+
+```javascript
+const handler = {
+  set(target, key, value, receiver) {
+    console.log(`设置 ${key} = ${value}`);
+    return Reflect.set(target, key, value, receiver); // 执行默认 set 行为
+  }
+};
+```
+
+**实际应用**：
+1. **Vue 3 响应式**：拦截 get/set，自动依赖收集和触发更新
+2. **数据验证**：在 set 陷阱里校验值类型
+3. **负索引数组**：拦截 get，支持 `arr[-1]` 访问最后一个元素
+4. **只读对象**：在 set/deleteProperty 陷阱里抛出错误
+5. **函数调用追踪（apply trap）**：记录函数调用次数和参数（mock/测试工具）
+6. **虚拟对象（has trap）**：动态报告属性是否存在
+
+**考察点**：
+1. Proxy 与 Object.defineProperty 的区别（Proxy 代理整个对象，后者代理单个属性）
+2. Reflect 的 receiver 参数（保持 this 正确性）
+3. 不可代理的值（基本类型不能用 Proxy）
+
+**示例答案**：
+Proxy 和 Reflect 是配套设计的：Proxy 让你拦截对象操作，Reflect 让你在拦截里执行默认行为。在 handler 的 set trap 里如果不调用 Reflect.set（或等价的 target[key]=value），设置操作就不会真正发生。Reflect 的价值在于它接受 receiver 参数（保证 this 指向正确），比直接操作 target 更安全。Vue 3 的响应式就是用 Proxy 的 get trap 收集依赖（当前正在执行的 effect 放进 dep set），set trap 触发所有依赖的重新执行。负索引是一个有趣的 Proxy 应用：`get(target, key) { const k = Number(key); return target[k < 0 ? target.length + k : k]; }`，这样 `arr[-1]` 就能正常工作。Proxy 相比 Object.defineProperty 的核心优势是代理整个对象而非单个属性，增删属性都能感知；Object.defineProperty 必须提前枚举所有属性，Vue 2 的响应式局限就在于此。
+
+---
+
+## 十一、浏览器安全
+
+---
+
