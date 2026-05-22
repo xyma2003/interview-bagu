@@ -287,3 +287,31 @@ def ladderLength(beginWord: str, endWord: str, wordList: list[str]) -> int:
 
 ---
 
+### Q36: 全排列 · LeetCode 46
+
+**🏢 高频公司**：字节、腾讯（回溯经典）
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def permute(nums: list[int]) -> list[list[int]]:
+    res = []
+    def backtrack(path, used):
+        if len(path) == len(nums):
+            res.append(path[:])
+            return
+        for i, x in enumerate(nums):
+            if used[i]: continue
+            used[i] = True
+            path.append(x)
+            backtrack(path, used)
+            path.pop()
+            used[i] = False
+    backtrack([], [False]*len(nums))
+    return res
+```
+
+**考察点**：回溯三要素（选择/递归/撤销）；used 数组标记已用元素
+
+---
+
