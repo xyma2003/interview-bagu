@@ -900,3 +900,43 @@ async function mergeChunks(fileHash, totalChunks) {
 
 ---
 
+### Q54: requestAnimationFrame vs setTimeout 实现动画的区别？
+
+**🏢 高频公司**：腾讯、字节
+
+**题目讲解**：
+- **setTimeout(fn, 16)**：在指定时间后将回调加入宏任务队列，但实际执行时间不精确（受主线程阻塞影响），可能跳帧或与浏览器刷新不同步
+- **requestAnimationFrame（rAF）**：在浏览器下次绘制前调用回调，与屏幕刷新率同步（60Hz → 16.7ms），由浏览器调度，Tab 切换到后台时自动暂停（节省电量）
+
+```javascript
+// ❌ setTimeout 动画：时机不精确，可能掉帧
+function animate() {
+  box.style.left = (parseInt(box.style.left) + 1) + 'px'
+  setTimeout(animate, 16)
+}
+
+// ✅ rAF 动画：与屏幕刷新同步
+function animate(timestamp) {
+  const elapsed = timestamp - startTime
+  box.style.transform = `translateX(${elapsed * 0.1}px)`
+  if (elapsed < 1000) requestAnimationFrame(animate)
+}
+requestAnimationFrame(animate)
+```
+
+**性能差异**：
+- rAF 回调在 Paint 之前执行，更改 DOM/CSS 会合并到当前帧
+- setTimeout 是宏任务，执行后浏览器才会 Paint，如果每帧有多次 setTimeout 会有多次 Paint
+
+**微任务 vs 宏任务 vs rAF 执行顺序**：
+```
+宏任务 → 清空微任务 → rAF 回调 → Layout → Paint → Composite → 下一帧
+```
+
+**考察点**：
+1. rAF 的"下一帧"语义 vs setTimeout 的"定时"语义
+2. rAF 在后台标签页自动暂停
+3. 高精度时间戳（DOMHighResTimeStamp，微秒级精度）
+
+---
+
