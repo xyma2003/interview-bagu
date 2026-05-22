@@ -74,3 +74,71 @@ Go 的 goroutine 是真正的轻量并发，Go 运行时内置调度器，在多
 
 ---
 
+### Q52: 什么是 OpenTelemetry？如何在服务中实现链路追踪（Distributed Tracing）？
+
+**🏢 高频公司**：字节、阿里、腾讯
+
+**题目讲解**：
+**问题**：微服务架构中，一个用户请求经过多个服务，出现问题时难以定位是哪个服务的哪个环节出了故障。
+
+**链路追踪核心概念**：
+- **Trace**：一次完整请求的全链路记录（全局唯一 trace_id）
+- **Span**：一次操作（RPC 调用、DB 查询），有 start_time/end_time/attributes
+- **Context Propagation**：trace_id 通过 HTTP Header 在服务间传递
+
+**OpenTelemetry（OTEL）Python 示例**：
+```python
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
+# 初始化
+provider = TracerProvider()
+provider.add_span_processor(
+    BatchSpanProcessor(OTLPSpanExporter(endpoint="http://jaeger:4317"))
+)
+trace.set_tracer_provider(provider)
+tracer = trace.get_tracer(__name__)
+
+# 使用
+@app.post("/order")
+async def create_order(order: OrderRequest):
+    with tracer.start_as_current_span("create_order") as span:
+        span.set_attribute("user.id", order.user_id)
+        span.set_attribute("order.total", order.total)
+        
+        with tracer.start_as_current_span("validate_inventory"):
+            await check_inventory(order.items)
+        
+        with tracer.start_as_current_span("charge_payment"):
+            await charge(order.payment)
+        
+        return {"order_id": "..."}
+```
+
+**自动埋点（Zero-Code Instrumentation）**：
+```python
+# OTEL 提供 auto-instrumentation，无需修改代码
+# pip install opentelemetry-instrumentation-fastapi
+opentelemetry-instrument --traces_exporter otlp \
+    --service_name order-service \
+    python app.py
+```
+
+**常用后端（Trace 存储与查询）**：
+- **Jaeger**：开源，OTEL 原生支持
+- **Zipkin**：老牌开源方案
+- **Tempo（Grafana）**：与 Prometheus/Loki 深度集成
+- **DataDog / Dynatrace**：商业方案
+
+**考察点**：
+1. Trace ID 在 HTTP Header 中的标准字段（`traceparent`，W3C Trace Context）
+2. Span 的父子关系（树形结构）
+3. 采样策略（全量 vs 基于尾部的采样）
+
+**示例答案**：
+OpenTelemetry 是链路追踪、指标、日志三合一的可观测性标准框架，各大云厂商和监控产品都支持。核心是 Span 的父子关系：HTTP 请求进来创建根 Span，调用其他服务创建子 Span，子 Span 通过 HTTP Header（traceparent）传递 trace_id，在 Jaeger 里就能看到完整的调用链树，哪个 Span 耗时最长、在哪出错一目了然。Python 里 OTEL auto-instrumentation 能自动给 FastAPI/Flask/aiohttp/SQLAlchemy 等常用库埋点，不需要改业务代码，启动时加个命令行参数就完成。生产中重要的是采样策略——全量追踪成本太高，通常对出错的请求全量采样，正常请求按 1-5% 采样，重要业务（支付）可以单独提高采样率。
+
+---
+
