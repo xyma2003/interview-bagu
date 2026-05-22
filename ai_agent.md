@@ -62,3 +62,27 @@ Temperature 控制的是输出分布的"尖锐程度"。数学上它除以 logit
 
 ---
 
+### Q3: 什么是 KV Cache？它在推理中如何节省计算？
+
+**题目解析**：KV Cache 是 LLM 推理优化的核心机制，理解它是写高性能 Agent 服务的基础。
+
+**题目讲解**：
+在自回归生成中，每生成一个新 token，模型需要对整个序列重新计算 Attention。KV Cache 通过缓存历史 token 的 Key 和 Value 矩阵避免重复计算：
+- **原理**：对于已经处理过的 prefix，其 K 和 V 矩阵不变，只有新 token 需要计算新的 K/V 并追加
+- **内存代价**：每层每个 token 需要缓存 2（K+V）× head_num × d_head 个浮点数；对长序列内存占用大
+- **Prompt Cache（Claude/GPT 等）**：将常用 system prompt 的 KV Cache 持久化，多次请求复用，降低 TTFT（Time To First Token）和费用
+- **PagedAttention（vLLM）**：用类似操作系统虚拟内存的分页机制管理 KV Cache，支持更高并发
+
+**考察点**：
+1. KV Cache 复用的原理和内存开销
+2. Prompt Caching 在 API 调用层面的工程价值
+3. 与批推理（batching）的配合
+
+**面试官更想听**：
+说出 Prompt Caching 的实际收益（Claude API 缓存命中可节省 90% token 费用），以及如何在项目中利用它（固定 system prompt 放最前，减少 prefix 变化）。
+
+**示例答案**：
+KV Cache 解决的是自回归生成的重复计算问题。在生成第 N 个 token 时，前 N-1 个 token 的 Key/Value 矩阵已经在上一步算过了，只需要缓存下来，新步骤只计算当前 token 的 Q 与缓存 K/V 做 attention 即可，推理时间从 O(N²) 降为 O(N)。内存代价是随序列长度线性增长，128K 上下文窗口会占用几十 GB GPU 显存，这是当前长上下文推理的主要瓶颈。Anthropic 提供的 Prompt Caching 功能允许将固定 system prompt 的 KV Cache 服务端复用，命中时 token 费用降低 90%，TTFT 也大幅缩短。在我的项目里，我将几千字的知识库 system prompt 固定在消息最前面，通过 cache_control 标记启用缓存，每次对话只有新增的用户消息需要全量计算，显著降低了延迟和成本。
+
+---
+
