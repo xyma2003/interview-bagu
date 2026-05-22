@@ -356,3 +356,57 @@ JVM 内存分几块：堆是最大的，存对象实例，分年轻代（Eden+Su
 
 ---
 
+### Q27: Java 的线程池（ThreadPoolExecutor）参数有哪些？如何合理配置？
+
+**题目解析**：线程池是 Java 并发编程的核心工具，合理配置线程池是后端开发的重要工程实践。
+
+**题目讲解**：
+**ThreadPoolExecutor 七个核心参数**：
+```java
+new ThreadPoolExecutor(
+    corePoolSize,          // 核心线程数，始终保活（即使空闲）
+    maximumPoolSize,       // 最大线程数
+    keepAliveTime,         // 非核心线程空闲超过此时间后销毁
+    TimeUnit,              // keepAliveTime 单位
+    workQueue,             // 任务队列
+    threadFactory,         // 线程创建工厂（可设线程名、daemon属性）
+    rejectedExecutionHandler // 拒绝策略
+);
+```
+
+**任务提交流程**：
+1. 线程数 < corePoolSize → 新建线程执行
+2. 线程数 >= corePoolSize → 放入队列
+3. 队列满 + 线程数 < maximumPoolSize → 新建线程执行
+4. 队列满 + 线程数 = maximumPoolSize → 触发拒绝策略
+
+**队列类型**：
+- `LinkedBlockingQueue`（无界）：maximumPoolSize 永远不生效，不推荐生产用
+- `ArrayBlockingQueue`（有界）：推荐，能触发扩容和拒绝策略
+- `SynchronousQueue`：不排队，直接移交，maximumPoolSize 要大
+
+**拒绝策略**：
+- `AbortPolicy`（默认）：抛出 RejectedExecutionException
+- `CallerRunsPolicy`：由提交任务的线程执行（降速反压）
+- `DiscardPolicy`：丢弃任务，不抛异常
+- `DiscardOldestPolicy`：丢弃队列最老的任务
+
+**线程数配置原则**：
+- CPU 密集型：核心数 + 1（防止一个线程缺页中断时充分利用 CPU）
+- I/O 密集型：核心数 × 2 或更多（等待 I/O 时 CPU 空闲，多线程利用率高）
+- 混合型：根据 CPU 占用比例计算
+
+**考察点**：
+1. 任务提交的优先级（核心线程 → 队列 → 非核心线程 → 拒绝）
+2. 无界队列的风险（OOM，maximumPoolSize 无效）
+3. 线程池监控（`getPoolSize()/getActiveCount()/getQueue().size()`）
+
+**示例答案**：
+ThreadPoolExecutor 的执行顺序要背熟：先用核心线程（corePoolSize 以内），满了放队列，队列满了才创建非核心线程（到 maximumPoolSize），再满了触发拒绝策略。生产配置注意：不要用 `Executors.newFixedThreadPool`（内部用无界 LinkedBlockingQueue，任务可以无限堆积直到 OOM），要用有界队列 ArrayBlockingQueue 并配合 CallerRunsPolicy（调用者执行，自然形成背压）。线程数：CPU 密集型用 `Runtime.getRuntime().availableProcessors() + 1`；I/O 密集型（HTTP 调用/数据库）通常设核心数的 2-4 倍，具体看压测下的 CPU 利用率。线程池一定要命名（自定义 threadFactory 设置 `thread-pool-xxx-thread-%d`），方便 jstack 时识别问题线程。监控上报 `activeCount/queueSize/completedTask` 到 metrics，队列积压告警是早期发现性能问题的关键信号。
+
+---
+
+## 十二、Elasticsearch
+
+---
+
