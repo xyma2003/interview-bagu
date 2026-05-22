@@ -769,3 +769,59 @@ function Counter() {
 
 ---
 
+### Q52: Web Workers 的用途是什么？SharedArrayBuffer 和 Atomics 解决什么问题？
+
+**🏢 高频公司**：字节
+
+**题目讲解**：
+**Web Workers**：在独立线程里运行 JS，不阻塞主线程（UI 渲染、事件处理）。
+
+**适用场景**：
+- 大型数据处理（CSV 解析、图片压缩、加密计算）
+- 复杂算法（路径规划、图形渲染计算）
+- Service Worker（特殊的 Worker，拦截网络请求）
+
+**基本用法**：
+```javascript
+// main.js
+const worker = new Worker('./worker.js')
+worker.postMessage({ data: largeArray })  // 结构化克隆传递（拷贝）
+worker.onmessage = e => console.log('结果:', e.data)
+
+// worker.js
+self.onmessage = e => {
+  const result = heavyComputation(e.data.data)
+  self.postMessage(result)
+}
+```
+
+**Transferable Objects（零拷贝传递）**：
+```javascript
+// ArrayBuffer 可以转让所有权（不拷贝，main 线程失去访问权）
+worker.postMessage({ buffer: arrayBuffer }, [arrayBuffer])
+```
+
+**SharedArrayBuffer（真正共享内存）**：
+```javascript
+// main.js
+const sab = new SharedArrayBuffer(1024)
+worker.postMessage({ buffer: sab })
+
+// worker.js（两边访问同一块内存）
+const arr = new Int32Array(e.data.buffer)
+Atomics.add(arr, 0, 1)  // 原子加法，线程安全
+```
+
+**Atomics 解决什么问题**：
+多线程共享内存时的竞态条件——`arr[0]++` 读-改-写不是原子操作，Atomics.add 保证原子性。Atomics.wait/notify 实现互斥锁。
+
+**考察点**：
+1. postMessage 的结构化克隆 vs Transferable（性能差异）
+2. SharedArrayBuffer 被 Spectre 攻击限制，需要 COOP/COEP 响应头
+3. Worker 无法操作 DOM
+
+**示例答案**：
+Web Worker 把 CPU 密集型任务移到独立线程，主线程专注 UI 交互。postMessage 默认做结构化克隆（深拷贝），大数据时开销大，用 Transferable 转让 ArrayBuffer 所有权实现零拷贝。SharedArrayBuffer 让多个 Worker 和主线程共享同一块内存，用 Atomics API 做原子操作保证线程安全，适合需要高频通信的并行计算（图像处理、WebAssembly 计算密集任务）。注意 SharedArrayBuffer 需要页面设置 COOP/COEP 安全头（Spectre 漏洞导致被浏览器限制，加响应头后解除）。
+
+---
+
