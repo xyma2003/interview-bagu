@@ -520,3 +520,34 @@ def longestCommonPrefix(strs: list[str]) -> str:
 
 ---
 
+### Q69: 实现 strStr（KMP）· LeetCode 28
+
+**🏢 高频公司**：字节（必考字符串）
+**难度**：中等 ⭐⭐
+
+**题目讲解（KMP 算法）**：
+```python
+def strStr(haystack: str, needle: str) -> int:
+    if not needle: return 0
+    # 构建 next 数组（部分匹配表）
+    next = [0] * len(needle)
+    j = 0
+    for i in range(1, len(needle)):
+        while j > 0 and needle[i] != needle[j]: j = next[j-1]
+        if needle[i] == needle[j]: j += 1
+        next[i] = j
+    # KMP 匹配
+    j = 0
+    for i, c in enumerate(haystack):
+        while j > 0 and c != needle[j]: j = next[j-1]
+        if c == needle[j]: j += 1
+        if j == len(needle): return i - j + 1
+    return -1
+```
+
+**复杂度**：O(N+M)
+
+**考察点**：next 数组的含义（最长公共前后缀长度）；为什么 KMP 不回退 i 指针
+
+---
+
