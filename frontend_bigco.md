@@ -715,3 +715,73 @@ function masonry(items, columns = 2, gap = 12) {
 
 ---
 
+### Q46: 小红书 面试：如何实现图片的渐进加载和懒加载？Blurhash 是什么？
+
+**🏢 高频公司**：小红书、Instagram 类图片应用
+
+**题目解析**：
+图片加载体验是内容型产品的核心用户体验，考察候选人的图片性能工程能力。
+
+**题目讲解**：
+
+**渐进加载策略**：
+1. **缩略图 → 原图（LQIP: Low Quality Image Placeholder）**：
+   ```html
+   <img src="thumbnail.jpg" data-src="full.jpg" class="lazy-img">
+   ```
+   先显示低质量模糊图，用 IntersectionObserver 触发加载原图
+
+2. **Blurhash（字节/Facebook 方案）**：
+   - 把图片编码为 30-40 字节的字符串（比 LQIP thumbnail 小 100 倍）
+   - 服务端计算，前端用 JS 解码渲染为 Canvas 模糊占位图
+   - 加载体验极好，首屏几乎无白块
+   ```javascript
+   import { decode } from 'blurhash';
+   
+   function renderBlurhash(hash, width, height, canvas) {
+     const pixels = decode(hash, width, height);
+     const ctx = canvas.getContext('2d');
+     const imageData = ctx.createImageData(width, height);
+     imageData.data.set(pixels);
+     ctx.putImageData(imageData, 0, 0);
+   }
+   ```
+
+3. **Progressive JPEG**：
+   - JPEG 的一种编码格式，先显示低质量全图，逐渐清晰
+   - 不需要额外代码，浏览器原生支持
+
+4. **WebP / AVIF 格式**：
+   - WebP 比 JPEG 小 25-35%，AVIF 更小（小 50%+），加载更快
+   - 用 `<picture>` 标签按浏览器支持降级
+
+**完整实现**：
+```javascript
+// IntersectionObserver 懒加载 + 原图加载完成后淡入
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const img = entry.target;
+    const fullSrc = img.dataset.src;
+    
+    const fullImg = new Image();
+    fullImg.onload = () => {
+      img.src = fullSrc;
+      img.classList.add('loaded');  // 触发 CSS 淡入动画
+    };
+    fullImg.src = fullSrc;
+    observer.unobserve(img);  // 加载后停止观察
+  });
+}, { rootMargin: '200px' });  // 提前 200px 开始加载
+```
+
+**考察点**：
+1. Blurhash 的数据大小优势（vs LQIP）
+2. rootMargin 的预加载距离设置
+3. 加载完成后的 CSS transition 淡入体验
+
+**示例答案**：
+图片懒加载 + 占位的完整方案：先在图片位置用占位元素（颜色块或 Blurhash 解码的模糊图）保持布局稳定，IntersectionObserver 检测到图片进入视口提前 200px 时开始加载，加载完成后用 CSS transition opacity 0→1 淡入，避免图片突然出现的突兀感。Blurhash 是现在最优雅的占位方案：服务端在上传图片时计算 Blurhash 字符串（通常 30 字节左右），存在数据库里，接口返回图片信息时一并返回；前端拿到 hash 后解码渲染到 Canvas，得到对应的模糊版本，与原图尺寸一致，加载体验极好。相比 LQIP（发一张额外的低质量缩略图请求），Blurhash 不需要额外 HTTP 请求，直接从数据库的字段里得到，性能更好。格式选择上，AVIF 体积最小但解码稍慢，WebP 兼顾质量和兼容性，用 `<picture>` 标签做降级：AVIF → WebP → JPEG，浏览器自动选择支持的最优格式。
+
+---
+
