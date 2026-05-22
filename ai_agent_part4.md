@@ -310,3 +310,63 @@ Constitutional AI 是 Anthropic 减少人工标注依赖的关键创新。传统
 
 ---
 
+### Q78: Agent 如何处理长时间运行的任务（Long-Running Tasks）？
+
+**🏢 高频公司**：腾讯、字节
+
+**题目讲解**：
+**问题场景**：任务需要 5-30 分钟（如：分析 10 万行数据、爬取并汇总 100 个网页、生成完整报告），不能让用户等待 HTTP 请求超时。
+
+**异步任务架构**：
+```python
+# 1. 提交任务，立即返回 task_id
+@app.post("/tasks")
+async def submit_task(request: TaskRequest) -> dict:
+    task_id = str(uuid.uuid4())
+    await task_queue.enqueue(task_id, request.dict())
+    return {"task_id": task_id, "status": "pending"}
+
+# 2. Worker 异步执行（独立进程）
+async def worker():
+    while True:
+        task_id, task_data = await task_queue.dequeue()
+        await update_status(task_id, "running")
+        try:
+            result = await run_agent(task_data)
+            await update_status(task_id, "completed", result=result)
+        except Exception as e:
+            await update_status(task_id, "failed", error=str(e))
+
+# 3. 客户端轮询或 WebSocket 订阅
+@app.get("/tasks/{task_id}")
+async def get_task_status(task_id: str) -> dict:
+    return await task_db.get(task_id)
+```
+
+**进度上报**：
+```python
+# LangGraph 中间件，每步上报进度
+async def on_node_complete(node_name: str, step: int, total: int):
+    progress = step / total
+    await redis.publish(f"task:{task_id}:progress", 
+                        json.dumps({"step": node_name, "progress": progress}))
+```
+
+**中断与恢复**：
+- LangGraph Checkpointer 保存每步状态，服务重启不丢失
+- 支持暂停（用户发送 pause 命令）和恢复
+
+**超时与清理**：
+- 任务设置最大执行时间（如 30 分钟）
+- 超时后标记为 failed，释放资源
+
+**考察点**：
+1. 任务队列选型（Redis Stream / Celery / Kafka）
+2. 进度推送（WebSocket / SSE / 轮询）
+3. 任务幂等（重试时不重复执行已完成步骤）
+
+**示例答案**：
+长时间任务必须用异步架构解耦请求和执行。用户提交任务后立刻拿到 task_id，Worker 独立执行（Celery + Redis 或自建 worker pool），执行过程中通过 Redis Pub/Sub 推送进度，前端 SSE 订阅进度更新。LangGraph 的 Checkpointer 机制让每步状态持久化，Worker 崩溃重启后从上次成功节点恢复，不重跑已完成步骤。任务超时设 30 分钟 TTL，到期后 kill 并标记 failed，同时通知用户"任务超时，请拆分为更小的任务重试"。生产中用 Celery + Redis 实现最成熟，支持优先级队列、定时重试、任务撤销，是 Python 生态的事实标准。
+
+---
+
