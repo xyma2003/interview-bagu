@@ -540,3 +540,60 @@ Agentic Search 让 AI 从"给我答案"升级为"自主获取答案"。关键是
 
 ---
 
+### Q82: 如何设计 LLM Agent 的 Guardrails（护栏）系统？
+
+**🏢 高频公司**：阿里、MiniMax
+
+**题目讲解**：
+**Guardrails 的定位**：在 Agent 的输入/输出层面设置安全边界，防止不当行为，不修改模型本身。
+
+**双向护栏架构**：
+```python
+class AgentGuardrails:
+    async def check_input(self, user_message: str) -> GuardResult:
+        """输入护栏"""
+        checks = await asyncio.gather(
+            self.check_pii(user_message),           # PII 检测
+            self.check_prompt_injection(user_message),  # 注入检测
+            self.check_topic_relevance(user_message),   # 主题相关性
+            self.check_rate_limit(user_message),        # 速率限制
+        )
+        violations = [c for c in checks if not c.passed]
+        return GuardResult(passed=len(violations)==0, violations=violations)
+    
+    async def check_output(self, agent_response: str) -> GuardResult:
+        """输出护栏"""
+        checks = await asyncio.gather(
+            self.check_hallucination(agent_response),   # 幻觉检测
+            self.check_sensitive_content(agent_response), # 敏感内容
+            self.check_pii_exposure(agent_response),    # PII 泄露
+            self.check_format(agent_response),          # 格式合规
+        )
+        violations = [c for c in checks if not c.passed]
+        return GuardResult(passed=len(violations)==0, violations=violations)
+```
+
+**常用护栏类型**：
+1. **NeMo Guardrails（NVIDIA）**：基于 Colang 语言定义对话规则
+2. **Guardrails AI**：Python 库，定义 validators 和 output fixes
+3. **LlamaGuard（Meta）**：专门训练的安全分类 LLM
+
+**分级响应**：
+- 轻微违规：修改输出，添加免责声明
+- 中度违规：拒绝执行，给出友好提示
+- 严重违规：立即终止，上报安全团队
+
+**考察点**：
+1. 护栏的性能开销（每次都加检测会增加延迟）
+2. 护栏的误报率（合法请求被拒绝影响体验）
+3. 护栏的对抗鲁棒性（能否被绕过）
+
+**示例答案**：
+Guardrails 是 Agent 的安全层，独立于模型之外，方便更新而不影响核心功能。双向护栏：输入检测防止恶意输入（提示注入、有害内容请求）和 PII（用户不小心输入身份证号时脱敏）；输出检测防止模型生成有害内容、幻觉声明、PII 泄露。实现上，并发执行多个检测器（asyncio.gather）减少延迟开销；轻量规则检测（关键词匹配、正则）做第一道快速过滤，只有可疑内容才进入 LLM-based 精细检测。护栏的误报是最大痛点，过于激进会拒绝大量合理请求；建议先以 monitor-only 模式运行两周（记录但不阻断），分析误报比例，调整阈值后再开启强制模式。
+
+---
+
+*本篇共 10 题（Q73-Q82），与前三篇合计 82 道 AI Agent 面试题。*
+
+---
+
