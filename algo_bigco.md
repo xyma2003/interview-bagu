@@ -171,3 +171,22 @@ def minPathSum(grid: list[list[int]]) -> int:
 
 ---
 
+### Q77: 腾讯 面试：不同路径 II（含障碍物）· LeetCode 63
+
+**题目讲解**：
+```python
+def uniquePathsWithObstacles(grid: list[list[int]]) -> int:
+    m, n = len(grid), len(grid[0])
+    dp = [0] * n
+    dp[0] = 1
+    for i in range(m):
+        for j in range(n):
+            if grid[i][j] == 1:
+                dp[j] = 0
+            elif j > 0:
+                dp[j] += dp[j-1]
+    return dp[-1]
+```
+
+---
+
