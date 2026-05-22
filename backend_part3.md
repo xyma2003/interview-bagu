@@ -842,3 +842,65 @@ Docker 提供轻量级容器化（镜像打包 + 隔离运行），K8s 是容器
 
 ---
 
+### Q48: Python 的 `__slots__` 是什么？它如何节省内存？
+
+**🏢 高频公司**：小红书、字节（Python 深度题）
+
+**题目讲解**：
+
+**默认情况（`__dict__`）**：
+每个 Python 实例都有一个 `__dict__` 字典存储属性，字典本身有较大内存开销（约 200+ 字节/实例）。
+
+**`__slots__` 的作用**：
+```python
+# 普通类
+class Normal:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+# 每个实例有 __dict__，约 250 字节
+
+# 使用 __slots__
+class Slotted:
+    __slots__ = ('x', 'y')   # 声明允许的属性名
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+# 每个实例约 80 字节（节省 ~60%）
+```
+
+**原理**：
+`__slots__` 把属性存储从字典改为固定大小的数组（类似 C struct），消除了字典的 hash 表开销。
+
+**代价（限制）**：
+- 不能动态添加未在 `__slots__` 中声明的属性
+- 继承时子类若没声明 `__slots__` 会自动有 `__dict__`（失去效果）
+- 不支持弱引用（除非在 `__slots__` 里加 `'__weakref__'`）
+
+**适用场景**：
+- 需要创建大量实例（百万级）的轻量数据类
+- 性能敏感的内存密集场景
+- 游戏中的粒子系统、数值计算中的向量类
+
+**现代替代**：
+- `@dataclass(slots=True)`（Python 3.10+）：更方便地使用 slots
+
+```python
+from dataclasses import dataclass
+
+@dataclass(slots=True)
+class Point:
+    x: float
+    y: float
+```
+
+**考察点**：
+1. `__slots__` 的内存原理（描述符 vs 字典）
+2. 与 `__dict__` 同时存在时的行为
+3. NamedTuple / dataclass 的 slots 参数
+
+**示例答案**：
+Python 对象默认用 `__dict__` 存属性，字典是哈希表结构，内存开销大（约 200 字节以上）。`__slots__` 把属性存储改为固定偏移量的内存块（类似 C 的 struct），消除哈希表开销，每个实例内存减少约 50-70%。百万级实例时节省数百 MB 显著。代价是属性列表固定，不能动态添加，在灵活性和性能之间取舍。Python 3.10+ 推荐用 `@dataclass(slots=True)`，语义更清晰，比手写 `__slots__` 更不容易出错（自动处理继承场景）。
+
+---
+
