@@ -403,3 +403,47 @@ const proxyWindow = new Proxy(window, {
 
 ---
 
+### Q34: 前端测试分哪几层？Jest、Vitest、React Testing Library 的定位是什么？
+
+**题目解析**：测试是工程质量的保证，考察候选人的工程化成熟度。
+
+**题目讲解**：
+**测试金字塔**：
+- **单元测试（Unit Test）**：测试单个函数/组件，快速，数量最多
+- **集成测试（Integration Test）**：测试多个组件/模块的交互
+- **端到端测试（E2E Test）**：模拟用户操作，测试完整业务流程，慢，数量最少
+
+**Jest vs Vitest**：
+- **Jest**：Facebook 出品，成熟生态，全功能（测试运行器 + 断言 + Mock + 覆盖率）
+- **Vitest**：基于 Vite，速度更快（复用 Vite 的 ES Module 转换，watch 模式极快），API 与 Jest 兼容（迁移成本低）
+- 选择：Vite 项目选 Vitest，Webpack 项目用 Jest
+
+**React Testing Library（RTL）**：
+- 测试哲学："测试用户行为，而不是实现细节"
+- 用 `getByRole`/`getByText`/`getByLabel` 查询元素（像用户一样找元素），而非 `querySelector` 或组件内部状态
+- 核心 API：`render`, `screen`, `fireEvent`, `userEvent`, `waitFor`
+- 配合 Jest/Vitest 使用，不是测试运行器
+
+**E2E 工具**：
+- **Playwright（微软）**：跨浏览器（Chromium/Firefox/Safari），API 优秀，速度快，现在主流
+- **Cypress**：UI 直观，调试方便，但只支持 Chrome 系
+
+**测试原则**：
+- 测试接近"用户视角"，越少测试实现细节越好
+- 不需要100%覆盖率，关键业务路径 + 容易出错的边界案例
+- Fast / Reliable / Isolated：测试要快、可重复、相互独立
+
+**考察点**：
+1. RTL 的查询优先级（role > label > text > testid）
+2. Mock 的使用场景（模拟 API、计时器、依赖模块）
+3. 覆盖率 vs 测试质量的权衡
+
+**示例答案**：
+前端测试分三层：单元测试（函数、hooks、工具类，快如闪电）、集成测试（多组件交互、API mock，是主力）、E2E（真实浏览器跑完整流程，慢但最接近用户）。RTL 的核心理念是"像用户一样查询"——用 `screen.getByRole('button', {name: '提交'})` 而非 `container.querySelector('.btn-submit')`，这样即使你改了 class name 或组件实现，测试不会失败（没有绑定实现细节）。Vitest 在 Vite 项目里是 Jest 的更好替代，watch 模式下改一个文件只重跑受影响的测试，速度提升极明显，且 API 完全兼容 Jest 可以无缝迁移。E2E 工具现在推荐 Playwright：真正跨浏览器（Webkit/Firefox/Chromium），并发执行快，自动等待（不需要手写 waitFor），截图/视频录制支持，debug 体验也很好。测试策略上不追求 100% 覆盖率，优先覆盖：用户主流程（下单、登录）、容易出 bug 的业务逻辑、以前出过 bug 的地方（回归测试）。
+
+---
+
+## 十五、性能监控与 Web API
+
+---
+
