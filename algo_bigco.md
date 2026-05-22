@@ -335,3 +335,24 @@ def maxAreaOfIsland(grid: list[list[int]]) -> int:
 
 ---
 
+### Q85: 字节 面试：二叉树的右视图 · LeetCode 199
+
+**题目讲解**（BFS 取每层最后一个）：
+```python
+from collections import deque
+def rightSideView(root) -> list[int]:
+    if not root: return []
+    res, q = [], deque([root])
+    while q:
+        for i in range(len(q)):
+            node = q.popleft()
+            if i == len(q): res.append(node.val)   # 当前层最后一个
+            if node.left:  q.append(node.left)
+            if node.right: q.append(node.right)
+    return res
+```
+
+等价写法：每层循环结束前记录最后访问的节点值。
+
+---
+
