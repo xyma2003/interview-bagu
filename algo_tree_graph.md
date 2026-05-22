@@ -558,3 +558,28 @@ def networkDelayTime(times: list[list[int]], n: int, k: int) -> int:
 
 ---
 
+### Q45: 最长公共子序列 · LeetCode 1143
+
+**🏢 高频公司**：字节、腾讯（DP 经典）
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def longestCommonSubsequence(text1: str, text2: str) -> int:
+    m, n = len(text1), len(text2)
+    dp = [[0] * (n+1) for _ in range(m+1)]
+    for i in range(1, m+1):
+        for j in range(1, n+1):
+            if text1[i-1] == text2[j-1]:
+                dp[i][j] = dp[i-1][j-1] + 1
+            else:
+                dp[i][j] = max(dp[i-1][j], dp[i][j-1])
+    return dp[m][n]
+```
+
+**复杂度**：O(MN) 时间，O(MN) 空间（可滚动数组压缩到 O(N)）
+
+**考察点**：二维 DP 的状态定义；最长公共子串（连续）的状态转移不同
+
+---
+
