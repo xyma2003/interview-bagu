@@ -246,3 +246,42 @@ W_int8 = round(W / scale)
 
 ---
 
+### Q37: 什么是 Reranker？Cross-Encoder 和 Bi-Encoder 有什么区别？
+
+**题目解析**：Reranker 是 RAG 精排的关键，理解 Cross-Encoder vs Bi-Encoder 体现检索架构的深度认知。
+
+**题目讲解**：
+**检索两阶段架构**：
+- **召回（Recall）**：Bi-Encoder（向量检索），从百万文档中快速找 Top-50，O(1)
+- **精排（Rerank）**：Cross-Encoder，对 Top-50 精细评分，选 Top-5 输入 LLM
+
+**Bi-Encoder**：
+- Query 和 Document 分别 encode，得到独立向量，用相似度评分
+- 优点：Document 向量可以预计算缓存，检索速度极快
+- 缺点：Query 和 Document 交互在 embedding 层之前就截断，交互不充分
+
+**Cross-Encoder**：
+- Query 和 Document 拼接，一起输入 BERT-like 模型，输出相关性分数
+- 优点：Query-Document 充分交互，每一层都有 cross-attention，准确率更高
+- 缺点：每个 query-doc 对都需要单独推理，不能预计算，延迟高（O(N) 其中 N 为候选集大小）
+
+**常用 Reranker 模型**：
+- **bge-reranker-large**（BAAI）：中文效果佳
+- **Cohere Rerank**：API 服务，质量高，支持中英文
+- **ms-marco-MiniLM**：轻量，速度快
+
+**设计模式**：
+```
+用户 query → Bi-Encoder 检索 Top-50 → Cross-Encoder Rerank → Top-5 → LLM
+```
+
+**考察点**：
+1. 为什么不直接用 Cross-Encoder 做召回（计算量 O(N×M)，N=query, M=文档数）
+2. Reranker 对哪类查询提升最大（语义模糊、多意图查询）
+3. 如何评估 Reranker 的效果（NDCG、MRR）
+
+**示例答案**：
+Bi-Encoder 和 Cross-Encoder 是互补的：Bi-Encoder 将 query 和 document 独立编码，document 向量可以预计算，检索时只需一次 query 编码加向量搜索，毫秒级完成；缺点是 query 和 document 没有深度交互，对模糊语义的召回率有限。Cross-Encoder 把 query+document 拼接后一起过模型，每层都有全注意力交互，打分精度高很多，但每个 pair 都要单独推理，Top-50 候选就要跑 50 次推理，速度是瓶颈。两阶段管道把二者结合：Bi-Encoder 快速召回，Cross-Encoder 精排，是当前 RAG 系统的标准架构。Reranker 对多义词和语义相近但意图不同的查询效果提升最显著——比如"苹果公司" vs "苹果水果"，Bi-Encoder 可能混淆，但 Cross-Encoder 能结合完整上下文精准判断。
+
+---
+
