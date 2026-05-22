@@ -209,3 +209,30 @@ def findDisappearedNumbers(nums: list[int]) -> list[int]:
 
 ---
 
+### Q98: 最短路径（Bellman-Ford）· LeetCode 787
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目**：最多经过 K 站中转，从 src 到 dst 的最便宜机票价格。
+
+**题目讲解**（Bellman-Ford K 次松弛）：
+```python
+def findCheapestPrice(n: int, flights: list[list[int]], src: int, dst: int, k: int) -> int:
+    prices = [float('inf')] * n
+    prices[src] = 0
+    
+    for _ in range(k + 1):   # 最多 k+1 条边
+        tmp = prices[:]
+        for u, v, w in flights:
+            if prices[u] != float('inf') and prices[u] + w < tmp[v]:
+                tmp[v] = prices[u] + w
+        prices = tmp
+    
+    return prices[dst] if prices[dst] != float('inf') else -1
+```
+
+**考察点**：`tmp = prices[:]` 防止同一轮松弛中连续更新（同一轮只能用上一轮的结果）
+
+---
+
