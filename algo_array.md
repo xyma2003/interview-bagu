@@ -585,3 +585,31 @@ def rotate(matrix: list[list[int]]) -> None:
 
 ---
 
+### Q18: 螺旋矩阵 · LeetCode 54
+
+**🏢 高频公司**：腾讯、字节
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def spiralOrder(matrix: list[list[int]]) -> list[int]:
+    res = []
+    top, bottom, left, right = 0, len(matrix)-1, 0, len(matrix[0])-1
+    while top <= bottom and left <= right:
+        for c in range(left, right+1):   res.append(matrix[top][c])
+        top += 1
+        for r in range(top, bottom+1):   res.append(matrix[r][right])
+        right -= 1
+        if top <= bottom:
+            for c in range(right, left-1, -1): res.append(matrix[bottom][c])
+            bottom -= 1
+        if left <= right:
+            for r in range(bottom, top-1, -1): res.append(matrix[r][left])
+            left += 1
+    return res
+```
+
+**考察点**：四个边界变量，收缩方向时注意判断是否还有行/列
+
+---
+
