@@ -637,3 +637,81 @@ WebSocket 用一次 HTTP Upgrade 握手把 HTTP 连接升级为持久双工 TCP 
 
 ---
 
+### Q45: 小红书 面试：CSS 实现一个瀑布流（Masonry）布局，有哪些方案？
+
+**🏢 高频公司**：小红书（产品特色）、Instagram 类应用
+
+**题目解析**：
+瀑布流是小红书的核心 UI 模式，是小红书前端面试的标志性题目。
+
+**题目讲解**：
+**方案一：CSS Multi-Column**（最简单，但无法精确控制列）：
+```css
+.masonry {
+  column-count: 2;
+  column-gap: 12px;
+}
+.masonry-item {
+  break-inside: avoid;  /* 防止卡片被断开 */
+  margin-bottom: 12px;
+}
+```
+- 优点：纯 CSS，零 JS
+- 缺点：列顺序是从上到下排（先填第一列，再第二列），不是从左到右按时间序
+
+**方案二：CSS Grid（现代方案）**：
+```css
+.masonry {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: masonry;  /* CSS Masonry 草案，Chrome flag 需开启 */
+  gap: 12px;
+}
+```
+- CSS Masonry 是 W3C 草案，部分浏览器实验性支持
+
+**方案三：JS 计算列高（生产主流）**：
+```javascript
+function masonry(items, columns = 2, gap = 12) {
+  const colHeights = new Array(columns).fill(0);
+  const positions = [];
+  
+  items.forEach(item => {
+    // 找当前最矮的列
+    const minCol = colHeights.indexOf(Math.min(...colHeights));
+    const colWidth = (containerWidth - gap * (columns - 1)) / columns;
+    
+    positions.push({
+      left: minCol * (colWidth + gap),
+      top: colHeights[minCol],
+      width: colWidth
+    });
+    
+    colHeights[minCol] += item.height + gap;
+  });
+  
+  return positions;
+}
+```
+- 优点：精确控制，支持从左到右排序
+- 缺点：需要预知图片高度（或加载后重算）
+
+**方案四：Flexbox（伪瀑布流）**：
+- 多列 Flex，每列单独一个 div，按列分配数据
+- 缺点：需要后端或前端提前分配数据到各列
+
+**生产实践（小红书方案）**：
+- JS 算法 + 虚拟列表组合：只渲染可视区域的卡片
+- 图片懒加载 + placeholder（先占位，加载后渐现）
+- IntersectionObserver 触发懒加载
+
+**考察点**：
+1. Multi-Column 的排列顺序问题（列序 vs 行序）
+2. 图片高度预知问题（需要服务端返回图片宽高）
+3. 瀑布流 + 虚拟列表的结合
+
+**示例答案**：
+小红书的瀑布流生产方案是 JS 计算 + 绝对定位。核心算法：维护每列的当前高度，每来一张卡片放入最矮的列，这样各列高度趋于均衡。图片高度问题是关键难点：如果等图片加载后才知道高度，会有明显的布局抖动（图片加载时卡片突然变高，后续卡片全部移位）。解决方案是服务端在图片 URL 里返回宽高信息（或单独字段），前端用固定宽度 + 服务端高度计算宽高比，用 `padding-bottom: 56.25%` 等技巧预先占位，图片加载后直接填入占位容器，用户不感知 layout shift。虚拟列表是必须的（首页可能有几千条内容），按列分别维护虚拟滚动状态，只渲染可视区域上下各一屏的卡片。CSS Multi-column 方案虽然最简单，但排列顺序是按列（第一列从上到下，再第二列），不是时间顺序，不符合信息流场景。
+
+---
+
