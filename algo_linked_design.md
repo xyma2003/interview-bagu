@@ -500,3 +500,23 @@ def groupAnagrams(strs: list[str]) -> list[list[str]]:
 
 ---
 
+### Q68: 最长公共前缀 · LeetCode 14
+
+**🏢 高频公司**：字节、腾讯
+**难度**：简单 ⭐
+
+**题目讲解**：
+```python
+def longestCommonPrefix(strs: list[str]) -> str:
+    prefix = strs[0]
+    for s in strs[1:]:
+        while not s.startswith(prefix):
+            prefix = prefix[:-1]
+            if not prefix: return ""
+    return prefix
+```
+
+**考察点**：横向扫描；追问：Trie 插入所有字符串，公共前缀是公共路径
+
+---
+
