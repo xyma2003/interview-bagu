@@ -385,3 +385,160 @@ def verify_citations(answer: str, docs: list[Doc]) -> float:
 
 ---
 
+### Q85: 设计一个数据分析 Agent（Text-to-SQL + 可视化）
+
+**🏢 高频公司**：小红书（数据工具）、字节（DataFact 类产品）、阿里（Quick BI）
+
+**题目解析**：
+数据分析 Agent 将自然语言转化为 SQL 并生成洞察，是 BI 产品的智能化升级。考察 Text-to-SQL、多轮交互、安全防护。
+
+---
+
+**一、需求拆解**
+
+**用户旅程**：
+```
+用户："过去 30 天，哪些商品的退货率最高？"
+Agent：生成 SQL → 执行 → 返回结果表格 + 图表 + 文字洞察
+用户："那这些商品的差评集中在哪些问题？"（追问）
+Agent：理解上文，生成新 SQL → 返回结果
+```
+
+---
+
+**二、核心架构**
+
+**多步骤 Agent Loop（LangGraph 实现）**：
+```
+用户问题
+    │
+    ▼
+[Schema 检索] 从向量库检索相关表/列定义（不把全量 Schema 塞进去）
+    │
+    ▼
+[SQL 生成] LLM 生成 SQL，加注释说明每步逻辑
+    │
+    ▼
+[SQL 校验] 语法检查 + 危险操作检测
+    │
+    ▼
+[SQL 执行] 沙箱执行，超时 30s 强制中止
+    │
+    ├── 有错误 → [错误修复] LLM 看报错信息自修复（最多 3 次）
+    │
+    ▼
+[结果解读] LLM 生成文字洞察（"TOP 3 商品退货率分别是...，主要原因可能是..."）
+    │
+    ▼
+[图表推荐] 根据数据类型自动选择图表类型（时序→折线，占比→饼图）
+    │
+    ▼
+返回：结果表格 + 图表 + 洞察文字
+```
+
+---
+
+**三、关键设计细节**
+
+**3.1 Schema 理解（关键难点）**
+
+实际数仓有几千张表，不能把所有 DDL 全塞进 context（token 爆炸）：
+
+```python
+class SchemaRetriever:
+    def __init__(self, schema_db):
+        # 提前对所有表的注释和列描述做 Embedding
+        self.embeddings = embed_all_schemas(schema_db)
+    
+    def retrieve(self, query: str, top_k=10) -> list[TableSchema]:
+        # 用问题检索最相关的表
+        query_emb = embed(query)
+        relevant = similarity_search(query_emb, self.embeddings, k=top_k)
+        
+        # 对于检索到的表，只返回相关的列（不是所有列）
+        return [trim_irrelevant_columns(table, query) for table in relevant]
+```
+
+**3.2 SQL 安全防护**
+
+```python
+class SQLValidator:
+    FORBIDDEN_PATTERNS = [
+        r'\bDROP\b', r'\bDELETE\b', r'\bTRUNCATE\b',
+        r'\bUPDATE\b', r'\bINSERT\b', r'\bALTER\b',
+        r'\bGRANT\b', r'\bREVOKE\b',
+        r'information_schema',   # 禁止查系统表
+    ]
+    
+    def validate(self, sql: str) -> ValidationResult:
+        for pattern in self.FORBIDDEN_PATTERNS:
+            if re.search(pattern, sql, re.IGNORECASE):
+                return ValidationResult(safe=False, reason=f"含禁止操作: {pattern}")
+        
+        # 行数限制（防止全表扫描打垮 DB）
+        if not re.search(r'\bLIMIT\b', sql, re.IGNORECASE):
+            sql = sql.rstrip(';') + ' LIMIT 10000'
+        
+        return ValidationResult(safe=True, sql=sql)
+```
+
+**3.3 自修复循环**
+
+```python
+async def execute_with_retry(sql: str, db, max_retries=3) -> QueryResult:
+    for attempt in range(max_retries):
+        try:
+            result = await db.execute(sql, timeout=30)
+            return result
+        except DatabaseError as e:
+            if attempt == max_retries - 1:
+                raise
+            # 让 LLM 看错误信息修复 SQL
+            sql = await fix_sql(sql, str(e))
+```
+
+**3.4 多轮对话上下文管理**
+
+追问时需要理解前面生成的 SQL 和结果：
+```python
+def build_context(history: list[Turn]) -> str:
+    context = []
+    for turn in history[-3:]:  # 只保留最近 3 轮
+        context.append(f"用户问: {turn.question}")
+        context.append(f"生成SQL: {turn.sql}")
+        context.append(f"结果摘要: {summarize_result(turn.result)}")
+    return "\n".join(context)
+```
+
+---
+
+**四、难点与权衡**
+
+| 难点 | 解决方案 |
+|------|---------|
+| 歧义问题（"最近"是多久？）| 追问澄清 or 用默认值并在回答中说明 |
+| Join 复杂逻辑 | 提供 Few-shot 示例教 LLM 正确 JOIN；提前维护常用宽表 |
+| 中文字段名 | 用 `table_comment` 和 `column_comment` 作为检索依据，SQL 用原始英文字段名 |
+| 执行超时 | 30s 超时，降级返回"查询太慢，请缩小时间范围" |
+| 敏感数据 | 列级权限控制，检索 Schema 时过滤无权访问的列；结果中手机号/身份证脱敏 |
+
+**考察点**：
+1. Schema 检索（不能全量注入）
+2. SQL 注入和危险操作防护
+3. 自修复循环设计（最多 N 次）
+4. 多轮对话的上下文压缩
+
+**示例答案**：
+
+数据分析 Agent 的核心挑战是 Schema 太大（实际数仓几千张表）和 SQL 安全。
+
+**Schema 处理**：不把全部 DDL 塞进 context，而是对每张表的注释和关键列描述做 Embedding，根据用户问题检索最相关的 Top-10 张表，再精简列到与问题相关的 10-20 列注入，整个 Schema context 控制在 2000 token 以内。
+
+**SQL 生成到执行**：LangGraph 多步骤 Loop——生成 SQL → 语法和安全校验（正则拦截 DROP/DELETE/系统表访问）→ 沙箱执行（只读账号，30s 超时，自动加 LIMIT 1万）→ 如有错误用报错信息让 LLM 自修复（最多 3 次）→ 结果解读+图表生成。
+
+**多轮理解**：追问时把最近 3 轮的问题、SQL、结果摘要一起注入，让 LLM 理解上下文。结果摘要而非原始数据（避免 token 爆炸）。
+
+**质量监控**：用户执行次数和修复次数比是核心指标——如果 60% 的 SQL 需要修复说明 Schema 理解或 Few-shot 有问题；监控用户放弃（生成了 SQL 但用户不执行）也是重要信号。
+
+---
+
