@@ -118,3 +118,41 @@ def mergeKLists(lists):
 
 ---
 
+### Q55: K 个一组翻转链表 · LeetCode 25
+
+**🏢 高频公司**：字节（高频困难）
+**难度**：困难 ⭐⭐⭐
+
+**题目讲解**：
+```python
+def reverseKGroup(head, k: int):
+    dummy = ListNode(0, head)
+    prev_group_end = dummy
+    
+    while True:
+        # 找第 k 个节点
+        kth = prev_group_end
+        for _ in range(k):
+            kth = kth.next
+            if not kth: return dummy.next
+        
+        # 翻转 k 个节点
+        group_start = prev_group_end.next
+        prev, curr = kth.next, group_start
+        for _ in range(k):
+            nxt = curr.next
+            curr.next = prev
+            prev = curr
+            curr = nxt
+        
+        # 连接
+        prev_group_end.next = kth
+        group_start.next = curr
+        prev_group_end = group_start
+    return dummy.next
+```
+
+**考察点**：找第 k 个节点 + 翻转 + 重新连接；细节很多，需要熟练
+
+---
+
