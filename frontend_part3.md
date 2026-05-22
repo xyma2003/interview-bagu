@@ -1218,3 +1218,42 @@ useEffect(() => {
 
 ---
 
+### Q60: Webpack 的 Tree Shaking 为什么只对 ES Module 有效？
+
+**🏢 高频公司**：字节、阿里
+
+**题目讲解**：
+**Tree Shaking 原理**：在打包时静态分析代码，删除未被使用的 export，减小 bundle 体积。
+
+**为什么需要 ES Module**：
+- **CommonJS**：`require()` 是动态的，运行时才知道导入了什么（`require(condition ? 'a' : 'b')`），静态分析无法确定哪些代码被用到
+- **ES Module**：`import/export` 是静态的，编译时就能确定依赖关系，工具可以构建完整的引用图
+
+**必要条件**：
+1. 源码用 ES Module（`import/export`）
+2. package.json 有 `"sideEffects": false`（告诉 Webpack 没有副作用的文件可以安全删除）
+3. 不要用 Babel 把 ESM 编译成 CommonJS（`modules: false`）
+4. 生产模式（`mode: 'production'`，启用 Terser 删除死代码）
+
+**副作用（sideEffects）**：
+```json
+{
+  "sideEffects": ["./src/polyfill.js", "*.css"]
+}
+```
+有副作用的文件即使没有被 import，也不能被删除（如全局 polyfill、CSS）。
+
+**考察点**：
+1. `sideEffects: false` 的作用（允许未用 export 的文件整体被删除）
+2. 为什么 Lodash 默认无法 Tree Shake（CommonJS）→ 用 lodash-es
+3. Rollup 的 Tree Shaking 比 Webpack 更彻底（最初的 Tree Shaking 实现者）
+
+**示例答案**：
+Tree Shaking 依赖静态分析——编译时就能确定哪些代码用到了，哪些没用。ES Module 的 import/export 是静态声明，编译器可以构建完整的依赖图，找出未被任何入口引用的 export 标记为 dead code，再由 Terser 删除。CommonJS 的 require 是函数调用，执行时才知道参数，静态分析无法处理。所以用 lodash 时，`import { debounce } from 'lodash'` 无法 Tree Shake（lodash 是 CJS），应该改用 `import debounce from 'lodash-es/debounce'` 或 `import { debounce } from 'lodash-es'`（ESM 版本）。sideEffects 字段是 Tree Shaking 的"安全声明"，`false` 表示所有文件都没有副作用，Webpack 可以大胆删除未用的模块；对于有副作用的文件（全局 CSS、polyfill）要在数组里声明，避免被误删。
+
+---
+
+*本篇共 12 题（Q49-Q60），与前两篇合计 60 道前端面试题。*
+
+---
+
