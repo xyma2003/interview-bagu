@@ -860,3 +860,46 @@ LangGraph 的 interrupt() 是 HITL 的核心机制，它在节点内部暂停图
 
 ---
 
+### Q68: 什么是 AI Agent 的"幻觉检测"？有哪些主动检测和被动防御手段？
+
+**🏢 高频公司**：MiniMax、字节、阿里
+
+**题目讲解**：
+
+**幻觉的三个来源**：
+1. **知识幻觉**：模型凭空捏造事实（"张三是某公司CEO"）
+2. **引用幻觉**：RAG 场景下声称"文档中说X"但文档没有这段内容
+3. **推理幻觉**：推理链看似正确但结论错误
+
+**主动检测（NLI-based）**：
+```python
+# 用 NLI（自然语言推断）模型验证声明 vs 来源文档
+from transformers import pipeline
+nli = pipeline("text-classification", model="cross-encoder/nli-deberta-v3-base")
+
+def check_faithfulness(claim: str, source: str) -> bool:
+    result = nli(f"{source} [SEP] {claim}")
+    return result[0]['label'] == 'ENTAILMENT'
+```
+
+**RAGAS 的 Faithfulness 指标**：
+1. 将模型回答拆解为原子声明（"句子1"，"句子2"...）
+2. 对每个声明，用 LLM 判断是否能从检索到的 context 中推断出来
+3. Faithfulness = 可推断声明数 / 总声明数
+
+**被动防御手段**：
+1. **Source Citation**：要求模型引用来源，并验证引用是否真实
+2. **Temperature=0**：降低随机性，减少"创造性填充"
+3. **Self-check**：生成答案后再让模型自检（"以上答案中是否有无法从文档确认的内容？"）
+4. **RAG Grounding Prompt**：system prompt 明确要求"只基于提供文档回答，不确定时说不知道"
+
+**考察点**：
+1. 引用幻觉的检测（Citation Grounding）
+2. 知识幻觉 vs 引用幻觉的不同处理策略
+3. 幻觉率的监控指标设计
+
+**示例答案**：
+幻觉检测分事前和事后。事前防御：RAG 系统里 system prompt 明确限制"只基于以下文档回答，无法回答时明确说不知道"，Temperature 设为 0 减少随机创造；要求回答时标注来源段落编号，方便后续验证。事后检测：将模型回答拆解为原子声明，用 NLI 模型或 LLM 逐条验证是否能从 context 推断（RAGAS Faithfulness）；也可以用 Self-Check——生成答案后让同一模型（或更强的模型）审查"哪些内容无法从提供的文档中确认"。生产监控上，抽样 5% 的请求做 faithfulness 检测，低分对话进入人工复查队列。发现幻觉集中在某类问题（如数字、日期类）后，可以针对性加强那类问题的 RAG 检索或在 prompt 里加特别提醒。
+
+---
+
