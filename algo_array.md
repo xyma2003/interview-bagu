@@ -613,3 +613,25 @@ def spiralOrder(matrix: list[list[int]]) -> list[int]:
 
 ---
 
+### Q19: 二分查找（标准模板）· LeetCode 704
+
+**🏢 高频公司**：所有大厂
+**难度**：简单 ⭐
+
+**题目讲解**：
+```python
+def search(nums: list[int], target: int) -> int:
+    l, r = 0, len(nums) - 1
+    while l <= r:             # 注意：闭区间 [l, r]
+        mid = l + (r - l) // 2  # 防止溢出（Python 不溢出，但好习惯）
+        if nums[mid] == target: return mid
+        elif nums[mid] < target: l = mid + 1
+        else: r = mid - 1
+    return -1
+```
+
+**追问**：`l <= r` vs `l < r`？左闭右开 vs 左闭右闭？
+- 用 `l <= r` + `l=mid+1, r=mid-1`（闭区间写法，不会漏掉）
+
+---
+
