@@ -479,3 +479,24 @@ def maxSubArray(nums: list[int]) -> int:
 
 ---
 
+### Q14: 跳跃游戏 · LeetCode 55
+
+**🏢 高频公司**：字节、阿里
+**难度**：中等 ⭐⭐
+
+**题目**：判断能否从第一个位置跳到最后一个位置。
+
+**题目讲解**：
+```python
+def canJump(nums: list[int]) -> bool:
+    max_reach = 0
+    for i, jump in enumerate(nums):
+        if i > max_reach: return False    # 当前位置不可达
+        max_reach = max(max_reach, i + jump)
+    return True
+```
+
+**复杂度**：O(N)，贪心维护最远可达位置
+
+---
+
