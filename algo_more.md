@@ -236,3 +236,35 @@ def findCheapestPrice(n: int, flights: list[list[int]], src: int, dst: int, k: i
 
 ---
 
+### Q99: 打乱数组（Fisher-Yates 洗牌算法）· LeetCode 384
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+import random
+
+class Solution:
+    def __init__(self, nums: list[int]):
+        self.original = nums[:]
+        self.nums = nums
+    
+    def reset(self) -> list[int]:
+        self.nums[:] = self.original
+        return self.nums
+    
+    def shuffle(self) -> list[int]:
+        n = len(self.nums)
+        for i in range(n-1, 0, -1):
+            j = random.randint(0, i)   # 随机选 [0, i] 中的一个
+            self.nums[i], self.nums[j] = self.nums[j], self.nums[i]
+        return self.nums
+```
+
+**复杂度**：O(N) 时间，O(1) 空间（原地）
+
+**考察点**：Fisher-Yates 每个排列出现概率相等（均匀随机）；Knuth 洗牌的数学证明
+
+---
+
