@@ -66,3 +66,26 @@ def detectCycle(head):
 
 ---
 
+### Q53: 合并两个有序链表 · LeetCode 21
+
+**🏢 高频公司**：所有大厂
+**难度**：简单 ⭐
+
+**题目讲解**：
+```python
+def mergeTwoLists(l1, l2):
+    dummy = curr = ListNode(0)
+    while l1 and l2:
+        if l1.val <= l2.val:
+            curr.next = l1; l1 = l1.next
+        else:
+            curr.next = l2; l2 = l2.next
+        curr = curr.next
+    curr.next = l1 or l2
+    return dummy.next
+```
+
+**考察点**：哑节点（dummy）简化链表头操作；追问：合并 K 个有序链表（堆，O(N log K)）
+
+---
+
