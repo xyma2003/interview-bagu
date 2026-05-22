@@ -164,3 +164,46 @@ RDB 定时 snapshot，紧凑高效，恢复快，代价是两次 snapshot 间的
 
 ---
 
+### Q23: Redis Cluster 的架构是什么？Slot 分片是如何工作的？
+
+**题目解析**：Redis Cluster 是生产环境高可用和水平扩展的标准方案，考察候选人对 Redis 架构的理解。
+
+**题目讲解**：
+**Redis Cluster 架构**：
+- 16384 个 hash slot，均匀分配给各节点
+- `CLUSTER KEYSLOT key` = `CRC16(key) % 16384`，确定 key 所属 slot
+- 每个主节点管理一段连续的 slot（如 0-5460，5461-10922，10923-16383）
+- 每个主节点有 N 个从节点（副本），主节点宕机从节点自动选主
+
+**客户端路由**：
+- 客户端可以连接任意节点
+- 如果 key 不在当前节点，返回 `MOVED slot 目标节点ip:port`，客户端重定向
+- 智能客户端（如 Jedis Cluster）缓存 slot-节点映射表，直接路由，减少重定向
+
+**Hash Tags**：
+- `{user:1}:profile` 和 `{user:1}:settings` 会映射到同一 slot（只用 `{...}` 里的内容计算 slot）
+- 用于确保相关 key 在同一节点（支持 MSET/pipeline/Lua 跨 key 操作）
+
+**集群扩缩容**：
+- 新增节点：分配 slot 给新节点，迁移对应 slot 的数据（CLUSTER MIGRATE）
+- 节点下线：把 slot 重新分配给其他节点
+
+**Cluster 的局限**：
+- 不支持跨 slot 的 Multi-key 操作（MSET/MGET 等，除非用 Hash Tag 在同一 slot）
+- 不支持多数据库（只有 db0）
+- 事务（MULTI/EXEC）只能操作同一 slot 的 key
+
+**考察点**：
+1. slot 和节点的映射机制（16384 个 slot）
+2. MOVED vs ASK 重定向的区别（MOVED 持久迁移，ASK 临时迁移中）
+3. Hash Tag 的使用场景和风险（hash tag 设计不当导致 slot 倾斜）
+
+**示例答案**：
+Redis Cluster 用 16384 个虚拟 slot 做数据分片，每个 key 通过 CRC16 哈希取模映射到特定 slot，每个主节点负责一段 slot 范围。客户端操作时，如果路由到的节点不负责该 slot，会收到 MOVED 指令（包含正确节点地址），客户端重定向；智能客户端会缓存 slot 映射表，大部分操作直接路由，只有 slot 迁移期间才重定向。Hash Tag 是个重要机制：key 名里的 `{...}` 内容用于计算 slot，让相关 key 落到同一 slot，从而支持原子的跨 key 操作（MSET/pipeline）。但 Hash Tag 要谨慎用：如果所有 key 都用同一个 Hash Tag，会造成严重 slot 倾斜（全部在一个节点，失去分片意义）。Cluster 的主要局限是不支持跨 slot 事务和 Multi-key 操作，设计数据结构时要考虑是否需要把相关 key 放在同一 slot。推荐用 Redis Cluster + 客户端 SDK（Lettuce/Jedis 的 Cluster 模式），能自动处理重定向和 slot 感知。
+
+---
+
+## 十、Python 进阶
+
+---
+
