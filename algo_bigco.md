@@ -190,3 +190,27 @@ def uniquePathsWithObstacles(grid: list[list[int]]) -> int:
 
 ---
 
+### Q78: 字节 面试：打家劫舍 III（树形 DP）· LeetCode 337
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目**：二叉树中不能偷相邻节点，求最大能偷的金额。
+
+**题目讲解**：
+```python
+def rob(root) -> int:
+    def dfs(node):
+        if not node: return (0, 0)  # (不偷当前节点的最大值, 偷当前节点的最大值)
+        l_no, l_yes = dfs(node.left)
+        r_no, r_yes = dfs(node.right)
+        no  = max(l_no, l_yes) + max(r_no, r_yes)  # 不偷当前，左右各取最大
+        yes = node.val + l_no + r_no                # 偷当前，左右只能不偷
+        return (no, yes)
+    return max(dfs(root))
+```
+
+**考察点**：每个节点返回"偷/不偷"两种状态，避免重复计算
+
+---
+
