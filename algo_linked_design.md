@@ -323,3 +323,36 @@ class MyCircularQueue:
 
 ---
 
+### Q61: 用两个栈实现队列 · LeetCode 232
+
+**🏢 高频公司**：字节、腾讯
+**难度**：简单 ⭐
+
+**题目讲解**：
+```python
+class MyQueue:
+    def __init__(self):
+        self.in_stack = []; self.out_stack = []
+    
+    def push(self, x: int) -> None:
+        self.in_stack.append(x)
+    
+    def pop(self) -> int:
+        self._move(); return self.out_stack.pop()
+    
+    def peek(self) -> int:
+        self._move(); return self.out_stack[-1]
+    
+    def empty(self) -> bool:
+        return not self.in_stack and not self.out_stack
+    
+    def _move(self):
+        if not self.out_stack:
+            while self.in_stack:
+                self.out_stack.append(self.in_stack.pop())
+```
+
+**考察点**：两个栈实现 FIFO；均摊 O(1) 的分析（每个元素最多进出各两次）
+
+---
+
