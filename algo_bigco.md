@@ -407,3 +407,16 @@ def calculate(s: str) -> int:
 
 ---
 
+### Q88: 腾讯 面试：数组的相对排序 · LeetCode 1122（计数排序思想）
+
+**题目讲解**：
+```python
+def relativeSortArray(arr1: list[int], arr2: list[int]) -> list[int]:
+    order = {v: i for i, v in enumerate(arr2)}
+    return sorted(arr1, key=lambda x: (0, order[x]) if x in order else (1, x))
+```
+
+**考察点**：自定义排序 key；不在 arr2 的元素按值升序排在最后
+
+---
+
