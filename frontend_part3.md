@@ -1017,3 +1017,68 @@ document.addEventListener('click', e => {
 
 ---
 
+### Q56: 如何实现虚拟滚动中的动态高度（Variable Height Virtual List）？
+
+**🏢 高频公司**：字节、小红书
+
+**题目讲解**：
+
+动态高度虚拟列表的关键问题：不知道每项高度，无法预先计算 offsetTop。
+
+**解决方案：预估 + 实测修正**：
+```javascript
+class VirtualList {
+  constructor(items, estimatedItemHeight = 50) {
+    this.items = items
+    this.estimatedItemHeight = estimatedItemHeight
+    this.heightCache = new Map()  // index → 实际高度
+    this.offsetCache = [0]        // index → offsetTop（前缀和）
+  }
+  
+  // 获取第 i 项的 offsetTop（前缀和）
+  getItemOffset(index) {
+    let offset = this.offsetCache[index] || 0
+    if (!this.offsetCache[index + 1]) {
+      for (let i = index; i < this.items.length; i++) {
+        const h = this.heightCache.get(i) || this.estimatedItemHeight
+        this.offsetCache[i + 1] = (this.offsetCache[i] || 0) + h
+      }
+    }
+    return this.offsetCache[index]
+  }
+  
+  // 二分查找当前 scrollTop 对应的 startIndex
+  getStartIndex(scrollTop) {
+    let lo = 0, hi = this.items.length
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if (this.getItemOffset(mid) <= scrollTop) lo = mid + 1
+      else hi = mid
+    }
+    return lo - 1
+  }
+  
+  // DOM 渲染后用 ResizeObserver 修正高度
+  observeItem(el, index) {
+    const ro = new ResizeObserver(entries => {
+      const newHeight = entries[0].contentRect.height
+      const oldHeight = this.heightCache.get(index) || this.estimatedItemHeight
+      if (newHeight !== oldHeight) {
+        this.heightCache.set(index, newHeight)
+        // 更新 index 之后的所有偏移量
+        this.invalidateOffsetCache(index)
+        this.forceUpdate()
+      }
+    })
+    ro.observe(el)
+  }
+}
+```
+
+**考察点**：
+1. 前缀和数组存储 offsetTop（避免每次 O(N) 遍历求位置）
+2. ResizeObserver 实测高度后修正缓存
+3. react-virtuoso 的实现思路（自带动态高度支持）
+
+---
+
