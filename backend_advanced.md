@@ -461,3 +461,52 @@ ThreadPoolExecutor 的执行顺序要背熟：先用核心线程（corePoolSize 
 
 ---
 
+### Q29: gRPC 和 REST API 的区别是什么？什么场景下应该用 gRPC？
+
+**题目解析**：gRPC 是微服务内部通信的主流方案，考察候选人对 RPC 框架的理解。
+
+**题目讲解**：
+**gRPC vs REST**：
+| | gRPC | REST |
+|---|---|---|
+| 传输协议 | HTTP/2 | HTTP/1.1（也可 HTTP/2）|
+| 数据格式 | Protocol Buffers（二进制）| JSON（文本）|
+| 接口定义 | .proto 文件（强类型）| OpenAPI/Swagger（可选）|
+| 性能 | 高（二进制压缩，HTTP/2 多路复用）| 中（文本序列化，HTTP/1.1 队头阻塞）|
+| 类型安全 | 编译期保证 | 运行时（JSON Schema 可选验证）|
+| 浏览器支持 | 受限（需要 gRPC-Web）| 完全支持 |
+| 流式传输 | 原生支持（客户端流/服务端流/双向流）| SSE/WebSocket 额外实现 |
+| 代码生成 | 自动生成客户端和服务端 stub | 需要 OpenAPI Generator |
+
+**Protocol Buffers**：
+```protobuf
+syntax = "proto3";
+message User {
+  int32 id = 1;
+  string name = 2;
+  repeated string emails = 3;
+}
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc ListUsers(ListUsersRequest) returns (stream User);  // 服务端流
+}
+```
+
+**适用场景**：
+- **用 gRPC**：微服务内部通信、高性能低延迟要求、强类型约束、需要双向流、多语言服务
+- **用 REST**：对外 API（浏览器/第三方）、需要可读性（调试方便）、简单 CRUD、团队不熟悉 proto
+
+**考察点**：
+1. Protocol Buffers 的字段编号（数字而非名字，向后兼容）
+2. gRPC 的四种流模式（Unary/Server/Client/BiDi Stream）
+3. gRPC 与 HTTP/2 的关系
+
+**示例答案**：
+gRPC 的核心优势是性能和类型安全。Protocol Buffers 序列化比 JSON 快 3-10 倍，体积小 2-5 倍，配合 HTTP/2 的多路复用，微服务内部通信延迟极低。强类型接口定义（.proto）能在编译时发现接口不匹配，比 JSON API 调试时才发现类型错误好很多，代码生成也节省大量手写客户端的工作。流式传输是 gRPC 的另一个优势：服务端流（Server Streaming）让一次请求可以持续接收响应（如实时日志、大数据导出），双向流（BiDi）支持实时语音/视频信令。限制是不能直接从浏览器调用（需要 gRPC-Web 代理），所以外部 API 还是用 REST。我们的微服务架构是：对外的 API Gateway 暴露 REST，内部服务间通信全用 gRPC，这样既有良好的外部体验又有高效的内部通信。.proto 文件作为接口契约存在独立 repo，所有服务从同一来源生成 stub，接口变更必须向后兼容（字段编号不能复用，只能新增）。
+
+---
+
+## 十四、算法与数据结构
+
+---
+
