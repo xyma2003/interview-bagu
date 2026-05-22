@@ -447,3 +447,57 @@ const proxyWindow = new Proxy(window, {
 
 ---
 
+### Q35: 如何实现前端错误监控？需要捕获哪些类型的错误？
+
+**题目解析**：错误监控是生产系统质量保障的基础，考察候选人的工程化运维意识。
+
+**题目讲解**：
+**错误类型**：
+1. **JS 运行时错误**：`window.onerror` 或 `addEventListener('error')`
+2. **Promise 未捕获拒绝**：`window.addEventListener('unhandledrejection')`
+3. **资源加载失败**：`addEventListener('error', handler, true)`（捕获阶段，因为 error 事件不冒泡）
+4. **React 渲染错误**：`ErrorBoundary` 的 `componentDidCatch`
+5. **接口错误**：Axios/Fetch 拦截器捕获网络请求错误
+6. **白屏检测**：定时检测页面是否渲染了关键元素
+
+**错误上报**：
+```javascript
+window.addEventListener('error', (event) => {
+  reportError({
+    type: 'js_error',
+    message: event.message,
+    source: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    stack: event.error?.stack,
+    userAgent: navigator.userAgent,
+    timestamp: Date.now(),
+    url: location.href,
+  });
+}, true);
+```
+
+**Source Map**：
+- 压缩混淆后的代码行号无意义
+- 上传 source map 到错误监控平台（Sentry），还原原始代码位置
+- source map 不应公开（包含源代码），应只在错误平台内部使用
+
+**上报方式**：
+- `fetch` POST（可能失败）
+- `navigator.sendBeacon`（页面关闭时可靠上报，不阻塞页面卸载）
+- `new Image().src = reportUrl`（1x1像素图片，兼容性好）
+
+**工具**：
+- **Sentry**：最主流，开源可自托管，错误聚合、告警、Source Map 支持
+- 自研上报 SDK
+
+**考察点**：
+1. `unhandledrejection` 捕获 Promise 错误的必要性
+2. Source Map 的安全处理
+3. 采样上报（避免高流量下打爆后端）
+
+**示例答案**：
+前端错误监控要全面覆盖几类错误：`window.onerror` 捕获 JS 运行时错误，`unhandledrejection` 捕获没有 catch 的 Promise rejection（现代 async/await 代码的漏网之鱼），资源加载失败（图片/CSS/JS）用 error 事件的捕获阶段（因为不会冒泡），React 组件渲染错误用 ErrorBoundary 的 componentDidCatch。上报要用 `sendBeacon`——页面关闭/跳转时可靠地把最后一批错误上报，不被页面卸载中断。Source Map 一定要上传到监控平台（Sentry 支持），但不要公开到 CDN，否则源码泄露；上传时用 CI/CD 流程自动化，每次部署同步上传 source map 并标记版本号，这样 Sentry 能精确还原每个版本的错误位置。高流量应用要做采样（同一 user 相同错误每小时只上报 1 次），避免把监控后端打垮。错误监控要配告警规则：新错误出现、错误率突增（比昨天同时段高 2 倍）触发报警，让团队能在用户大量反映之前先发现问题。
+
+---
+
