@@ -281,3 +281,47 @@ Redis 六种数据类型各有不同的底层实现。String 底层是 SDS（自
 
 ---
 
+### Q8: Redis 如何实现分布式锁？Redlock 算法解决了什么问题？
+
+**题目解析**：分布式锁是微服务架构的核心问题，面试官几乎必问，且会深挖细节。
+
+**题目讲解**：
+**基础实现（单 Redis 节点）**：
+```bash
+SET lock_key unique_value NX PX 30000
+# NX: 不存在才设置（原子性）, PX: 毫秒级过期时间
+```
+
+**释放锁（Lua 脚本保证原子性）**：
+```lua
+if redis.call("get", KEYS[1]) == ARGV[1] then
+    return redis.call("del", KEYS[1])
+else
+    return 0
+end
+```
+用 unique_value（UUID）标识锁的持有者，防止误删他人的锁。
+
+**单节点问题**：Redis 主从切换时，主节点加锁后若未同步到从节点就宕机，新主节点上没有该锁，其他客户端可以再次加锁，产生并发问题。
+
+**Redlock 算法（多节点）**：
+- 对 N（通常 5）个独立 Redis 节点依次加锁
+- 超过 N/2+1 个节点加锁成功，且总耗时 < 锁过期时间，才算加锁成功
+- 失败时释放所有已加的锁
+- 争议：Martin Kleppmann 认为仍有问题（GC pause 导致锁失效）
+
+**工程实践**：
+- Java 用 Redisson（实现了 Redlock + 看门狗续期）
+- Python 用 redis-py 手写或 pottery 库
+- 锁续期（Watchdog）：后台线程定期延长锁 TTL，防止任务未完成锁过期
+
+**考察点**：
+1. SET NX PX 的原子性
+2. Lua 脚本防止误删的原理
+3. Redlock 的多数票原则
+
+**示例答案**：
+Redis 分布式锁基础实现：`SET lock:key my_uuid NX PX 30000`，NX 保证只有一个客户端设置成功（原子操作），PX 设置过期时间防止死锁（持锁进程崩溃后自动释放）。释放时要用 Lua 脚本：先检查 value 是否是自己的 UUID，是才删除，防止锁过期后误删别人的锁（GET+DEL 非原子，Lua 保证原子性）。单节点的问题是主从切换时锁可能丢失，Redlock 用 5 个独立 Redis 节点，需要超过半数（3个）成功才算加锁，某一个节点宕机不影响整体。Redisson 是 Java 里最成熟的实现，自带看门狗（Watchdog）机制：持锁期间后台线程每 10 秒检查是否还持有锁，若是则续期 30 秒，防止业务执行时间超过锁 TTL 导致锁提前失效。Python 项目里通常用 `redis-py` 手写 Lua 脚本实现，或用 `pottery` 库的 RedisSimpleLock。
+
+---
+
