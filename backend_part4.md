@@ -142,3 +142,84 @@ OpenTelemetry 是链路追踪、指标、日志三合一的可观测性标准框
 
 ---
 
+### Q53: 如何设计 API 的版本管理策略？RESTful API 最佳实践有哪些？
+
+**🏢 高频公司**：阿里、腾讯
+
+**题目讲解**：
+
+**API 版本管理方案**：
+```
+1. URL Path 版本（最直观）
+   GET /v1/users/123
+   GET /v2/users/123
+
+2. Query Parameter
+   GET /users/123?version=2
+
+3. HTTP Header
+   GET /users/123
+   Accept: application/vnd.myapi.v2+json
+
+4. 子域名
+   https://v2.api.example.com/users/123
+```
+
+**推荐方案**：URL Path（简单直观，方便 CDN 缓存和日志分析）
+
+**RESTful 最佳实践**：
+```
+资源命名（名词，复数）：
+  ✅ GET    /users              - 获取用户列表
+  ✅ POST   /users              - 创建用户
+  ✅ GET    /users/123          - 获取用户详情
+  ✅ PUT    /users/123          - 全量更新
+  ✅ PATCH  /users/123          - 部分更新
+  ✅ DELETE /users/123          - 删除用户
+  ✅ GET    /users/123/orders   - 用户的订单
+
+  ❌ GET /getUser/123
+  ❌ POST /deleteUser/123
+
+HTTP 状态码：
+  200 OK          - 成功
+  201 Created     - 创建成功（POST 后）
+  204 No Content  - 成功但无响应体（DELETE）
+  400 Bad Request - 参数错误
+  401 Unauthorized - 未认证
+  403 Forbidden   - 无权限
+  404 Not Found   - 资源不存在
+  409 Conflict    - 资源冲突（如重复创建）
+  422 Unprocessable Entity - 业务逻辑校验失败
+  429 Too Many Requests    - 限流
+  500 Internal Server Error - 服务端错误
+
+分页：
+  GET /users?page=1&size=20&sort=created_at:desc
+  响应头携带：Link: <...>; rel="next"
+  或：{"data": [...], "pagination": {"total": 100, "page": 1}}
+```
+
+**HATEOAS（超媒体）**：
+```json
+{
+  "id": 123,
+  "name": "Alice",
+  "_links": {
+    "self": {"href": "/users/123"},
+    "orders": {"href": "/users/123/orders"},
+    "delete": {"href": "/users/123", "method": "DELETE"}
+  }
+}
+```
+
+**考察点**：
+1. PUT vs PATCH 的语义区别（全量 vs 部分更新）
+2. 幂等性（GET/PUT/DELETE 是幂等的，POST 不是）
+3. GraphQL vs REST 的选择
+
+**示例答案**：
+API 版本管理首选 URL Path（`/v1/`, `/v2/`），简单直观，文档好写，CDN 可以按路径缓存不同版本。版本迭代原则：新增字段向后兼容（旧客户端忽略新字段），破坏性修改（删字段、改类型）才升版本号。RESTful 最重要的是正确使用 HTTP 语义：资源用名词（`/users`），动作体现在 HTTP 方法里；状态码要精确（别什么错误都返回 200，把错误放 body 里）；GET 必须幂等（可缓存），POST 创建资源、PUT 全量替换、PATCH 部分更新。分页用 `page+size` 或 cursor（`?after=xxx`），cursor 分页对大数据更高效。
+
+---
+
