@@ -150,3 +150,24 @@ def wordBreak(s: str, wordDict: list[str]) -> bool:
 
 ---
 
+### Q76: 字节 面试：最小路径和 · LeetCode 64
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def minPathSum(grid: list[list[int]]) -> int:
+    m, n = len(grid), len(grid[0])
+    for i in range(m):
+        for j in range(n):
+            if i == 0 and j == 0: continue
+            elif i == 0: grid[i][j] += grid[i][j-1]
+            elif j == 0: grid[i][j] += grid[i-1][j]
+            else: grid[i][j] += min(grid[i-1][j], grid[i][j-1])
+    return grid[-1][-1]
+```
+**复杂度**：O(MN) 时间，O(1) 空间（原地修改）
+
+---
+
