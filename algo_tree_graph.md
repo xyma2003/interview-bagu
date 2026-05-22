@@ -398,3 +398,29 @@ def solveNQueens(n: int) -> list[list[str]]:
 
 ---
 
+### Q40: 单词搜索 · LeetCode 79
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def exist(board: list[list[str]], word: str) -> bool:
+    rows, cols = len(board), len(board[0])
+    
+    def dfs(r, c, k):
+        if k == len(word): return True
+        if not (0<=r<rows and 0<=c<cols) or board[r][c] != word[k]:
+            return False
+        tmp, board[r][c] = board[r][c], '#'  # 标记已访问
+        found = any(dfs(r+dr, c+dc, k+1) for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)])
+        board[r][c] = tmp   # 回溯
+        return found
+    
+    return any(dfs(r, c, 0) for r in range(rows) for c in range(cols))
+```
+
+**考察点**：原地修改标记已访问（不用 visited 矩阵），回溯时恢复
+
+---
+
