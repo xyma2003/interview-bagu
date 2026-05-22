@@ -176,3 +176,46 @@ XSS 的本质是"把数据当代码执行"——攻击者在用户输入里藏 `
 
 ---
 
+### Q29: 什么是 Content Security Policy（CSP）？如何配置？
+
+**题目解析**：CSP 是现代 Web 安全的重要机制，考察候选人对安全头的实践经验。
+
+**题目讲解**：
+**CSP 是什么**：
+通过 HTTP 响应头或 `<meta>` 标签，声明页面允许加载哪些来源的资源（脚本、样式、图片、字体等），浏览器强制执行该策略。
+
+**常用指令**：
+```
+Content-Security-Policy:
+  default-src 'self';                        # 默认只允许同源资源
+  script-src 'self' 'nonce-abc123' cdn.com;  # 脚本：同源 + nonce + 特定CDN
+  style-src 'self' 'unsafe-inline';          # 样式：同源 + 允许内联
+  img-src *;                                  # 图片：允许所有来源
+  connect-src 'self' api.example.com;        # AJAX/WebSocket
+  frame-ancestors 'none';                    # 禁止被 iframe 嵌入（防 Clickjacking）
+  report-uri /csp-report;                    # 违规时上报到该地址
+```
+
+**nonce 的使用**：
+为每次请求生成随机 nonce，内联 script 标签上加 `nonce="abc123"`，CSP 只允许带对应 nonce 的内联脚本执行，绕过了"禁止所有内联脚本"的限制同时保持安全。
+
+**Report-Only 模式**：
+`Content-Security-Policy-Report-Only`：先不强制执行，只上报违规，用于测试和逐步迁移。
+
+**CSP 对 XSS 的减缓**：
+即使有 XSS 注入点，`script-src 'self'` 可以阻止攻击者注入的内联脚本或外部脚本执行。
+
+**考察点**：
+1. nonce vs hash 两种内联脚本白名单方式
+2. 'unsafe-inline' 和 'unsafe-eval' 的代价
+3. CSP Level 2 vs Level 3 的区别
+
+**示例答案**：
+CSP 通过白名单声明页面的资源加载策略，浏览器只允许来自白名单的资源加载执行，是 XSS 的重要纵深防御层。配置时从严开始：`default-src 'self'` 只允许同源资源，然后按需添加例外（CDN 域名、谷歌字体等）。`script-src 'unsafe-inline'` 和 `'unsafe-eval'` 会显著削弱 CSP 对 XSS 的防护，要尽量避免；如果有内联 script 需要，用 nonce 方案（每次请求服务端生成随机 nonce，注入到 script 标签和 CSP 头里，只有 nonce 匹配的内联脚本才允许执行）。上线前先用 `Content-Security-Policy-Report-Only` + `report-uri` 收集 2 周的违规报告，看清楚哪些资源被阻断，调整白名单后再切换为强制模式，避免把第三方资源也拦截了。`frame-ancestors 'none'` 防止页面被 iframe 嵌入（点击劫持），相当于老的 `X-Frame-Options: DENY`。
+
+---
+
+## 十二、React 进阶
+
+---
+
