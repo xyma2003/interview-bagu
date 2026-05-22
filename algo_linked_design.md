@@ -459,3 +459,23 @@ def longestValidParentheses(s: str) -> int:
 
 ---
 
+### Q66: 罗马数字转整数 · LeetCode 13
+
+**🏢 高频公司**：字节、腾讯
+**难度**：简单 ⭐
+
+**题目讲解**：
+```python
+def romanToInt(s: str) -> int:
+    val = {'I':1,'V':5,'X':10,'L':50,'C':100,'D':500,'M':1000}
+    ans = 0
+    for i in range(len(s)):
+        if i+1 < len(s) and val[s[i]] < val[s[i+1]]:
+            ans -= val[s[i]]   # 减法规则
+        else:
+            ans += val[s[i]]
+    return ans
+```
+
+---
+
