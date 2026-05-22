@@ -215,3 +215,37 @@ def orangesRotting(grid: list[list[int]]) -> int:
 
 ---
 
+### Q34: 课程表（拓扑排序）· LeetCode 207
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目**：判断课程能否完成（检测有向图是否有环）。
+
+**题目讲解**（Kahn 算法 BFS 拓扑排序）：
+```python
+from collections import deque
+
+def canFinish(numCourses: int, prerequisites: list[list[int]]) -> bool:
+    in_degree = [0] * numCourses
+    graph = [[] for _ in range(numCourses)]
+    for a, b in prerequisites:
+        graph[b].append(a)
+        in_degree[a] += 1
+    
+    q = deque(i for i in range(numCourses) if in_degree[i] == 0)
+    finished = 0
+    while q:
+        node = q.popleft()
+        finished += 1
+        for nxt in graph[node]:
+            in_degree[nxt] -= 1
+            if in_degree[nxt] == 0:
+                q.append(nxt)
+    return finished == numCourses
+```
+
+**考察点**：Kahn 算法（BFS 拓扑排序）；DFS 的三色标记法也可以
+
+---
+
