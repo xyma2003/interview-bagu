@@ -85,3 +85,65 @@ Promise.myAny = function(promises) {
 
 ---
 
+### Q38: 字节 面试：实现 `instanceof`，并解释为什么 `typeof null === 'object'`
+
+**🏢 高频公司**：字节、腾讯
+
+**题目解析**：
+考察候选人对 JavaScript 类型系统的深层理解和原型链知识。
+
+**题目讲解**：
+**手写 instanceof**：
+```javascript
+function myInstanceof(left, right) {
+  // 基本类型直接返回 false
+  if (typeof left !== 'object' && typeof left !== 'function') return false;
+  if (left === null) return false;
+  
+  let proto = Object.getPrototypeOf(left);  // 等价于 left.__proto__
+  const prototype = right.prototype;
+  
+  while (proto !== null) {
+    if (proto === prototype) return true;
+    proto = Object.getPrototypeOf(proto);
+  }
+  return false;
+}
+```
+
+**为什么 `typeof null === 'object'`**：
+- 历史遗留 bug（JavaScript 诞生时的错误，后来为了向后兼容保留）
+- 底层原因：JS 的值用标签位（type tag）标记类型，对象的标签是 `000`，而 `null` 的 32 位表示全是 0，被误判为对象类型
+- ES6 曾提案修复（`typeof null === 'null'`），但因为会破坏大量现有代码而被拒绝
+
+**typeof 的完整返回值**：
+```javascript
+typeof undefined    // "undefined"
+typeof null         // "object" (bug!)
+typeof true         // "boolean"
+typeof 42           // "number"
+typeof "str"        // "string"
+typeof Symbol()     // "symbol"
+typeof 42n          // "bigint"
+typeof function(){} // "function"
+typeof {}           // "object"
+typeof []           // "object"
+```
+
+**更准确的类型判断**：
+```javascript
+Object.prototype.toString.call(null)     // "[object Null]"
+Object.prototype.toString.call([])       // "[object Array]"
+Object.prototype.toString.call(/regex/)  // "[object RegExp]"
+```
+
+**考察点**：
+1. instanceof 沿原型链查找的完整过程
+2. typeof 的历史 bug
+3. Object.prototype.toString 作为精确类型检测工具
+
+**示例答案**：
+手写 instanceof：沿左侧对象的 `__proto__` 链向上找，看是否等于右侧构造函数的 `prototype`，到 null 时返回 false。注意处理边界：null 没有原型链，基本类型（数字/字符串等）也要返回 false。`typeof null === 'object'` 是 JavaScript 最著名的历史 bug——1995 年布兰登·艾克设计时，用二进制标签位标记类型，对象是 `000`，而 null 指针的完整二进制表示恰好是 32 个 0，被误识别为对象。这个 bug 在 ES6 提案中被提出修复但被否决，因为全球已有太多代码依赖这个行为。正确检测 null 用全等 `=== null`，精确检测各种对象类型用 `Object.prototype.toString.call()`，它能区分 Array/RegExp/Date/Null 等，是最可靠的运行时类型检测方式。
+
+---
+
