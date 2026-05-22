@@ -340,3 +340,40 @@ def findMedianSortedArrays(nums1: list[int], nums2: list[int]) -> float:
 
 ---
 
+### Q9: 搜索旋转排序数组 · LeetCode 33
+
+**🏢 高频公司**：字节、腾讯、阿里
+**难度**：中等 ⭐⭐
+
+**题目**：在旋转后的有序数组中搜索目标值。
+
+**题目讲解**：
+```python
+def search(nums: list[int], target: int) -> int:
+    l, r = 0, len(nums) - 1
+    while l <= r:
+        mid = (l + r) // 2
+        if nums[mid] == target:
+            return mid
+        # 判断哪半边是有序的
+        if nums[l] <= nums[mid]:   # 左半有序
+            if nums[l] <= target < nums[mid]:
+                r = mid - 1
+            else:
+                l = mid + 1
+        else:                       # 右半有序
+            if nums[mid] < target <= nums[r]:
+                l = mid + 1
+            else:
+                r = mid - 1
+    return -1
+```
+
+**复杂度**：时间 O(log N)，空间 O(1)
+
+**考察点**：
+1. 旋转数组中，mid 必然有一侧是有序的
+2. 根据有序侧判断 target 是否在该范围内决定移动方向
+
+---
+
