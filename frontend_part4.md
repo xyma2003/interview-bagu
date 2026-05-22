@@ -367,3 +367,70 @@ if (!window.ResizeObserver) {
 
 ---
 
+### Q67: TypeScript 的条件类型和映射类型是什么？如何实现 DeepPartial？
+
+**🏢 高频公司**：字节、阿里
+
+**题目讲解**：
+
+**条件类型（Conditional Types）**：
+```typescript
+type IsString<T> = T extends string ? true : false
+type A = IsString<string>   // true
+type B = IsString<number>   // false
+
+// 内置工具类型的实现
+type NonNullable<T> = T extends null | undefined ? never : T
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : never
+```
+
+**映射类型（Mapped Types）**：
+```typescript
+// Partial<T> 的实现
+type Partial<T> = {
+  [K in keyof T]?: T[K]
+}
+
+// Readonly<T> 的实现
+type Readonly<T> = {
+  readonly [K in keyof T]: T[K]
+}
+
+// Record<K, V> 的实现
+type Record<K extends keyof any, V> = {
+  [P in K]: V
+}
+```
+
+**DeepPartial（递归映射）**：
+```typescript
+type DeepPartial<T> = T extends object
+  ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : T
+
+// 使用
+interface Config {
+  server: { host: string; port: number }
+  database: { url: string; pool: number }
+}
+type PartialConfig = DeepPartial<Config>
+// { server?: { host?: string; port?: number }; database?: ... }
+```
+
+**模板字面量类型**：
+```typescript
+type EventName = 'click' | 'focus' | 'blur'
+type Handler = `on${Capitalize<EventName>}`
+// "onClick" | "onFocus" | "onBlur"
+```
+
+**考察点**：
+1. `infer` 关键字的用法（从类型中提取子类型）
+2. 分布式条件类型（T 是 union 时条件类型分布执行）
+3. 递归类型的使用限制（无限递归会报错）
+
+**示例答案**：
+条件类型让 TypeScript 的类型具备了"if-else"逻辑，`T extends U ? X : Y` 在编译时计算。配合 `infer` 可以从类型中提取子类型（`ReturnType` 就是用 `infer R` 提取返回值类型）。映射类型用 `[K in keyof T]` 遍历对象的所有属性键并变换，Partial/Readonly/Record 都是内置的映射类型。DeepPartial 是两者的结合：先用条件类型判断 T 是否是 object，是则递归映射所有属性为可选，否则直接返回 T，实现深层次的 Partial。这类工具类型在实际项目中很有用，比如 API 请求的 body 通常是 Partial（所有字段可选），而 Response 是 Required（所有字段必须）。
+
+---
+
