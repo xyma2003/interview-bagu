@@ -735,3 +735,32 @@ def largestRectangleArea(heights: list[int]) -> int:
 
 ---
 
+### Q24: 前 K 个高频元素 · LeetCode 347
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+import heapq
+from collections import Counter
+
+def topKFrequent(nums: list[int], k: int) -> list[int]:
+    count = Counter(nums)
+    # 最小堆（大小 k），维护频率最大的 k 个元素
+    heap = []
+    for num, freq in count.items():
+        heapq.heappush(heap, (freq, num))
+        if len(heap) > k:
+            heapq.heappop(heap)
+    return [num for freq, num in heap]
+```
+
+**复杂度**：时间 O(N log K)，空间 O(N)
+
+**考察点**：
+1. 大小为 K 的最小堆（维护最大的 K 个）
+2. 桶排序方案 O(N)：下标 = 频率，O(N) 空间
+
+---
+
