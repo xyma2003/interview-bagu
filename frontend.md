@@ -221,3 +221,40 @@ JavaScript 里每个对象都有一个内部属性指向它的原型对象（可
 
 ---
 
+### Q7: `this` 的指向规则有哪些？箭头函数的 `this` 与普通函数有何不同？
+
+**题目解析**：this 指向问题是 JavaScript 最容易出错的特性，也是面试高频考点。
+
+**题目讲解**：
+**普通函数 this 绑定规则（优先级从高到低）**：
+1. **new 绑定**：new 调用时，this 指向新创建的对象
+2. **显式绑定**：call/apply/bind 指定 this
+3. **隐式绑定**：作为对象方法调用，this 指向该对象（`obj.fn()` → this=obj）
+4. **默认绑定**：独立函数调用，严格模式下 undefined，非严格模式下 globalThis
+
+**箭头函数**：
+- 没有自己的 this，继承定义时外层作用域的 this（词法 this）
+- 无法被 call/apply/bind 改变 this
+- 不能用作构造函数
+
+**常见陷阱**：
+```javascript
+const obj = {
+  name: 'Alice',
+  greet: function() { console.log(this.name); },  // this=obj（方法调用）
+  greetArrow: () => { console.log(this.name); }   // this=外层（可能是 window）
+};
+const fn = obj.greet;
+fn();  // 独立调用，this=undefined（严格模式）
+```
+
+**考察点**：
+1. 四种绑定规则及优先级
+2. 箭头函数的词法 this
+3. 回调函数中的 this 丢失问题
+
+**示例答案**：
+this 的值在调用时决定，不在定义时。规则优先级：new > call/apply/bind 显式绑定 > 对象方法隐式绑定 > 默认绑定（严格模式 undefined，非严格 global）。经典陷阱是回调函数中 this 丢失：把 `obj.method` 传给 setTimeout，执行时是独立调用，this 变成 global；解决方案是用箭头函数包裹、或 `.bind(obj)`。箭头函数根本就没有自己的 this，它的 this 在定义时从外层词法作用域继承，之后无论怎么调用都不会变。这使箭头函数非常适合用作回调（保持外层 this），但不适合用作对象方法（会导致 this 不指向对象）。
+
+---
+
