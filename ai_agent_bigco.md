@@ -40,3 +40,40 @@ Softmax 在 Attention 中做两件事：归一化（权重和为1，可以解释
 
 ---
 
+### Q49: MiniMax 面试：什么是 Speculative Decoding？它如何加速 LLM 推理？
+
+**🏢 高频公司**：MiniMax、字节 AI 推理、腾讯混元
+
+**题目解析**：
+推理加速是 LLM 落地的核心工程问题，MiniMax 等自研模型公司必问。
+
+**题目讲解**：
+**自回归推理的瓶颈**：
+LLM 生成每个 token 都需要完整的大模型前向传播，GPU 利用率低（每次只生成1个 token，计算量小但内存带宽占满）——实际上受 Memory-Bound 而非 Compute-Bound 限制。
+
+**Speculative Decoding（推测解码）**：
+1. **Draft 阶段**：用一个小模型（draft model）快速连续生成 K 个候选 token（如 K=4）
+2. **Verify 阶段**：用大模型（target model）一次前向传播，并行验证这 K 个 token 是否与大模型一致
+3. **接受/拒绝**：大模型按概率接受或拒绝每个 draft token，拒绝后从该位置重新由大模型生成
+4. **加速原理**：大模型一次前向传播可以验证 K 个 token，而非每次只生成 1 个
+
+**关键特性**：
+- **输出分布不变**：通过概率拒绝采样，最终输出与不用 speculative decoding 的大模型完全等价（不牺牲质量）
+- **加速倍数**：取决于 draft model 的命中率，通常 2-3x 加速
+- **硬件要求**：大小模型都要加载进 GPU，内存占用增加
+
+**变体**：
+- **Self-Speculative（自推测）**：用大模型的早期层做 draft（不需要额外小模型）
+- **Medusa**：在大模型上加多个"推测头"，并行预测未来多个 token
+- **EAGLE**：用轻量 draft 头，精度更高的推测
+
+**考察点**：
+1. Speculative Decoding 的等价性证明（为什么输出分布不变）
+2. draft model 选择标准（需要和 target model 同类，分布接近）
+3. 在 vLLM/TGI 等框架中的集成
+
+**示例答案**：
+LLM 推理的瓶颈是 Memory-Bandwidth，不是算力——每个 token 生成都需要从 GPU HBM 加载几十 GB 的模型权重，但实际计算量很小，导致 GPU 算力大量闲置。Speculative Decoding 利用这个空闲算力：先用小模型快速批量生成 K 个候选 token，再让大模型一次性并行验证——由于大模型一次前向传播的成本和生成 1 个 token 差不多（KV Cache 写入是瓶颈），验证 K 个 token 的边际成本很低，只要有几个 token 被接受就等于加速了。关键保证是"接受-拒绝采样"方案使输出分布与原始大模型完全一致，不是近似。实际中 draft model 一般用对应系列的小版本（如 70B 用 7B 做 draft），命中率 75%+ 时加速效果显著。vLLM 已支持 Speculative Decoding，配置几行参数即可启用。
+
+---
+
