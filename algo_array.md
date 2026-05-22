@@ -291,3 +291,52 @@ def findAnagrams(s: str, p: str) -> list[int]:
 
 ---
 
+### Q8: 寻找两个有序数组的中位数 · LeetCode 4
+
+**🏢 高频公司**：字节（必考困难题）、腾讯
+**难度**：困难 ⭐⭐⭐
+
+**题目**：找出两个有序数组合并后的中位数，要求 O(log(m+n))。
+
+**题目讲解**：
+二分分割：在较短数组上二分，找到分割点使左半部分元素数 = (m+n+1)/2。
+```python
+def findMedianSortedArrays(nums1: list[int], nums2: list[int]) -> float:
+    # 确保 nums1 是较短的数组
+    if len(nums1) > len(nums2):
+        nums1, nums2 = nums2, nums1
+    m, n = len(nums1), len(nums2)
+    half = (m + n + 1) // 2
+    lo, hi = 0, m
+    
+    while lo <= hi:
+        i = (lo + hi) // 2      # nums1 的分割点
+        j = half - i            # nums2 的分割点
+        
+        nums1_left_max  = nums1[i-1] if i > 0 else float('-inf')
+        nums1_right_min = nums1[i]   if i < m else float('inf')
+        nums2_left_max  = nums2[j-1] if j > 0 else float('-inf')
+        nums2_right_min = nums2[j]   if j < n else float('inf')
+        
+        if nums1_left_max <= nums2_right_min and nums2_left_max <= nums1_right_min:
+            # 找到正确分割
+            left_max = max(nums1_left_max, nums2_left_max)
+            if (m + n) % 2 == 1:
+                return float(left_max)
+            right_min = min(nums1_right_min, nums2_right_min)
+            return (left_max + right_min) / 2
+        elif nums1_left_max > nums2_right_min:
+            hi = i - 1
+        else:
+            lo = i + 1
+    return 0.0
+```
+
+**复杂度**：时间 O(log(min(m,n)))，空间 O(1)
+
+**考察点**：
+1. 二分搜索不只用于"查值"，这里用于"找分割点"
+2. 边界（i=0 或 i=m 时的 ±inf 处理）
+
+---
+
