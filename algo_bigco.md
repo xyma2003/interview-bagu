@@ -435,3 +435,26 @@ def optimalDivision(nums: list[int]) -> str:
 
 ---
 
+### Q90: 小红书 面试：前 K 个高频单词 · LeetCode 692
+
+**题目讲解**：
+```python
+from collections import Counter
+import heapq
+
+def topKFrequent(words: list[str], k: int) -> list[str]:
+    count = Counter(words)
+    # 最小堆：(-频率, 单词) 保证频率高的在堆顶，频率相同时字典序小的在堆顶
+    heap = [(-freq, word) for word, freq in count.items()]
+    heapq.heapify(heap)
+    return [heapq.heappop(heap)[1] for _ in range(k)]
+```
+
+**考察点**：自定义比较（负频率保证最大频率在堆顶，单词自然字典序）
+
+---
+
+*本文件共 20 题（Q71-Q90），大厂高频算法专项。*
+
+---
+
