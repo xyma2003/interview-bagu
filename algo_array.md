@@ -121,3 +121,57 @@ def maxArea(height: list[int]) -> int:
 
 ---
 
+### Q4: 接雨水 · LeetCode 42
+
+**🏢 高频公司**：字节（必考）、腾讯、阿里
+**难度**：困难 ⭐⭐⭐
+
+**题目**：给定高度数组，计算可以接的雨水总量。
+
+**题目讲解**：
+每个位置能接的水 = `min(左侧最高, 右侧最高) - 当前高度`
+
+**方法一：预处理左右最大值数组，O(N) 时间，O(N) 空间**：
+```python
+def trap(height: list[int]) -> int:
+    n = len(height)
+    left_max  = [0] * n  # left_max[i]  = max(height[0..i])
+    right_max = [0] * n  # right_max[i] = max(height[i..n-1])
+    left_max[0] = height[0]
+    for i in range(1, n):
+        left_max[i] = max(left_max[i-1], height[i])
+    right_max[-1] = height[-1]
+    for i in range(n-2, -1, -1):
+        right_max[i] = max(right_max[i+1], height[i])
+    return sum(min(left_max[i], right_max[i]) - height[i] for i in range(n))
+```
+
+**方法二：双指针，O(N) 时间，O(1) 空间**：
+```python
+def trap(height: list[int]) -> int:
+    l, r = 0, len(height) - 1
+    left_max = right_max = 0
+    ans = 0
+    while l < r:
+        if height[l] < height[r]:
+            if height[l] >= left_max: left_max = height[l]
+            else: ans += left_max - height[l]
+            l += 1
+        else:
+            if height[r] >= right_max: right_max = height[r]
+            else: ans += right_max - height[r]
+            r -= 1
+    return ans
+```
+
+**复杂度**：O(N) 时间，O(1) 空间（双指针法）
+
+**考察点**：
+1. 单调栈解法（另一种 O(N) 思路）
+2. 双指针维护 left_max/right_max 的正确性证明
+
+**示例答案**：
+先用 O(N) 空间预处理左右最大值是最直觉的做法。进阶到 O(1) 空间的双指针：当 `height[l] < height[r]` 时，右侧最大值至少是 `height[r]`，所以左侧的水量完全由 `left_max` 决定，可以直接计算并移动左指针。反之亦然。
+
+---
+
