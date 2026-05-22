@@ -479,3 +479,24 @@ def romanToInt(s: str) -> int:
 
 ---
 
+### Q67: 字母异位词分组 · LeetCode 49
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+from collections import defaultdict
+
+def groupAnagrams(strs: list[str]) -> list[list[str]]:
+    groups = defaultdict(list)
+    for s in strs:
+        key = tuple(sorted(s))   # 或 ''.join(sorted(s))
+        groups[key].append(s)
+    return list(groups.values())
+```
+
+**考察点**：排序字符作为 key；追问：计数数组作 key O(N)，但仅适用于小字符集
+
+---
+
