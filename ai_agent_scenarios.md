@@ -1245,3 +1245,121 @@ def score_title(title: str, category: str) -> TitleScore:
 
 ---
 
+### Q91: 设计一个智能财务报告分析 Agent
+
+**🏢 高频公司**：阿里、腾讯
+
+**题目解析**：
+财务数据分析是高价值 AI 应用场景，涉及结构化数据理解、图表解读、风险识别，也考察安全和合规意识。
+
+---
+
+**一、核心能力**
+
+- 解读财务报告（资产负债表/利润表/现金流量表）
+- 识别异常指标（毛利率下滑/债务攀升/现金流异常）
+- 多报告对比分析（同比/环比/行业对标）
+- 自然语言查询（"应收账款周转天数趋势如何？"）
+- 风险预警（潜在财务风险的早期信号）
+
+---
+
+**二、系统设计**
+
+**多模态输入处理**：
+```python
+class FinancialReportParser:
+    def parse(self, doc: Document) -> StructuredReport:
+        if doc.type == "pdf":
+            # 1. OCR + 表格识别（财报里大量是表格）
+            tables = extract_tables_with_ocr(doc)
+            # 2. 识别报表类型（资产负债表/利润表/现金流）
+            classified = classify_tables(tables)
+            # 3. 标准化为统一数据模型
+            return normalize_to_standard(classified)
+```
+
+**核心指标计算 Agent**：
+```python
+# 内置财务指标计算工具（不依赖 LLM 计算，避免数字幻觉）
+@tool
+def calculate_ratios(report: StructuredReport) -> FinancialRatios:
+    return FinancialRatios(
+        gross_margin    = report.gross_profit / report.revenue,
+        current_ratio   = report.current_assets / report.current_liabilities,
+        debt_to_equity  = report.total_debt / report.total_equity,
+        ar_days         = report.accounts_receivable / report.revenue * 365,
+        # ...
+    )
+```
+
+**关键原则：数字计算用代码，文字解读用 LLM**：
+```python
+# 不让 LLM 做数字计算（幻觉风险极高）
+# LLM 只做定性分析和文字解读
+analysis_prompt = f"""
+基于以下计算好的财务指标，提供专业分析：
+{ratios.to_dict()}
+
+重点关注：
+1. 哪些指标出现了异常变化（超出行业基准）
+2. 变化的可能原因
+3. 潜在的风险提示
+
+注意：所有数字结论必须来自上面提供的数据，不要自行计算或估算。
+"""
+```
+
+**风险预警规则（规则 + LLM 双引擎）**：
+```python
+RISK_RULES = [
+    Rule("应收账款周转天数连续 3 季度上升", severity="medium"),
+    Rule("经营性现金流为负且净利润为正（利润质量差）", severity="high"),
+    Rule("资产负债率超过行业平均值 20%", severity="high"),
+    Rule("存货增速超过收入增速 50%", severity="medium"),
+]
+
+# 规则触发后，LLM 生成详细解读
+if rule.triggered:
+    explanation = await llm.explain_risk(rule, report_data, industry_context)
+```
+
+---
+
+**三、安全与合规**
+
+```python
+# 财务数据极度敏感，需要严格权限控制
+class FinancialDataAccessControl:
+    def check_access(self, user: User, report: Report) -> bool:
+        # 只有 CFO/财务团队/合规审计 可以访问完整报告
+        return user.role in report.authorized_roles
+    
+    def audit_log(self, user: User, action: str, report: Report):
+        # 每次访问都留下审计记录
+        audit_db.log(user_id, action, report_id, timestamp)
+
+# Agent 输出必须标注"仅供参考，不构成投资建议"
+DISCLAIMER = "以上分析基于提供的财务数据，仅供内部参考，不构成投资建议。"
+```
+
+**考察点**：
+1. 数字计算用代码工具（不用 LLM 算数，防止幻觉）
+2. 规则引擎 + LLM 的双引擎风险识别
+3. 财务数据的安全和权限控制
+4. 合规免责声明
+
+**示例答案**：
+
+财务分析 Agent 最大的技术挑战是**防止数字幻觉**——LLM 对数字计算不可靠，财务场景里数字错误代价极大。
+
+核心设计原则：数字由代码计算，语言由 LLM 解读。所有财务比率（毛利率/流动比率/应收账款周转天数）用 Python 代码直接计算，LLM 只负责解读这些已经算好的数字（"毛利率从 35% 下降到 28%，降幅显著，可能原因是..."）。这样做把幻觉风险降到最低。
+
+风险识别用双引擎：规则引擎（逻辑清晰，可审计）负责触发已知风险模式（"经营性现金流为负且净利润为正"是典型利润质量差信号），LLM 负责对触发的规则生成详细背景分析和可能原因。新的风险模式由 LLM 发现，但需要人工审核后才加入规则库。
+
+多报告对比时，强调"同比"和"行业基准"，孤立地看一个数字没意义——应收账款周转天数 60 天，在快消行业是正常的，在软件行业就异常高了。知识库里存了行业基准数据，检索后作为对比参照注入分析 prompt。
+
+安全上，财务数据加严格权限控制，每次访问记录审计日志，所有输出加"仅供内部参考"免责声明。
+
+---
+
