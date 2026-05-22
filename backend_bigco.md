@@ -80,3 +80,81 @@
 
 ---
 
+### Q33: 字节 面试：实现一个 LFU（Least Frequently Used）缓存
+
+**🏢 高频公司**：字节（算法题）
+
+**题目解析**：
+LFU 比 LRU 更复杂，需要同时追踪访问频次，考察候选人的数据结构设计能力。
+
+**题目讲解**：
+
+**LFU 的关键数据结构**：
+- `key → (value, freq)` 映射
+- `freq → LinkedHashSet[keys]`（相同频次的 key，按访问时间 LRU 淘汰）
+- `minFreq`：当前最小频次（淘汰时用）
+
+```python
+from collections import defaultdict, OrderedDict
+
+class LFUCache:
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.min_freq = 0
+        self.key_to_val = {}          # key → value
+        self.key_to_freq = {}         # key → freq
+        self.freq_to_keys = defaultdict(OrderedDict)  # freq → {key: None} (有序)
+    
+    def get(self, key: int) -> int:
+        if key not in self.key_to_val:
+            return -1
+        self._increase_freq(key)
+        return self.key_to_val[key]
+    
+    def put(self, key: int, value: int) -> None:
+        if self.capacity <= 0:
+            return
+        if key in self.key_to_val:
+            self.key_to_val[key] = value
+            self._increase_freq(key)
+        else:
+            if len(self.key_to_val) >= self.capacity:
+                self._remove_min_freq()
+            self.key_to_val[key] = value
+            self.key_to_freq[key] = 1
+            self.freq_to_keys[1][key] = None
+            self.min_freq = 1
+    
+    def _increase_freq(self, key):
+        freq = self.key_to_freq[key]
+        self.key_to_freq[key] = freq + 1
+        del self.freq_to_keys[freq][key]
+        if not self.freq_to_keys[freq]:
+            del self.freq_to_keys[freq]
+            if self.min_freq == freq:
+                self.min_freq += 1
+        self.freq_to_keys[freq + 1][key] = None
+    
+    def _remove_min_freq(self):
+        keys = self.freq_to_keys[self.min_freq]
+        # OrderedDict 删除最早插入的（LRU 兜底）
+        oldest_key = next(iter(keys))
+        del keys[oldest_key]
+        if not keys:
+            del self.freq_to_keys[self.min_freq]
+        del self.key_to_val[oldest_key]
+        del self.key_to_freq[oldest_key]
+```
+
+**时间复杂度**：get 和 put 均 O(1)。
+
+**考察点**：
+1. freq_to_keys 用 OrderedDict（频次相同时按 LRU 淘汰）
+2. min_freq 的维护时机（新 key 插入时 min_freq = 1；删除 min_freq 对应的最后一个 key 后更新）
+3. 边界：capacity=0 时直接 return
+
+**示例答案**：
+LFU 的难点是同时维护"访问频次"和"相同频次下按 LRU 淘汰"两个维度。关键数据结构是 `freq → OrderedDict[key]`：相同频次的 key 放在一个 OrderedDict 里，最早访问的在头部（淘汰时删头部）。min_freq 追踪当前最小频次，淘汰时直接取 `freq_to_keys[min_freq]` 的最早 key。每次访问后，把该 key 从 freq N 的桶移到 freq N+1 的桶，如果 freq N 桶空了且 N == min_freq，则 min_freq 加一。插入新 key 时，其 freq=1，min_freq 强制设为 1（因为新 key 频次最低）。全部操作 O(1)，但实现比 LRU 复杂很多，面试时先确认数据结构设计，再写代码。
+
+---
+
