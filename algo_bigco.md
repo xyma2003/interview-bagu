@@ -240,3 +240,27 @@ def longestPalindrome(s: str) -> str:
 
 ---
 
+### Q80: 阿里 面试：课程表 II（输出拓扑序列）· LeetCode 210
+
+**题目讲解**（Kahn + 记录顺序）：
+```python
+from collections import deque
+
+def findOrder(numCourses: int, prerequisites: list[list[int]]) -> list[int]:
+    graph = [[] for _ in range(numCourses)]
+    in_degree = [0] * numCourses
+    for a, b in prerequisites:
+        graph[b].append(a); in_degree[a] += 1
+    
+    q = deque(i for i in range(numCourses) if in_degree[i] == 0)
+    order = []
+    while q:
+        node = q.popleft(); order.append(node)
+        for nxt in graph[node]:
+            in_degree[nxt] -= 1
+            if in_degree[nxt] == 0: q.append(nxt)
+    return order if len(order) == numCourses else []
+```
+
+---
+
