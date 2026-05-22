@@ -293,3 +293,33 @@ this 的值在调用时决定，不在定义时。规则优先级：new > call/a
 
 ---
 
+### Q9: 浏览器从输入 URL 到页面渲染的完整过程是什么？
+
+**题目解析**：这道经典题目考察候选人知识面的广度，从网络到渲染一网打尽。
+
+**题目讲解**：
+1. **DNS 解析**：域名 → IP，有多级缓存（浏览器缓存 → 系统 hosts → 本地 DNS → 递归解析）
+2. **TCP 三次握手**：建立可靠连接
+3. **TLS 握手**（HTTPS）：证书验证、协商加密套件、交换密钥
+4. **HTTP 请求**：发送 GET 请求，含 Host、Cookie、Accept 等头部
+5. **服务器处理**：路由、业务逻辑、数据库查询、生成响应
+6. **HTTP 响应**：返回 HTML，包含状态码、Content-Type 等头部
+7. **浏览器渲染**（关键路径）：
+   - **解析 HTML** → 构建 DOM 树（遇到外链资源暂停 or 并行预加载）
+   - **解析 CSS** → 构建 CSSOM 树（CSS 阻塞渲染但不阻塞 HTML 解析）
+   - **执行 JS**（`<script>` 阻塞 HTML 解析，除非 async/defer）
+   - **合并 DOM + CSSOM** → Render Tree（只包含可见节点）
+   - **Layout（布局/Reflow）**：计算每个节点的几何信息（位置、大小）
+   - **Paint（绘制/Repaint）**：将节点转为像素
+   - **Composite（合成）**：将不同图层合并输出到屏幕
+
+**考察点**：
+1. DNS 的缓存层级
+2. CSS 阻塞渲染 vs JS 阻塞解析的区别
+3. async 和 defer 的区别
+
+**示例答案**：
+输入 URL 到渲染分几个阶段：首先 DNS 查询把域名解析为 IP（有多级缓存），然后 TCP 三次握手建连，HTTPS 还要 TLS 握手。HTTP 请求发出，服务器返回 HTML。浏览器开始渲染关键路径：解析 HTML 构建 DOM，解析 CSS 构建 CSSOM（CSS 会阻塞渲染，因为渲染需要完整 CSSOM），遇到 script 标签停止解析等待 JS 执行（除非 async/defer）。DOM 和 CSSOM 合并为 Render Tree，只包含实际渲染的节点（display:none 的不包含）。接着 Layout 计算元素位置大小，Paint 生成绘制指令，最后 Compositor 合并各图层输出画面。性能优化要关注缩短关键渲染路径：减少阻塞资源、CSS 放 head、script 放底部或用 defer、预加载关键资源。
+
+---
+
