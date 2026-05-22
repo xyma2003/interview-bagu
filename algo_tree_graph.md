@@ -31,3 +31,30 @@ def maxDepth_bfs(root) -> int:
 
 ---
 
+### Q27: 二叉树的层序遍历 · LeetCode 102
+
+**🏢 高频公司**：字节、腾讯（高频）
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+from collections import deque
+
+def levelOrder(root) -> list[list[int]]:
+    if not root: return []
+    res, q = [], deque([root])
+    while q:
+        level = []
+        for _ in range(len(q)):
+            node = q.popleft()
+            level.append(node.val)
+            if node.left:  q.append(node.left)
+            if node.right: q.append(node.right)
+        res.append(level)
+    return res
+```
+
+**考察点**：BFS 标准模板；`for _ in range(len(q))` 处理逐层
+
+---
+
