@@ -214,3 +214,29 @@ def rob(root) -> int:
 
 ---
 
+### Q79: 腾讯 面试：最长回文子串 · LeetCode 5
+
+**🏢 高频公司**：腾讯、字节
+**难度**：中等 ⭐⭐
+
+**中心扩展法 O(N²)**：
+```python
+def longestPalindrome(s: str) -> str:
+    def expand(l, r):
+        while l >= 0 and r < len(s) and s[l] == s[r]:
+            l -= 1; r += 1
+        return s[l+1:r]
+    
+    res = ""
+    for i in range(len(s)):
+        odd  = expand(i, i)       # 奇数长度
+        even = expand(i, i+1)     # 偶数长度
+        if len(odd)  > len(res): res = odd
+        if len(even) > len(res): res = even
+    return res
+```
+
+**Manacher 算法 O(N)**（了解原理即可）：在每两个字符间插入 `#`，统一奇偶，用已知信息加速扩展。
+
+---
+
