@@ -940,3 +940,80 @@ requestAnimationFrame(animate)
 
 ---
 
+### Q55: 前端监控 SDK 如何设计？如何采集 Core Web Vitals？
+
+**🏢 高频公司**：字节、阿里
+
+**题目讲解**：
+
+**监控 SDK 的采集点**：
+```javascript
+class Monitor {
+  init() {
+    this._collectWebVitals()
+    this._collectErrors()
+    this._collectResourceTiming()
+    this._collectUserBehavior()
+  }
+  
+  // 1. Web Vitals（LCP/INP/CLS）
+  _collectWebVitals() {
+    new PerformanceObserver(list => {
+      for (const entry of list.getEntries()) {
+        if (entry.entryType === 'largest-contentful-paint') {
+          this.report('LCP', entry.startTime)
+        }
+      }
+    }).observe({ type: 'largest-contentful-paint', buffered: true })
+    
+    // 使用 web-vitals 库更简便
+    import { onLCP, onINP, onCLS } from 'web-vitals'
+    onLCP(metric => this.report('LCP', metric.value))
+  }
+  
+  // 2. JS 错误
+  _collectErrors() {
+    window.addEventListener('error', e => {
+      this.report('js_error', {
+        message: e.message, source: e.filename,
+        lineno: e.lineno, stack: e.error?.stack
+      })
+    })
+    window.addEventListener('unhandledrejection', e => {
+      this.report('promise_error', { reason: String(e.reason) })
+    })
+  }
+  
+  // 3. 上报
+  report(type, data) {
+    const payload = { type, data, url: location.href, ts: Date.now() }
+    // 使用 sendBeacon 在页面关闭时也能可靠上报
+    navigator.sendBeacon('/api/monitor', JSON.stringify(payload))
+  }
+}
+```
+
+**资源加载时序（PerformanceResourceTiming）**：
+```javascript
+const entries = performance.getEntriesByType('resource')
+entries.forEach(e => {
+  console.log(e.name, e.duration, e.transferSize)
+})
+```
+
+**用户行为采集（无痕埋点）**：
+```javascript
+// 事件委托，采集所有点击的元素路径
+document.addEventListener('click', e => {
+  const path = getElementPath(e.target)  // 元素 CSS 选择器路径
+  monitor.report('click', { path, x: e.clientX, y: e.clientY })
+})
+```
+
+**考察点**：
+1. PerformanceObserver API 的 buffered 选项（采集历史条目）
+2. sendBeacon 的可靠性（页面关闭不丢失）
+3. Source Map 上传与错误还原
+
+---
+
