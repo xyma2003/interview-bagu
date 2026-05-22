@@ -175,3 +175,35 @@ def trap(height: list[int]) -> int:
 
 ---
 
+### Q5: 最长无重复子串 · LeetCode 3
+
+**🏢 高频公司**：字节、腾讯、小红书、阿里（超高频）
+**难度**：中等 ⭐⭐
+
+**题目**：找出字符串中不含重复字符的最长子串的长度。
+
+**题目讲解**：
+```python
+def lengthOfLongestSubstring(s: str) -> int:
+    char_index = {}  # char -> 最近出现的下标
+    left = 0
+    ans = 0
+    for right, c in enumerate(s):
+        if c in char_index and char_index[c] >= left:
+            left = char_index[c] + 1  # 窗口左边收缩到重复字符的下一位
+        char_index[c] = right
+        ans = max(ans, right - left + 1)
+    return ans
+```
+
+**复杂度**：时间 O(N)，空间 O(字符集大小)
+
+**考察点**：
+1. 滑动窗口的标准模板
+2. `char_index[c] >= left` 的判断（字符可能在窗口外）
+
+**示例答案**：
+滑动窗口：右指针向右扩展，遇到已在窗口内的字符时，左指针跳到该字符上次出现位置的右边。用哈希表记录每个字符最后出现的下标，注意要判断其是否在当前窗口内（`>= left`），否则窗口外的旧记录会错误收缩左指针。
+
+---
+
