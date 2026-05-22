@@ -500,3 +500,32 @@ def canJump(nums: list[int]) -> bool:
 
 ---
 
+### Q15: 颜色分类（荷兰国旗）· LeetCode 75
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目**：将 0/1/2 三种颜色排序，要求 O(N) 一次遍历。
+
+**题目讲解**：三指针（low/mid/high），low 左边都是 0，high 右边都是 2：
+```python
+def sortColors(nums: list[int]) -> None:
+    low, mid, high = 0, 0, len(nums) - 1
+    while mid <= high:
+        if nums[mid] == 0:
+            nums[low], nums[mid] = nums[mid], nums[low]
+            low += 1; mid += 1
+        elif nums[mid] == 1:
+            mid += 1
+        else:
+            nums[mid], nums[high] = nums[high], nums[mid]
+            high -= 1   # mid 不动，因为换来的数还未检查
+
+def sortColors(nums):
+    pass
+```
+
+**考察点**：荷兰国旗三指针；mid 遇到 2 时不前移（换来的数未知）
+
+---
+
