@@ -1082,3 +1082,43 @@ class VirtualList {
 
 ---
 
+### Q57: React Query 的核心原理是什么？它如何管理缓存和后台更新？
+
+**🏢 高频公司**：阿里、字节、小红书
+
+**题目讲解**：
+React Query（TanStack Query）专门解决"服务端状态"管理问题，核心是三个机制：
+
+**1. 缓存（QueryCache）**：
+- 每个 query 有唯一 key，结果存入内存缓存
+- `staleTime`：多久内数据是新鲜的（默认 0）
+- `gcTime`：数据不被使用后多久从缓存删除（默认 5 分钟）
+
+```javascript
+const { data, isLoading, isFetching } = useQuery({
+  queryKey: ['user', userId],
+  queryFn: () => fetchUser(userId),
+  staleTime: 1000 * 60 * 5,  // 5分钟内不重新请求
+  gcTime: 1000 * 60 * 10,    // 10分钟未使用后删除缓存
+})
+```
+
+**2. 后台更新（Stale-While-Revalidate）**：
+- 数据超过 staleTime 后标记为 stale
+- 下次组件 mount 或窗口 focus 时，先返回旧数据（不阻塞渲染），同时后台重新请求
+- 新数据返回后更新 UI（用户感知不到等待）
+
+**3. 自动重试和失效**：
+- `useMutation` 的 `onSuccess` 可调用 `queryClient.invalidateQueries` 使相关缓存失效
+- 失败自动重试 3 次
+
+**与 Redux 的对比**：
+- Redux 存储状态逻辑（客户端 UI 状态）
+- React Query 存储服务端数据（网络请求结果）
+- 两者不冲突，搭配使用
+
+**示例答案**：
+React Query 的核心是"服务端状态的本地缓存管理"。每个请求用唯一 queryKey 标识，结果缓存到内存，staleTime 控制数据新鲜度（0 = 每次都认为过期，需要后台刷新）。关键机制是 SWR：先返回缓存数据让页面立刻可用，同时后台静默发起更新请求，新数据来了再刷新。比手动写 loading/error/data state + useEffect 请求干净很多，还自动处理重试、竞态条件、重复请求合并。数据失效通过 `invalidateQueries` 触发，mutation 成功后调一下，相关页面自动重新拉取，不需要手动管理缓存一致性。
+
+---
+
