@@ -542,3 +542,158 @@ def build_context(history: list[Turn]) -> str:
 
 ---
 
+### Q86: 设计一个多轮对话商品推荐 Agent（小红书/淘宝场景）
+
+**🏢 高频公司**：小红书（必问）、阿里、字节
+
+**题目解析**：
+对话式推荐是"搜索 → 对话"范式转变的核心，考察候选人能否结合 LLM 对话能力和推荐系统工程。
+
+---
+
+**一、需求拆解**
+
+用户旅程：
+```
+用户："我想买一款防晒霜"（宽泛需求）
+Agent："您是日常通勤还是户外运动？肤质是什么类型？"（偏好探索）
+用户："户外爬山用，油性皮肤，预算 150 以内"
+Agent：返回 Top-3 推荐 + 理由 + 对比（个性化精排）
+用户："第二款有没有替代品，我想看看其他品牌？"（继续对话）
+```
+
+---
+
+**二、系统架构**
+
+```
+对话管理层（Session State）
+    ├── 用户偏好实体（品类/功效/价位/肤质）
+    └── 对话历史（最近 10 轮）
+
+                │ 状态机驱动
+                ▼
+
+       ┌─────────────────┐
+       │  意图分类器      │
+       │（探索/精化/比较/购买）│
+       └────────┬────────┘
+                │
+    ┌───────────┼───────────┐
+    ▼           ▼           ▼
+  探索模式    精化模式    比较模式
+（追问偏好）（精排+推荐）（商品对比）
+    │           │           │
+    └───────────┴───────────┘
+                │
+        推荐引擎调用
+        ├── 召回（协同过滤 + 向量相似）
+        ├── 粗排（LTR 排序模型）
+        └── 精排（LLM 个性化重排 + 解释生成）
+```
+
+---
+
+**三、核心设计**
+
+**3.1 偏好提取与状态管理**
+
+```python
+@dataclass
+class UserPreference:
+    # 已明确的偏好
+    category: str | None = None       # "防晒霜"
+    use_scenario: str | None = None   # "户外运动"
+    skin_type: str | None = None      # "油性"
+    budget_max: float | None = None   # 150
+    
+    # 隐式信号（从浏览/点击推断）
+    preferred_brands: list[str] = field(default_factory=list)
+    excluded_ingredients: list[str] = field(default_factory=list)
+    
+    def missing_fields(self) -> list[str]:
+        """返回还没获取到的关键偏好"""
+        return [f for f in ['use_scenario', 'skin_type'] if getattr(self, f) is None]
+
+async def extract_preference(message: str, current: UserPreference) -> UserPreference:
+    """用 LLM 从用户消息中提取偏好实体，合并到已有状态"""
+    extracted = await llm.extract(message, schema=UserPreference)
+    return merge(current, extracted)
+```
+
+**3.2 智能追问策略**
+
+不是问完所有字段才推荐（用户会不耐烦），而是一次最多问 1-2 个最关键的缺失字段：
+```python
+def decide_next_action(pref: UserPreference) -> Action:
+    missing = pref.missing_fields()
+    
+    if len(missing) >= 3:
+        # 偏好太少，追问最关键的一个
+        return Action(type="ASK", question=generate_question(missing[0]))
+    elif len(missing) == 0 or pref.budget_max is not None:
+        # 偏好足够，直接推荐
+        return Action(type="RECOMMEND")
+    else:
+        # 边推荐边追问（给结果的同时问补充问题）
+        return Action(type="RECOMMEND_AND_ASK")
+```
+
+**3.3 LLM 个性化重排和解释生成**
+
+传统推荐系统给分数，Agent 给**有原因的推荐**：
+```python
+RERANK_PROMPT = """
+用户偏好：{preference}
+候选商品（已按推荐算法粗排）：{candidates}
+
+请根据用户偏好对候选商品重新排序，并为 Top-3 商品各生成一句个性化推荐理由。
+理由要直接回应用户的诉求（如：户外爬山 → 防水性、SPF 值），不要泛泛而谈。
+
+输出格式：
+1. [商品名] - [个性化理由（25字以内）]
+...
+"""
+```
+
+**3.4 比较模式**
+
+用户要比较两个商品时，生成结构化对比：
+```python
+def compare_products(prod_a: Product, prod_b: Product, user_focus: list[str]) -> str:
+    # user_focus 从上下文提取（用户关心什么维度）
+    dims = user_focus or ['价格', '防晒指数', '持妆时长', '适合肤质']
+    comparison_table = build_comparison_table(prod_a, prod_b, dims)
+    recommendation = llm.recommend_based_on_comparison(prod_a, prod_b, user_preference)
+    return format_comparison(comparison_table, recommendation)
+```
+
+---
+
+**四、难点与权衡**
+
+| 难点 | 解决方案 |
+|------|---------|
+| 偏好漂移（用户说变就变）| 每轮对话后重新提取全部偏好，不依赖增量更新 |
+| 冷启动（新用户无历史）| 对话式主动探索偏好，比默认热门推荐更个性化 |
+| 幻觉商品信息 | 推荐理由只能基于真实商品属性生成，商品数据库是唯一来源 |
+| 多轮上下文太长 | 只保留偏好状态 + 最近 5 轮对话，历史超出时摘要压缩 |
+| 情感导购（用户聊情绪）| 识别情感意图，先共情再引导到具体需求 |
+
+**考察点**：
+1. 偏好状态机的设计（渐进式获取而非一次性问完）
+2. 传统推荐系统与 LLM 的分工（粗排用 ML 模型，精排和解释用 LLM）
+3. "推荐 + 解释"一体化的提示词设计
+
+**示例答案**：
+
+对话推荐 Agent 的核心是**渐进式偏好获取**——不是一开始就问 10 个问题，而是根据已有信息动态决定"继续问还是直接推荐"。
+
+系统维护一个偏好状态机，每轮对话从用户消息中提取偏好实体（品类/场景/肤质/预算），合并更新状态。每轮后判断：如果关键偏好（使用场景+肤质）已知，立刻推荐；如果缺少超过 2 个关键维度，追问最重要的那一个；其他情况"推荐同时追问"（给结果又问补充）。
+
+推荐分三层：协同过滤+向量相似度做召回（基础推荐系统），LTR 模型做粗排，LLM 只做最后的精排和解释生成——LLM 看用户偏好和粗排候选，重排 Top-3 并给每个商品生成一句直击用户诉求的理由（"户外爬山需要防水持久，这款 SPF50+/PA+++ 且防水 80 分钟"），而不是泛化的"这款很好用"。
+
+防幻觉：推荐理由的每个属性（SPF 值/成分/价格）只能来自商品结构化数据，不允许 LLM 自行生成商品参数。上线前对所有推荐解释做人工抽检，确保没有捏造的规格数字。
+
+---
+
