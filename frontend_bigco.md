@@ -785,3 +785,99 @@ const observer = new IntersectionObserver((entries) => {
 
 ---
 
+### Q47: 小红书 面试：移动端 1px 问题是什么？有哪些解决方案？
+
+**🏢 高频公司**：小红书、腾讯、字节
+
+**题目解析**：
+移动端 1px 是 H5 开发的经典问题，考察候选人对设备像素比的理解。
+
+**题目讲解**：
+**问题原因**：
+- 移动设备 DPR（Device Pixel Ratio，设备像素比）通常为 2 或 3
+- DPR=2 时，CSS 的 1px = 设备的 2 个物理像素，视觉上显示为 2px 粗
+- 设计稿要求的"1px 细线"在高清屏上无法用 CSS 1px 实现
+
+**解决方案**：
+
+**方案一：viewport 缩放（最彻底）**：
+```javascript
+const dpr = window.devicePixelRatio;
+const meta = document.querySelector('meta[name="viewport"]');
+meta.content = `width=device-width, initial-scale=${1/dpr}, 
+                maximum-scale=${1/dpr}, minimum-scale=${1/dpr}`;
+```
+- 整体缩放后，CSS 1px = 1 物理像素
+- 问题：整个页面等比缩放，字体/图标也会变小，需要整体调整
+
+**方案二：transform: scaleY(0.5)**（最常用）：
+```css
+.border-1px {
+  position: relative;
+}
+.border-1px::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: #ddd;
+  transform: scaleY(0.5);    /* DPR=2 用 0.5，DPR=3 用 0.333 */
+  transform-origin: bottom;
+}
+```
+```javascript
+// 根据 DPR 动态设置
+const scale = 1 / window.devicePixelRatio;
+el.style.transform = `scaleY(${scale})`;
+```
+
+**方案三：box-shadow（无伪元素占用）**：
+```css
+.border-shadow {
+  box-shadow: 0 1px 0 0 #ddd;  /* 底边 */
+}
+```
+
+**方案四：border-image + SVG**：
+用 1x2 或 2x2 的 SVG 作为边框图片，顶部透明底部有颜色
+
+**方案五：PostCSS 自动转换**：
+- `postcss-write-svg` 插件自动处理
+
+**最佳实践**：
+Sass/Less mixin 封装 transform 方案，按 DPR 自动适配：
+```scss
+@mixin hairline-bottom($color: #ddd) {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 100%; height: 1px;
+    background: $color;
+    @media (-webkit-min-device-pixel-ratio: 2) {
+      transform: scaleY(0.5);
+    }
+    @media (-webkit-min-device-pixel-ratio: 3) {
+      transform: scaleY(0.333);
+    }
+  }
+}
+```
+
+**考察点**：
+1. DPR 的概念和计算
+2. `transform: scale` 不影响布局（不会撑开空间）
+3. 4 周边框的 scale 方案（`transform: scale(0.5); width: 200%; height: 200%; transform-origin: 0 0;`）
+
+**示例答案**：
+1px 问题的根源是 DPR：iPhone 的 DPR 为 2 或 3，CSS 1px 实际渲染成 2 或 3 个物理像素，视觉上比设计稿厚。最常用的方案是伪元素 + `transform: scaleY(0.5)`：在元素上用 `::after` 画一条高 1px 的线，然后缩放为 0.5，物理上就是 0.5 CSS px = 1 物理像素。transform 缩放不影响文档流（不撑开空间），是最无副作用的方案。实际项目用 SCSS mixin 封装，用媒体查询按 DPR 自动选择缩放比（0.5 或 0.333），调用时 `@include hairline-bottom()` 一行搞定所有边框。如果需要四边边框，稍微复杂些：把伪元素做成 200% × 200% 然后整体缩放 0.5，`transform-origin: 0 0` 保证从左上角缩放。postcss-hairlines 等插件可以自动处理，不用每次手写。
+
+---
+
+## 阿里高频
+
+---
+
