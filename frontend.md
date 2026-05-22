@@ -626,3 +626,35 @@ Composition API 解决了 Options API 的两个核心问题：逻辑分散和复
 
 ---
 
+### Q19: 什么是 Web Vitals？LCP、FID/INP、CLS 分别是什么？如何优化？
+
+**题目解析**：Web Vitals 是 Google 定义的用户体验标准，也是 SEO 排名因素，前端性能必考。
+
+**题目讲解**：
+**Core Web Vitals（核心指标）**：
+
+1. **LCP（Largest Contentful Paint，最大内容绘制）**：
+   - 衡量页面加载性能：最大可见内容（图片/视频/文本块）的渲染时间
+   - 良好：< 2.5s
+   - 优化：预加载关键图片（`<link rel="preload">`）、SSR、CDN、压缩图片（WebP/AVIF）、消除渲染阻塞资源
+
+2. **INP（Interaction to Next Paint，交互响应时间）**：
+   - 替代 FID，衡量用户交互（点击/键盘/触摸）到下一帧绘制的延迟
+   - 良好：< 200ms
+   - 优化：减少长任务（>50ms），拆分 JS 任务，减少主线程阻塞，使用 Web Worker
+
+3. **CLS（Cumulative Layout Shift，累积布局偏移）**：
+   - 衡量视觉稳定性：页面加载过程中元素意外移动的总量
+   - 良好：< 0.1
+   - 优化：给图片/视频设置宽高属性（避免加载后撑开页面），避免在内容上方动态插入元素，字体使用 `font-display: swap`
+
+**考察点**：
+1. 三个指标分别衡量的用户体验维度
+2. 如何用 Chrome DevTools / Lighthouse 测量
+3. 具体优化手段和预期收益
+
+**示例答案**：
+Web Vitals 是 Google 提出的三个核心用户体验指标。LCP 衡量"加载速度感知"，是最大内容块（通常是主图或标题）多久可见，优化重点是预加载 Hero 图片（`<link rel="preload">`）、SSR 减少白屏时间、用 WebP 格式压缩图片体积。INP（已替换 FID）衡量"交互响应性"，测量从用户交互到下一帧绘制的时间，超过 200ms 用户会感觉卡顿，优化方式是把长任务（>50ms）拆分为更小的任务（`setTimeout(fn, 0)` 切片），将 CPU 密集计算移到 Web Worker。CLS 衡量"视觉稳定性"，图片/广告加载后撑开页面导致内容位移是主要原因，解决方案是给所有图片和视频元素明确指定 width/height，用 `aspect-ratio` 占位，避免在现有内容上方动态注入内容。用 Lighthouse 定期测量，在 Search Console 里监控真实用户数据。
+
+---
+
