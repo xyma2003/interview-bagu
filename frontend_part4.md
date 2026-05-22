@@ -206,3 +206,51 @@ async ensureValidToken() {
 
 ---
 
+### Q64: Web 无障碍（Accessibility）的核心标准是什么？ARIA 属性怎么用？
+
+**🏢 高频公司**：阿里（大厂有无障碍要求）
+
+**题目讲解**：
+
+**WCAG 核心原则（POUR）**：
+- **Perceivable**：可感知（图片 alt、视频字幕）
+- **Operable**：可操作（键盘可访问、足够点击区域）
+- **Understandable**：可理解（清晰的错误提示、一致的导航）
+- **Robust**：健壮（兼容辅助技术如屏幕阅读器）
+
+**常用 ARIA 属性**：
+```html
+<!-- 角色（role）：告诉屏幕阅读器这是什么 -->
+<div role="button" tabindex="0">自定义按钮</div>
+
+<!-- 状态（aria-*）：描述当前状态 -->
+<button aria-expanded="false" aria-controls="menu">菜单</button>
+<div id="menu" hidden>...</div>
+
+<!-- 标签（aria-label / aria-labelledby）：为元素命名 -->
+<button aria-label="关闭对话框">✕</button>
+<input aria-labelledby="username-label" />
+<label id="username-label">用户名</label>
+
+<!-- 动态区域（aria-live）：通知内容变化 -->
+<div aria-live="polite" aria-atomic="true">
+  <!-- 屏幕阅读器会朗读这里的变化 -->
+  {searchResultsCount} 个搜索结果
+</div>
+```
+
+**实际检测工具**：
+- Chrome DevTools → Accessibility 面板（查看可访问性树）
+- axe-core（自动检测，Storybook 集成）
+- Lighthouse Accessibility 评分
+
+**考察点**：
+1. 语义化 HTML 优于 ARIA（`<button>` 好过 `<div role="button">`）
+2. 键盘焦点管理（Modal 打开时焦点移入，关闭时移回）
+3. 颜色对比度要求（WCAG AA：4.5:1）
+
+**示例答案**：
+无障碍的第一原则是"先用正确的 HTML 语义标签"——`<button>` 自带键盘访问和屏幕阅读器支持，不需要任何 ARIA；`<img alt="描述">` 让屏幕阅读器能理解图片。ARIA 是补丁，用于原生 HTML 无法表达的交互（如自定义下拉、Tab 切换）。实践上最重要的是：所有交互元素必须能键盘操作（Tab 可达，Enter/Space 可激活）；动态内容变化用 `aria-live="polite"` 通知屏幕阅读器；Modal 打开时把焦点陷入其中（防止 Tab 跑到背后的内容）。axe-core 可以在 CI 中自动扫描无障碍问题，能发现约 57% 的自动可检测的无障碍缺陷。
+
+---
+
