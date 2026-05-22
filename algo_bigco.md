@@ -264,3 +264,20 @@ def findOrder(numCourses: int, prerequisites: list[list[int]]) -> list[int]:
 
 ---
 
+### Q81: 字节 面试：删除链表的倒数第 N 个节点 · LeetCode 19
+
+**题目讲解**（快慢指针一次遍历）：
+```python
+def removeNthFromEnd(head, n: int):
+    dummy = ListNode(0, head)
+    fast = slow = dummy
+    for _ in range(n + 1):   # fast 先走 n+1 步
+        fast = fast.next
+    while fast:
+        fast = fast.next; slow = slow.next
+    slow.next = slow.next.next
+    return dummy.next
+```
+
+---
+
