@@ -356,3 +356,25 @@ def rightSideView(root) -> list[int]:
 
 ---
 
+### Q86: 阿里 面试：二叉树展开为链表 · LeetCode 114
+
+**题目讲解**（Morris 前序遍历原地展开）：
+```python
+def flatten(root) -> None:
+    cur = root
+    while cur:
+        if cur.left:
+            # 找左子树最右节点
+            rightmost = cur.left
+            while rightmost.right:
+                rightmost = rightmost.right
+            # 将右子树接到左子树最右边
+            rightmost.right = cur.right
+            cur.right = cur.left
+            cur.left = None
+        cur = cur.right
+```
+**复杂度**：O(N) 时间，O(1) 空间
+
+---
+
