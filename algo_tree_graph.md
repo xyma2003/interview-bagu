@@ -338,3 +338,31 @@ def subsets(nums: list[int]) -> list[list[int]]:
 
 ---
 
+### Q38: 组合总和 · LeetCode 39
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目**：找出数组中所有和为 target 的组合（元素可重复使用）。
+
+**题目讲解**：
+```python
+def combinationSum(candidates: list[int], target: int) -> list[list[int]]:
+    res = []
+    candidates.sort()
+    def backtrack(start, path, remaining):
+        if remaining == 0:
+            res.append(path[:]); return
+        for i in range(start, len(candidates)):
+            if candidates[i] > remaining: break   # 剪枝
+            path.append(candidates[i])
+            backtrack(i, path, remaining - candidates[i])  # i 不是 i+1（可重用）
+            path.pop()
+    backtrack(0, [], target)
+    return res
+```
+
+**考察点**：可重复使用时传 `i`，不可重复时传 `i+1`；排序+剪枝提效
+
+---
+
