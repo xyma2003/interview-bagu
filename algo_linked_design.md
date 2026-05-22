@@ -433,3 +433,29 @@ def trap_stack(height: list[int]) -> int:
 
 ---
 
+### Q65: 最长有效括号 · LeetCode 32
+
+**🏢 高频公司**：字节（困难）
+**难度**：困难 ⭐⭐⭐
+
+**题目讲解（栈）**：
+```python
+def longestValidParentheses(s: str) -> int:
+    stack = [-1]   # 存下标，-1 作为哨兵
+    ans = 0
+    for i, c in enumerate(s):
+        if c == '(':
+            stack.append(i)
+        else:
+            stack.pop()
+            if not stack:
+                stack.append(i)    # 新哨兵
+            else:
+                ans = max(ans, i - stack[-1])
+    return ans
+```
+
+**考察点**：栈底维护"上一个无法匹配的右括号"下标（哨兵）；追问：DP 解法
+
+---
+
