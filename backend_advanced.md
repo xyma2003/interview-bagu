@@ -318,3 +318,41 @@ finally:
 
 ---
 
+### Q26: JVM 的内存模型是什么？各区域的作用和常见 OOM 是什么？
+
+**题目解析**：JVM 是 Java 开发者必须掌握的底层知识，考察候选人对 JVM 内存管理的理解。
+
+**题目讲解**：
+**JVM 内存区域**：
+1. **堆（Heap）**：最大区域，存储对象实例。GC 的主要工作区
+   - Young Generation（年轻代）：Eden + S0 + S1
+   - Old Generation（老年代）：长期存活对象
+   - OOM：`java.lang.OutOfMemoryError: Java heap space`（对象太多/内存泄漏）
+
+2. **方法区/元空间（Metaspace）**：存储类元信息（类结构、方法字节码、静态变量）
+   - Java 8 以前是 PermGen（固定大小，容易 OOM），8 以后改为 Metaspace（使用本地内存）
+   - OOM：`OutOfMemoryError: Metaspace`（大量动态生成类，如 CGLIB/反射代理过多）
+
+3. **虚拟机栈（VM Stack）**：每个线程独立，每个方法调用创建一个栈帧（局部变量表/操作数栈/返回地址）
+   - StackOverflowError：递归太深
+   - OOM：`OutOfMemoryError: unable to create new native thread`（线程太多）
+
+4. **程序计数器（PC Register）**：记录当前线程执行的字节码位置
+
+5. **本地方法栈**：Native 方法使用
+
+**对象分配流程**：
+1. 对象优先分配在 Eden 区
+2. Eden 满 → Minor GC（Young GC），存活对象到 S0/S1，达到年龄阈值晋升老年代
+3. 老年代满 → Full GC（整个堆，STW 时间长）
+
+**考察点**：
+1. 年轻代/老年代的分代收集原理
+2. 常见 OOM 类型和排查方法
+3. `-Xms`、`-Xmx`、`-Xmn`、`-XX:MetaspaceSize` 等参数含义
+
+**示例答案**：
+JVM 内存分几块：堆是最大的，存对象实例，分年轻代（Eden+Survivor）和老年代，GC 在这里发生；方法区（Metaspace）存类的元信息，Java 8 之前是 PermGen（固定大小经常 OOM），8 以后改为 Metaspace 用本地内存（更灵活但也可能耗尽）；虚拟机栈每个线程一个，存栈帧（局部变量、返回地址），递归太深会 StackOverflow。常见 OOM 排查：`Java heap space` 先看是真的对象太多（加 heap）还是内存泄漏（用 jmap dump + MAT 分析对象引用链）；`Metaspace` 通常是动态代理/反射用太多，加 `-XX:MaxMetaspaceSize` 或找出动态生成类的地方；线程 OOM 是线程池配置不当或线程泄漏，`jstack` 看线程状态。GC 日志 `-XX:+PrintGCDetails -XX:+PrintGCDateStamps` 是诊断性能问题的第一步，看 GC 频率和 STW 时间是否异常。
+
+---
+
