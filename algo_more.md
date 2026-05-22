@@ -268,3 +268,39 @@ class Solution:
 
 ---
 
+### Q100: 数字 1 的个数 · LeetCode 233
+
+**🏢 高频公司**：字节（数学题）
+**难度**：困难 ⭐⭐⭐
+
+**题目**：统计 1 到 n 中数字 1 出现的次数。
+
+**题目讲解**（逐位统计）：
+```python
+def countDigitOne(n: int) -> int:
+    count = 0
+    factor = 1
+    while factor <= n:
+        higher = n // (factor * 10)
+        current = (n // factor) % 10
+        lower = n % factor
+        
+        if current == 0:
+            count += higher * factor
+        elif current == 1:
+            count += higher * factor + lower + 1
+        else:
+            count += (higher + 1) * factor
+        
+        factor *= 10
+    return count
+```
+
+**考察点**：分三种情况讨论当前位为 0/1/2+ 时的贡献；`factor` 从个位到最高位遍历
+
+---
+
+*本批共 10 题（Q91-Q100），算法分支题目达到 100 道整。*
+
+---
+
