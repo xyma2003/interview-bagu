@@ -697,3 +697,143 @@ def compare_products(prod_a: Product, prod_b: Product, user_focus: list[str]) ->
 
 ---
 
+### Q87: 设计一个自动化 Bug 排查 Agent（On-Call 值班助手）
+
+**🏢 高频公司**：字节、腾讯（SRE 方向）
+
+**题目解析**：
+线上告警时工程师需要快速定位根因，Agent 可以自动化这个过程。考察系统工程 + LLM 推理能力。
+
+---
+
+**一、需求拆解**
+
+**输入**：告警通知（错误类型 + 时间 + 影响面）
+**输出**：根因定位报告 + 建议处置动作（及严重程度）
+
+---
+
+**二、系统架构与 Agent 工具集**
+
+```python
+tools = [
+    # 日志查询
+    Tool("query_logs", "查询 ElasticSearch 日志，按时间范围+关键词", 
+         params={"start_time", "end_time", "keywords", "service", "level"}),
+    
+    # 指标查询  
+    Tool("query_metrics", "查询 Prometheus/Grafana 指标",
+         params={"metric_name", "service", "time_range", "labels"}),
+    
+    # 链路追踪
+    Tool("query_traces", "查询 Jaeger 慢请求/错误链路",
+         params={"service", "min_duration_ms", "time_range", "error_only"}),
+    
+    # 代码变更
+    Tool("get_recent_deploys", "查询指定服务最近的部署记录",
+         params={"service", "hours_back"}),
+    
+    # 关联告警
+    Tool("get_related_alerts", "查询同时期其他服务的告警",
+         params={"time_range", "exclude_service"}),
+    
+    # 知识库
+    Tool("search_runbook", "搜索历史事故的处置手册",
+         params={"keywords", "error_type"}),
+]
+```
+
+---
+
+**三、Agent 推理流程（ReAct）**
+
+```
+告警触发：order-service 错误率从 0.1% 升至 15%，时间 14:32
+
+Thought: 先查错误日志，看具体错误类型
+Action: query_logs(service="order-service", level="ERROR", start_time="14:30", end_time="14:35")
+Observation: 大量 "Connection refused" 错误，指向 payment-service:8080
+
+Thought: 下游 payment-service 不可达，查 payment-service 健康状态
+Action: query_metrics(metric="up", service="payment-service", time_range="last_10min")
+Observation: payment-service 在 14:31 开始 down，0 个实例在线
+
+Thought: 查 payment-service 最近是否有部署
+Action: get_recent_deploys(service="payment-service", hours_back=1)
+Observation: 14:30 有一次部署，版本 v2.3.1
+
+Thought: 部署时间和故障时间吻合，高度怀疑新版本有问题。查历史 runbook
+Action: search_runbook(keywords="payment-service down after deploy")
+Observation: 历史处置：回滚到上一版本，执行命令 kubectl rollout undo deployment/payment-service
+
+根因报告：
+- 根因：payment-service v2.3.1 部署后立即崩溃（时间吻合度 99%）
+- 影响：order-service 全量依赖 payment-service，错误率 15%
+- 置信度：95%
+- 建议操作：立即回滚 payment-service 到 v2.3.0（命令已准备好）
+- 预计恢复时间：2 分钟
+```
+
+---
+
+**四、核心设计亮点**
+
+**4.1 证据链追踪**
+
+Agent 的每个结论都要有证据支撑，输出报告格式化为"根因 → 证据 → 操作建议"三层：
+```python
+report = {
+    "root_cause": "payment-service v2.3.1 启动失败",
+    "evidence": [
+        {"type": "log", "content": "Connection refused to payment-service:8080"},
+        {"type": "metric", "content": "payment-service up=0 since 14:31"},
+        {"type": "deploy", "content": "payment-service v2.3.1 deployed at 14:30"},
+    ],
+    "confidence": 0.95,
+    "actions": [
+        {"priority": "P0", "action": "rollback", "command": "kubectl rollout undo..."},
+    ],
+    "estimated_recovery": "2 min",
+}
+```
+
+**4.2 人工介入点**
+
+高危操作（回滚、扩容、重启）不自动执行，需要 On-Call 工程师确认：
+```python
+if action.risk_level == "HIGH":
+    send_notification(oncall_engineer, report)
+    await interrupt({"report": report, "proposed_action": action})
+    # 等待工程师确认后才执行
+```
+
+**4.3 时效性**
+
+告警到根因报告 < 3 分钟（并发查询工具，不串行等待）：
+```python
+# 并发查询日志、指标、部署记录
+logs, metrics, deploys = await asyncio.gather(
+    query_logs(alert.service, alert.time),
+    query_metrics(alert.service, alert.time),
+    get_recent_deploys(alert.service, hours_back=2)
+)
+```
+
+**考察点**：
+1. 工具集的完整性（日志/指标/链路/变更/知识库）
+2. 证据链设计（可审计的推理过程）
+3. 并发工具调用降低延迟
+4. 高危操作的 HITL 设计
+
+**示例答案**：
+
+On-Call Agent 的设计原则是**快速+可信**——3 分钟内给出根因，且每个结论必须有可验证的证据。
+
+工具集是核心：日志查询（ES）、指标查询（Prometheus）、链路追踪（Jaeger）、部署记录（CD 平台）、历史 runbook（RAG 知识库）——五类工具覆盖了根因排查的 90% 场景。
+
+执行流程用 ReAct：收到告警后，Agent 先查错误日志明确错误类型，再根据错误指向查下游服务状态，发现问题再查最近变更记录……像经验丰富的工程师一样沿着证据链推理。关键优化是**并发工具调用**：日志/指标/部署记录并发查，不串行等，3 分钟内完成。
+
+输出报告结构化为"根因→证据→操作建议"三层，每条证据标注来源（日志行/指标截图/部署时间），置信度透明。高危操作（回滚/重启）通过 interrupt() 暂停等待工程师确认，Agent 负责分析，人负责决策，做到"AI 加速、人工把关"。
+
+---
+
