@@ -635,3 +635,25 @@ def search(nums: list[int], target: int) -> int:
 
 ---
 
+### Q20: 搜索插入位置 · LeetCode 35
+
+**🏢 高频公司**：字节、腾讯
+**难度**：简单 ⭐
+
+**题目讲解**：找到目标值或应该插入的位置（等价于找第一个 `>= target` 的位置）：
+```python
+def searchInsert(nums: list[int], target: int) -> int:
+    l, r = 0, len(nums)   # r = n（target 可能插在末尾）
+    while l < r:
+        mid = (l + r) // 2
+        if nums[mid] < target:
+            l = mid + 1
+        else:
+            r = mid       # 左闭右开：r = mid 而非 mid-1
+    return l
+```
+
+**考察点**：二分的"左边界"模板（`l < r`，`r=mid`）；这两种模板要熟练切换
+
+---
+
