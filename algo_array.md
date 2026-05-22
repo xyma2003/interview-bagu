@@ -529,3 +529,34 @@ def sortColors(nums):
 
 ---
 
+### Q16: 下一个排列 · LeetCode 31
+
+**🏢 高频公司**：字节（高频）
+**难度**：中等 ⭐⭐
+
+**题目**：找出给定数字排列的下一个字典序排列。
+
+**题目讲解**：
+```python
+def nextPermutation(nums: list[int]) -> None:
+    n = len(nums)
+    # 1. 从右找第一个"下降点" i（nums[i] < nums[i+1]）
+    i = n - 2
+    while i >= 0 and nums[i] >= nums[i+1]:
+        i -= 1
+    
+    if i >= 0:
+        # 2. 从右找第一个大于 nums[i] 的数 j
+        j = n - 1
+        while nums[j] <= nums[i]:
+            j -= 1
+        nums[i], nums[j] = nums[j], nums[i]
+    
+    # 3. 翻转 i+1 到末尾（变为最小排列）
+    nums[i+1:] = nums[i+1:][::-1]
+```
+
+**考察点**：原地操作，三步骤（找下降点→找交换点→翻转后缀）
+
+---
+
