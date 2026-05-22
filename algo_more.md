@@ -45,3 +45,37 @@ def findCircleNum(isConnected: list[list[int]]) -> int:
 
 ---
 
+### Q92: 零矩阵 · LeetCode 73
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目**：矩阵中某元素为 0，则将其所在行列全置 0，O(1) 空间。
+
+**题目讲解**（用第一行/列作标记）：
+```python
+def setZeroes(matrix: list[list[int]]) -> None:
+    m, n = len(matrix), len(matrix[0])
+    row0 = any(matrix[0][j] == 0 for j in range(n))
+    col0 = any(matrix[i][0] == 0 for i in range(m))
+    
+    for i in range(1, m):
+        for j in range(1, n):
+            if matrix[i][j] == 0:
+                matrix[i][0] = matrix[0][j] = 0
+    
+    for i in range(1, m):
+        for j in range(1, n):
+            if matrix[i][0] == 0 or matrix[0][j] == 0:
+                matrix[i][j] = 0
+    
+    if row0:
+        for j in range(n): matrix[0][j] = 0
+    if col0:
+        for i in range(m): matrix[i][0] = 0
+```
+
+**考察点**：用第一行/列当标记数组，先处理中间，后处理边界
+
+---
+
