@@ -410,3 +410,54 @@ ThreadPoolExecutor 的执行顺序要背熟：先用核心线程（corePoolSize 
 
 ---
 
+### Q28: Elasticsearch 的倒排索引是什么？与 MySQL 全文索引的区别？
+
+**题目解析**：Elasticsearch 是后端常用的搜索引擎，理解其索引原理体现候选人的技术广度。
+
+**题目讲解**：
+**倒排索引（Inverted Index）**：
+- 正排索引：文档 → 内容（给文档找词）
+- 倒排索引：词 → 文档列表（给词找文档）
+
+**ES 倒排索引结构**：
+```
+词项（Term）| 文档 ID 列表（Posting List）| 词频 | 位置
+"苹果"      | [doc1, doc5, doc10]        | [3,1,2] | [(0,5),(2),(1,7)]
+"手机"      | [doc1, doc3, doc8]         | [1,2,1]
+```
+
+**分词（Tokenization）**：
+- 中文分词：IK Analyzer、jieba，把"苹果手机"分为"苹果"/"手机"
+- 英文：小写化、去停用词（the/is）、词干化（running → run）
+
+**ES vs MySQL 全文索引**：
+| | Elasticsearch | MySQL FULLTEXT |
+|---|---|---|
+| 分词 | 丰富（IK/jieba/自定义）| 基础（ngram）|
+| 查询语法 | 复杂（bool/range/nested/agg）| 基础（MATCH AGAINST）|
+| 相关性评分 | BM25 算法 | 简单 TF/IDF |
+| 横向扩展 | 原生分布式（Shard）| 需要额外方案 |
+| 实时性 | 近实时（1s 延迟）| 事务级实时 |
+| 运维成本 | 高 | 低（MySQL 已有）|
+
+**ES 核心概念**：
+- **Index**：类似数据库，存储同类文档
+- **Shard**：水平分片，每个 Shard 是独立 Lucene 实例
+- **Replica**：副本分片，提高可用性和读吞吐
+- **Mapping**：字段类型定义（text/keyword/integer/date 等）
+- **Analyzer**：分词器（character filter → tokenizer → token filter）
+
+**考察点**：
+1. 倒排索引为什么快（词 → 文档是 O(1) hash 查找，posting list 是有序数组方便 AND/OR 合并）
+2. Mapping 中 text vs keyword 的区别（text 会分词，keyword 不分词）
+3. ES 的近实时原理（先写 buffer，每秒 refresh 到 segment，可读但未 fsync）
+
+**示例答案**：
+倒排索引把文档里的每个词映射到"包含这个词的文档列表"，搜索时直接查词的 posting list，O(1) 找到候选文档，然后做集合运算（AND/OR/NOT）过滤，比 MySQL 的全表扫描 LIKE 查询快几个数量级。ES 的分词是核心优势：中文用 IK 分词把"苹果手机"拆成"苹果"+"手机"，搜索任一词都能命中；MySQL fulltext 的中文分词能力很弱（ngram 模式按字符切割，冗余 token 多）。ES 还有 BM25 相关性评分，能按"相关性最高"排序，而不是简单的 FULLTEXT 频率统计。实际工程里，常见模式是 MySQL 做主存储（事务、精确查询），ES 做搜索引擎（全文检索、聚合分析），数据通过 Canal（binlog 监听）同步到 ES。Mapping 里要注意 text vs keyword：name 字段要全文搜索用 text（分词），要精确过滤/聚合用 keyword，通常两个都要（multi_fields）。
+
+---
+
+## 十三、gRPC 与微服务通信
+
+---
+
