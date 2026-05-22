@@ -1110,3 +1110,70 @@ await usage_db.insert({
 
 ---
 
+### Q72: 什么是 Agent 的"计划-执行"模式（Plan-and-Execute）？与 ReAct 有何区别？
+
+**🏢 高频公司**：字节、MiniMax
+
+**题目讲解**：
+
+**ReAct 模式（交替推理-执行）**：
+- 每步：Thought → Action → Observation → Thought → ...
+- 决策是即时的（执行一步后再决定下一步）
+- 适合：短任务、任务复杂度未知、需要根据中间结果动态调整
+
+**Plan-and-Execute 模式（先计划后执行）**：
+- 先由"规划 Agent"生成完整计划（步骤列表）
+- 再由"执行 Agent"按计划逐步执行，遇到问题可以重新规划
+- 适合：长任务、步骤可以预先明确、需要并行执行多步
+
+```python
+# LangGraph Plan-and-Execute 结构
+class PlanExecuteState(TypedDict):
+    input: str
+    plan: list[str]          # 计划步骤
+    past_steps: list[tuple]  # (步骤, 执行结果)
+    response: str
+
+# 规划节点
+def planner(state):
+    plan = llm.invoke(f"为以下任务制定步骤计划：{state['input']}")
+    return {"plan": plan.steps}
+
+# 执行节点
+def executor(state):
+    task = state["plan"][0]
+    result = agent.invoke(task)
+    return {
+        "past_steps": state["past_steps"] + [(task, result)],
+        "plan": state["plan"][1:]
+    }
+
+# 重规划节点（可选，发现偏差时）
+def replanner(state):
+    # 根据已执行步骤重新规划剩余步骤
+    ...
+```
+
+**两种模式对比**：
+| | ReAct | Plan-and-Execute |
+|---|---|---|
+| 计划时机 | 每步即时 | 预先一次性 |
+| 适合任务长度 | 短（3-5 步）| 长（10+ 步）|
+| 并行可能性 | 天然串行 | 可以并行独立步骤 |
+| 灵活性 | 高（随时调整）| 低（需重规划）|
+| Token 消耗 | 每步都有 Thought | 规划 Token 多 |
+
+**考察点**：
+1. 何时应该重规划（Replan）
+2. Plan 的粒度设计（太细则限制了执行 Agent 的自由度）
+3. LangGraph 实现 Plan-and-Execute 的图结构
+
+**示例答案**：
+ReAct 每步都做即时决策，灵活但效率有限（每步都要 LLM 推理）；Plan-and-Execute 先花一次 LLM 调用生成完整计划，后续执行 Agent 按计划跑，对于长任务总体 LLM 调用次数更少，且计划可以识别并行步骤。实践中，对于"帮我研究一个主题并写报告"这类需要 10-20 个子任务的复杂请求，Plan-and-Execute 效果更好；对于"帮我查一下天气然后推荐穿衣"这类简单 2-3 步任务，ReAct 更合适（不需要规划开销）。重规划（Replan）是 Plan-and-Execute 的关键补丁：当执行结果与预期偏差较大时，触发 replanner 重新生成后续计划，保证最终目标还能完成。在 LangGraph 里，条件边判断"计划是否完成"和"是否需要重规划"，实现自适应的计划执行。
+
+---
+
+*本篇共 10 题（Q63-Q72），与前三篇合计 72 道 AI Agent 面试题。*
+
+---
+
