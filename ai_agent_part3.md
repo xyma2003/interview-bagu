@@ -707,3 +707,42 @@ Parallel Tool Use 是 Agent 性能优化的重要手段。Claude 可以一次回
 
 ---
 
+### Q65: 解释 LLM 的 Context Length vs Knowledge Cutoff 的区别，以及各自的工程应对
+
+**🏢 高频公司**：字节、小红书、阿里
+
+**题目讲解**：
+
+**Context Length（上下文长度）**：
+- 当前请求能输入的最大 token 数（当前会话的"工作记忆"）
+- 技术上限制：KV Cache 显存、计算复杂度
+- 解决方案：RAG（检索相关内容而非全部输入）、摘要压缩、分块处理
+
+**Knowledge Cutoff（知识截止日期）**：
+- 模型训练数据的时间截止点，之后发生的事情模型不知道
+- 是训练数据的限制，不是推理时的限制
+- 解决方案：RAG 接入实时数据、Tool Use（搜索 API）、持续预训练
+
+**两者的工程影响对比**：
+| 问题 | 原因 | 解决方案 |
+|------|------|---------|
+| 模型不知道昨天的新闻 | Knowledge Cutoff | RAG / 搜索工具 |
+| 模型忘记对话前面的内容 | Context Length 超限 | 摘要压缩 / 滑动窗口 |
+| 模型无法处理 100 页 PDF | Context Length | Chunking + RAG |
+| 模型对 2024 年后的事件一无所知 | Knowledge Cutoff | Fine-tuning / RAG |
+
+**实际判断方法**：
+- 模型说"我不知道 X"：可能是 Knowledge Cutoff 或 RAG 没覆盖
+- 模型忘记之前说过的话：Context Length 问题
+- 用 `max_context - current_usage` 监控上下文使用率
+
+**考察点**：
+1. 两者的根本区别（训练时 vs 推理时的限制）
+2. 如何在 Agent 里检测上下文即将超限（预计算 token 数）
+3. 知识截止日期问题的多种解决方案
+
+**示例答案**：
+Context Length 是推理时的技术限制（当前请求能看到多少 token），Knowledge Cutoff 是训练时的数据限制（模型知道截止什么时候的信息）。两者的解决方案不同：Context Length 问题用 RAG（只传相关片段）、摘要压缩（压缩历史对话）解决；Knowledge Cutoff 问题用 RAG + 实时搜索工具解决，让模型能查到最新信息。Agent 工程上要同时处理两个：用 tiktoken 实时估算 context 使用量，接近上限时触发摘要；同时给 Agent 配备搜索工具，遇到可能超出训练数据的问题（近期事件、实时数据）主动调用搜索。
+
+---
+
