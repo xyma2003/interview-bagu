@@ -561,3 +561,44 @@ LLM 红队测试是在 AI 应用上线前主动寻找安全漏洞的过程，类
 
 ---
 
+### Q44: 多模态 LLM 是如何处理图片的？Vision-Language 模型的架构是什么？
+
+**题目解析**：多模态是 LLM 的重要扩展方向，考察候选人对技术边界的了解。
+
+**题目讲解**：
+**Vision Encoder + LLM 架构**：
+```
+图片 → Vision Encoder（如 CLIP ViT）→ 图片 Token/Embedding
+文本 → Text Tokenizer → 文本 Token
+两者 → 对齐层（Projection）→ 统一 Token 序列 → LLM Decoder
+```
+
+**主要架构变体**：
+1. **LLaVA 风格**：CLIP ViT 编码图片 → MLP 投影层 → 拼接到文本 token 序列
+2. **GPT-4V**：图片通过 CLIP 处理，细节用 tile-based 方法（将图片切片分别处理再聚合）
+3. **Flamingo 风格**：Gated Cross-Attention，文本 token 通过 cross-attention 动态关注图片 token
+4. **Gemini**：原生多模态，从预训练就是多模态的
+
+**视觉处理细节**：
+- **Image Tiling**：高分辨率图片切成多个 tile 分别编码（GPT-4V、Claude 3 等），保留细节
+- **Dynamic Resolution**：根据图片内容动态选择分辨率（避免过多 token 消耗）
+- 一张 512x512 图片通常会产生 256-1024 个 image token（消耗上下文窗口）
+
+**实际能力与局限**：
+- 擅长：图片描述、VQA（视觉问答）、OCR、图表理解
+- 局限：精确计数（"图片里有几只猫"容易出错）、空间关系理解、细粒度视觉推理
+
+**考察点**：
+1. Vision Encoder 的作用（把像素转为 LLM 能理解的 embedding）
+2. Image Token 对上下文窗口的消耗
+3. 实际应用中多模态 Agent 的设计模式
+
+**示例答案**：
+多模态 LLM 的标准架构是 Vision Encoder + Projection + LLM Decoder：图片先通过预训练的 ViT（如 CLIP 的 ViT-L）提取视觉特征，得到一组 image patch embedding，再通过一个 MLP 投影层将维度对齐到 LLM 的 embedding 维度，最后这些 image token 和文本 token 拼接在一起送入 LLM Decoder。一张图片通常产生几百个 image token（Claude 3 根据图片大小可达 1000+ token），显著消耗上下文窗口，成本要考虑。Image Tiling 是处理高分辨率图片的技巧：把图片切成多个 tile 分别编码再聚合，保留文字等细节（低分辨率 resize 后 OCR 会失败）。实际 Agent 设计里，多模态能力主要用于三类场景：文档图片 OCR（菜单、表格、截图解析）、界面操作（截图 → Agent 判断下一步操作）、视觉内容审核。在 Peppr 点餐系统里，菜品图片通过多模态识别辅助确认用户描述的菜品。
+
+---
+
+## 十六、常见框架详解
+
+---
+
