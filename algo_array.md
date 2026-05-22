@@ -207,3 +207,51 @@ def lengthOfLongestSubstring(s: str) -> int:
 
 ---
 
+### Q6: 最小覆盖子串 · LeetCode 76
+
+**🏢 高频公司**：字节（高频）、腾讯
+**难度**：困难 ⭐⭐⭐
+
+**题目**：找出 s 中包含 t 所有字符的最小子串。
+
+**题目讲解**：
+```python
+from collections import Counter
+
+def minWindow(s: str, t: str) -> str:
+    need = Counter(t)
+    window = {}
+    left = 0
+    valid = 0          # 已满足条件的字符数
+    start, min_len = 0, float('inf')
+    
+    for right, c in enumerate(s):
+        if c in need:
+            window[c] = window.get(c, 0) + 1
+            if window[c] == need[c]:
+                valid += 1
+        # 已覆盖所有字符，尝试收缩左窗口
+        while valid == len(need):
+            if right - left + 1 < min_len:
+                start, min_len = left, right - left + 1
+            lc = s[left]
+            left += 1
+            if lc in need:
+                if window[lc] == need[lc]:
+                    valid -= 1
+                window[lc] -= 1
+    
+    return s[start:start+min_len] if min_len != float('inf') else ""
+```
+
+**复杂度**：时间 O(N+M)，空间 O(字符集)
+
+**考察点**：
+1. 滑动窗口"扩右-缩左"的双计数器模板
+2. `valid` 计数器的维护（字符数刚好满足才计数）
+
+**示例答案**：
+滑动窗口进阶版：用 `need` 记录目标计数，`window` 记录当前窗口计数，`valid` 记录已完全满足的字符种数。右扩时更新 window；当 valid == 所需字符种数时，记录答案并收缩左边。这是"可变滑动窗口"的标准模板，背会后可以解决一类题。
+
+---
+
