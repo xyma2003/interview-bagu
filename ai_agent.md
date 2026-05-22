@@ -906,3 +906,32 @@ Agent 的可观测性要从 Trace 维度思考，而非简单的日志。每次 
 
 ---
 
+### Q28: 什么是上下文工程（Context Engineering）？为什么说它比 Prompt Engineering 更重要？
+
+**题目解析**：上下文工程是 2025 年 AI Agent 领域的新热词，考察候选人对最新趋势的跟进。
+
+**题目讲解**：
+**Context Engineering 的定义**：
+系统性地设计、构建和管理输入给 LLM 的完整上下文，包括：哪些信息该放进来、哪些该留在外面、以什么顺序和格式组织——以最大化模型在给定 context window 内的效能。
+
+**与 Prompt Engineering 的区别**：
+- Prompt Engineering：关注如何措辞、指令风格、少样本示例的写法（相对静态）
+- Context Engineering：关注运行时动态组装：从记忆中检索什么、工具返回什么信息注入、对话历史如何压缩、错误信息如何反馈
+
+**核心技术**：
+1. **动态上下文注入**：根据用户 query 检索相关记忆/文档注入，而非全量注入
+2. **上下文压缩**：对话历史摘要、文档提取核心信息，节省 token
+3. **信息优先级**：重要信息放在 context 的开头和结尾（注意力分布规律）
+4. **结构化 Context**：用 XML 标签、Markdown 头部清晰标注各部分，帮助模型定位
+5. **Context 预算分配**：显式规划各部分 token 配额（system prompt 500 tokens、历史 2000、检索 3000、用户输入 1000）
+
+**考察点**：
+1. 动态上下文构建 vs 静态 prompt
+2. Lost in the Middle 问题（重要信息放中间会被忽视）
+3. Context Window 预算分配策略
+
+**示例答案**：
+Context Engineering 是比 Prompt Engineering 更系统的思维框架。Prompt Engineering 关注"怎么写指令"，Context Engineering 关注"运行时送给模型的整个 context 是否最优"——包括从哪里检索信息、如何压缩历史、不同信息的排列顺序、token 预算怎么分配。举例：同一个问题，如果相关文档被埋在 context 中间，模型的引用率会下降（Lost in the Middle 现象），把重要信息放在 context 头部或尾部能显著提升效果。动态 context 组装：不是把所有记忆、所有文档都塞进去，而是根据当前 query 选择最相关的 K 条记忆、Top-N 个文档片段，剩余 token 留给对话历史。Context 压缩：对话历史超过一定长度后，用 LLM 将早期对话摘要为 summary 替换原文，保留对话 thread 同时节省 token。结构化标注：用 `<user_profile>...</user_profile>`、`<retrieved_docs>...</retrieved_docs>` 等 XML 标签清晰分隔 context 的各个区域，帮助模型定位不同信息来源。这比调整 prompt 措辞对效果的影响更大。
+
+---
+
