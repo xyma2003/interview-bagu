@@ -801,3 +801,62 @@ HyDE 的洞察是：查询语言和文档语言有风格差距，直接用查询
 
 ---
 
+### Q67: LangGraph 的 Interrupt 和 Command 机制详解，Human-in-the-Loop 的三种模式
+
+**🏢 高频公司**：字节、小红书
+
+**题目讲解**：
+
+**interrupt() 工作原理**：
+```python
+from langgraph.types import interrupt, Command
+
+def review_node(state: State):
+    # 暂停执行，把 value 传给外部
+    decision = interrupt({"draft": state["draft"]})
+    # decision 是外部 resume 时传入的值
+    if decision["action"] == "approve":
+        return {"status": "approved"}
+    else:
+        return {"feedback": decision["feedback"], "status": "revise"}
+```
+
+**三种 HITL 模式**：
+
+**1. Approve/Reject（审批）**：
+```python
+# 服务端等待中
+result = graph.invoke(input, config)  # 返回 interrupt value
+# 用户审批
+graph.invoke(Command(resume={"action": "approve"}), config)
+```
+
+**2. Edit（编辑后继续）**：
+```python
+# 用户修改了草稿
+graph.invoke(Command(resume={"action": "edit", "content": new_content}), config)
+```
+
+**3. Multi-turn（多轮澄清）**：
+```python
+# Agent 遇到不确定时主动问用户
+clarification = interrupt({"question": "您要的是红色还是蓝色？"})
+# 用户回答后继续
+graph.invoke(Command(resume=clarification_answer), config)
+```
+
+**生产中的持久化**：
+- Checkpointer 把 interrupt 时的完整 state 序列化到数据库
+- `thread_id` 是状态的唯一标识，支持跨请求恢复
+- 支持超时：如果 N 小时内没有 resume，自动走降级策略
+
+**考察点**：
+1. interrupt() 和 checkpointer 的配合（状态如何持久化）
+2. stream_mode 下的 interrupt 处理
+3. 多 interrupt 节点的图设计（串行审批流）
+
+**示例答案**：
+LangGraph 的 interrupt() 是 HITL 的核心机制，它在节点内部暂停图执行，把中间状态（通过 Checkpointer 持久化到 DB）和 interrupt value（需要用户决策的内容）返回给调用方，调用方可以展示给用户并等待；用户决策后通过 `Command(resume=...)` 恢复执行，图从 interrupt 点继续。三种模式中"审批"最简单，只需 approve/reject；"编辑"让用户直接修改中间产物（如日报草稿）然后继续；"澄清"让 Agent 主动提问解决歧义，类似多轮对话但嵌入在 graph 流程里。关键工程细节是 thread_id 管理——每个用户会话有唯一 thread_id，所有 checkpoint 都用这个 ID 存取，服务端无状态，任意实例都能恢复任意 session。
+
+---
+
