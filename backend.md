@@ -163,3 +163,39 @@ B+ 树是 MySQL InnoDB 的核心数据结构。与 B 树的区别是：B+ 树内
 
 ---
 
+### Q5: MySQL 事务的四个隔离级别分别是什么？MVCC 是如何工作的？
+
+**题目解析**：事务隔离是数据库面试的核心，MVCC 是 MySQL 实现高并发读的关键机制。
+
+**题目讲解**：
+**并发问题**：
+- **脏读**：读到其他事务未提交的数据（提交前可能回滚）
+- **不可重复读**：同一事务两次读同一行，值不同（中间被其他事务 UPDATE）
+- **幻读**：同一事务两次范围查询，结果集不同（中间被其他事务 INSERT/DELETE）
+
+**四个隔离级别**：
+| 级别 | 脏读 | 不可重复读 | 幻读 |
+|------|------|-----------|------|
+| READ UNCOMMITTED | 可能 | 可能 | 可能 |
+| READ COMMITTED | ✅ | 可能 | 可能 |
+| REPEATABLE READ（MySQL 默认）| ✅ | ✅ | ✅（InnoDB MVCC+间隙锁防止）|
+| SERIALIZABLE | ✅ | ✅ | ✅ |
+
+**MVCC（多版本并发控制）**：
+- 每行数据有两个隐藏字段：`trx_id`（最后修改该行的事务 ID）和 `roll_pointer`（指向 undo log 中旧版本）
+- Read View：事务开始时创建快照，记录当前活跃事务 ID 列表
+- 读取时，通过 `trx_id` 和 Read View 判断版本是否可见：
+  - 版本的 trx_id < min_trx_id（ReadView 创建时最小活跃事务 ID）→ 可见
+  - 版本的 trx_id > max_trx_id → 不可见，通过 roll_pointer 查旧版本
+- **RC 和 RR 的区别**：RC 每次 SELECT 创建新 Read View，RR 只在事务开始时创建一次
+
+**考察点**：
+1. 幻读 vs 不可重复读的区别（行 vs 范围）
+2. RR 级别下 MVCC 防止不可重复读的机制
+3. 当前读 vs 快照读（SELECT FOR UPDATE 是当前读，不走 MVCC）
+
+**示例答案**：
+MySQL 默认的隔离级别是 REPEATABLE READ，通过 MVCC 实现了无锁的一致性读。每行数据在 undo log 里保存历史版本，事务开始时创建 Read View（快照），记录当前所有活跃事务。读取时，通过版本链和 Read View 找到"对当前事务可见"的最新版本——比当前事务早提交的版本可见，当前事务创建后才开始的事务修改的版本不可见。RR 级别的 Read View 在整个事务期间只创建一次，所以两次读到的数据一致（防不可重复读）；RC 级别每次 SELECT 都创建新 Read View，能看到最新提交，所以会出现不可重复读。InnoDB 在 RR 级别还通过间隙锁（Gap Lock）解决了范围查询的幻读：`SELECT ... WHERE id BETWEEN 1 AND 10 FOR UPDATE` 会锁住 1-10 的间隙，防止其他事务插入新行。注意：FOR UPDATE 是当前读（读最新版本+加锁），不走 MVCC。
+
+---
+
