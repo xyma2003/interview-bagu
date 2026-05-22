@@ -560,3 +560,28 @@ def nextPermutation(nums: list[int]) -> None:
 
 ---
 
+### Q17: 旋转图像 · LeetCode 48
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目**：将 N×N 矩阵顺时针旋转 90 度（原地）。
+
+**题目讲解**：
+先沿主对角线转置，再水平翻转（等价于顺时针 90°）：
+```python
+def rotate(matrix: list[list[int]]) -> None:
+    n = len(matrix)
+    # 转置
+    for i in range(n):
+        for j in range(i+1, n):
+            matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
+    # 每行翻转
+    for row in matrix:
+        row.reverse()
+```
+
+**考察点**：转置 + 翻转 = 顺时针 90°；逆时针 = 转置 + 竖向翻转
+
+---
+
