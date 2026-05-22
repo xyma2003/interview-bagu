@@ -521,3 +521,39 @@ Hooks 的魔法在于 React 用一个链表在每个组件的 Fiber 节点上存
 
 ---
 
+### Q16: 如何优化 React 应用的渲染性能？
+
+**题目解析**：React 性能优化是工程实践中的高频需求，考察候选人的实战经验。
+
+**题目讲解**：
+**不必要的重渲染来源**：
+- 父组件重渲染导致子组件 props 未变也重渲染
+- Context 值变化导致所有消费者重渲染
+- 每次渲染创建新的对象/函数引用导致子组件无法避免重渲染
+
+**优化手段**：
+
+1. **React.memo**：对纯组件进行浅比较 props，props 不变则跳过重渲染
+2. **useMemo**：缓存计算结果，依赖不变时不重新计算
+3. **useCallback**：缓存函数引用，避免子组件因函数 prop 变化重渲染
+4. **组件拆分**：将不需要重渲染的部分下沉为独立组件
+5. **Context 优化**：将 Context 按关注点拆分（value 不变的放一起），或用 `useContextSelector`
+6. **虚拟化长列表**：react-window / react-virtualized，只渲染可见区域
+7. **代码分割**：`React.lazy` + `Suspense` + 动态 import，按需加载
+
+**使用 React DevTools Profiler**：录制渲染，找出重渲染频繁的组件。
+
+**考察点**：
+1. memo/useMemo/useCallback 的适用场景和滥用问题
+2. 虚拟列表的实现原理
+3. Concurrent Mode 的 startTransition 对性能的影响
+
+**示例答案**：
+React 性能优化的核心是"减少不必要的重渲染"。首先用 React DevTools Profiler 录制找出渲染热点，然后针对性优化。对纯展示组件用 `React.memo` 避免父组件重渲染时不必要的子组件重渲染；给子组件传递的函数用 `useCallback` 缓存引用，传递的计算结果用 `useMemo` 缓存，否则每次渲染都创建新引用，memo 形同虚设。Context 粒度要细，一个 Context 里有多个不相关的值，任何一个变化都会触发所有消费者重渲染；拆分成多个 Context 或用 zustand 这类订阅式状态管理。长列表必须虚拟化（react-window），只渲染可视区域内的 DOM 节点。代码分割用 `React.lazy + Suspense`，路由级别懒加载，首屏 bundle 大小从几 MB 降到几百 KB。最后，搜索/过滤等即时响应但计算量大的场景用 `startTransition` 标记为低优先级，优先保证输入框响应流畅。
+
+---
+
+## 六、Vue
+
+---
+
