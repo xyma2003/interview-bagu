@@ -458,3 +458,24 @@ def productExceptSelf(nums: list[int]) -> list[int]:
 
 ---
 
+### Q13: 子数组最大和 (Kadane 算法) · LeetCode 53
+
+**🏢 高频公司**：字节、腾讯、阿里
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def maxSubArray(nums: list[int]) -> int:
+    cur = best = nums[0]
+    for x in nums[1:]:
+        cur = max(x, cur + x)   # 要么从 x 重新开始，要么延续之前的子数组
+        best = max(best, cur)
+    return best
+```
+
+**复杂度**：O(N) 时间，O(1) 空间
+
+**考察点**：Kadane 算法；追问：分治解法 O(N log N)，线段树维护可修改版本
+
+---
+
