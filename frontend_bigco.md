@@ -333,3 +333,84 @@ LRU Cache 需要同时支持 O(1) 的 get 和 put，纯数组不行（查找 O(N
 
 ---
 
+### Q41: 字节 面试：EventEmitter 的实现，以及如何防止内存泄漏
+
+**🏢 高频公司**：字节、腾讯
+
+**题目解析**：
+观察者模式的手写实现，以及 Node.js EventEmitter 的内存泄漏是常见面试考察点。
+
+**题目讲解**：
+
+**基础 EventEmitter 实现**：
+```javascript
+class EventEmitter {
+  constructor() {
+    this._events = Object.create(null);  // 避免原型污染
+    this._maxListeners = 10;
+  }
+  
+  on(event, listener) {
+    if (!this._events[event]) this._events[event] = [];
+    this._events[event].push(listener);
+    // 超过最大监听数警告（防内存泄漏）
+    if (this._events[event].length > this._maxListeners) {
+      console.warn(`MaxListeners exceeded for event: ${event}`);
+    }
+    return this;  // 链式调用
+  }
+  
+  once(event, listener) {
+    const wrapper = (...args) => {
+      listener(...args);
+      this.off(event, wrapper);
+    };
+    wrapper._original = listener;  // 方便 off 时找到原始函数
+    return this.on(event, wrapper);
+  }
+  
+  emit(event, ...args) {
+    const listeners = this._events[event];
+    if (!listeners) return false;
+    [...listeners].forEach(fn => fn(...args));  // 拷贝防止 emit 中 off 引起的遍历问题
+    return true;
+  }
+  
+  off(event, listener) {
+    const listeners = this._events[event];
+    if (!listeners) return this;
+    this._events[event] = listeners.filter(
+      fn => fn !== listener && fn._original !== listener
+    );
+    return this;
+  }
+  
+  removeAllListeners(event) {
+    if (event) delete this._events[event];
+    else this._events = Object.create(null);
+    return this;
+  }
+}
+```
+
+**内存泄漏场景**：
+1. `on` 注册监听但从不 `off`（组件销毁后监听器仍在，持有组件引用）
+2. `once` 的 wrapper 函数 closure 持有外部对象引用
+3. 循环引用：A listen B，B listen A
+
+**防止内存泄漏**：
+- 组件卸载时（React `useEffect` return，Vue `onUnmounted`）一定 `off` 已注册的监听
+- 使用 `once` 代替 `on`（自动移除）
+- 设置 `maxListeners` 上限（Node.js 默认 10）
+- 使用 WeakRef 持有对象（允许 GC 回收）
+
+**考察点**：
+1. `once` 的 wrapper 实现和 `off` 时的匹配问题
+2. `emit` 时遍历拷贝防止 listener 修改数组
+3. `Object.create(null)` vs `{}`（避免 toString 等原型属性冲突）
+
+**示例答案**：
+EventEmitter 的核心是用 `_events` 对象存储事件名到监听器数组的映射。关键细节：用 `Object.create(null)` 而非 `{}` 存储，防止事件名叫 `toString` / `hasOwnProperty` 时与原型方法冲突；`once` 的实现要用 wrapper 函数包裹原始 listener，执行后自动调用 `off` 移除，同时在 wrapper 上存 `_original` 引用，方便用户用原始函数调用 `off`；`emit` 时要先拷贝 listeners 数组再遍历，防止 listener 里调用 `off` 修改原数组导致遍历跳过某些 listener。内存泄漏是实际开发中的大坑，React 里在 useEffect 的 return 函数里取消所有订阅，Vue 里在 onUnmounted 里清理，这是团队规范里必须强制的。`maxListeners` 警告是个很好的早期信号，超过阈值说明可能有重复注册的 bug。
+
+---
+
