@@ -249,3 +249,41 @@ def canFinish(numCourses: int, prerequisites: list[list[int]]) -> bool:
 
 ---
 
+### Q35: 单词接龙 · LeetCode 127
+
+**🏢 高频公司**：字节
+**难度**：困难 ⭐⭐⭐
+
+**题目**：找出 beginWord → endWord 的最短转换序列长度（每次只改一个字母，且必须在字典中）。
+
+**题目讲解**（双向 BFS 优化）：
+```python
+from collections import deque
+
+def ladderLength(beginWord: str, endWord: str, wordList: list[str]) -> int:
+    word_set = set(wordList)
+    if endWord not in word_set: return 0
+    
+    front, back = {beginWord}, {endWord}
+    step = 1
+    while front:
+        step += 1
+        next_front = set()
+        for word in front:
+            for i in range(len(word)):
+                for c in 'abcdefghijklmnopqrstuvwxyz':
+                    new_word = word[:i] + c + word[i+1:]
+                    if new_word in back: return step
+                    if new_word in word_set:
+                        next_front.add(new_word)
+                        word_set.discard(new_word)
+        front = next_front
+        if len(front) > len(back):   # 始终从小的一侧 BFS
+            front, back = back, front
+    return 0
+```
+
+**考察点**：双向 BFS 将复杂度从 O(b^d) 降到 O(b^(d/2))；b=分支因子，d=深度
+
+---
+
