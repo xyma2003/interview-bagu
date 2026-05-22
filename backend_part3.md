@@ -682,3 +682,71 @@ WHERE product_id = 1 AND version = {expected_version}
 
 ---
 
+### Q45: 如何设计一个秒杀系统？应对瞬时高并发的核心手段？
+
+**🏢 高频公司**：阿里（双十一）、字节、腾讯
+
+**题目讲解**：
+**核心挑战**：
+- 读多写少（99% 是查库存）：读操作用缓存承接
+- 瞬时峰值（10万QPS → 0.1秒内卖出1000件）：写操作要防超卖
+
+**分层设计**：
+
+**1. 前端限流（用户侧）**：
+- 点击秒杀按钮后 disable（防重复提交）
+- 加 CDN 缓存静态页面（不打到源站）
+
+**2. 网关限流**：
+- 令牌桶限流，控制进入系统的 QPS
+- 对同一用户限频（每人每秒最多1次请求）
+
+**3. 库存预热（Redis）**：
+```python
+# 秒杀开始前，库存写入 Redis
+redis.set("seckill:product:1001:stock", 1000)
+
+# 秒杀时原子扣减（Lua 脚本保证原子性）
+lua_script = """
+local stock = tonumber(redis.call('get', KEYS[1]))
+if stock > 0 then
+    redis.call('decr', KEYS[1])
+    return 1  -- 成功
+else
+    return 0  -- 库存不足
+end
+"""
+result = redis.eval(lua_script, 1, "seckill:product:1001:stock")
+```
+
+**4. 异步落库（MQ 削峰）**：
+```python
+if result == 1:
+    # 秒杀成功，发 MQ 消息，异步创建订单
+    kafka.send("seckill_orders", {
+        "user_id": user_id, "product_id": 1001
+    })
+    return "秒杀成功，订单处理中"
+```
+
+**5. 数据库层保障（兜底防超卖）**：
+```sql
+-- 即使 Redis 出错，数据库的 CHECK 约束兜底
+UPDATE products SET stock = stock - 1
+WHERE product_id = 1001 AND stock > 0
+-- 影响行数为 0 则超卖，回滚
+```
+
+**6. 订单去重（用户只能买一件）**：
+- 数据库联合唯一索引：`(user_id, product_id, seckill_activity_id)`
+
+**考察点**：
+1. Redis 扣减库存后 DB 扣减失败的一致性问题（最终一致性方案）
+2. 热 key 问题（同一商品的 Redis key 被所有节点请求）
+3. 消息队列的背压机制（下游处理不过来时如何保护）
+
+**示例答案**：
+秒杀的核心是"把 DB 压力转移到缓存"和"把同步变异步"。读操作全走 Redis 库存缓存（秒杀前预热）；写操作用 Redis Lua 脚本原子扣减库存，成功的发 Kafka 消息异步创建订单，失败的直接返回。DB 只承接 Kafka 消费者的异步写入，QPS 从峰值的十万降到稳定的几千，可以从容处理。防超卖三重保障：Redis 原子扣减（第一道关）、Kafka 幂等消费（第二道）、DB 的 `stock > 0` 条件更新（第三道兜底）。热 key 问题：对热门商品的 Redis key 做 sharding（`seckill:1001:0`、`seckill:1001:1`...N 个 key，分散到不同节点），请求按 hash 路由，N 倍分散热点。
+
+---
+
