@@ -427,3 +427,34 @@ def merge(intervals: list[list[int]]) -> list[list[int]]:
 
 ---
 
+### Q12: 除自身以外数组的乘积 · LeetCode 238
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目**：返回数组中除自身外所有元素的乘积，不能用除法，O(N) 时间。
+
+**题目讲解**：
+```python
+def productExceptSelf(nums: list[int]) -> list[int]:
+    n = len(nums)
+    res = [1] * n
+    # 第一遍：res[i] = nums[0..i-1] 的乘积
+    prefix = 1
+    for i in range(n):
+        res[i] = prefix
+        prefix *= nums[i]
+    # 第二遍：乘上 nums[i+1..n-1] 的乘积
+    suffix = 1
+    for i in range(n-1, -1, -1):
+        res[i] *= suffix
+        suffix *= nums[i]
+    return res
+```
+
+**复杂度**：时间 O(N)，空间 O(1)（输出数组不算）
+
+**考察点**：前缀积 × 后缀积，一次左扫一次右扫，原地更新
+
+---
+
