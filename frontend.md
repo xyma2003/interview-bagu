@@ -592,3 +592,37 @@ Vue 2 用 Object.defineProperty 把对象每个属性转为 getter/setter，gett
 
 ---
 
+### Q18: Vue 3 的 `setup()` 和 Composition API 的优势是什么？
+
+**题目解析**：Composition API 是 Vue 3 最大的变化，考察候选人对其设计理念的理解。
+
+**题目讲解**：
+**Options API 的问题**：
+- 同一业务逻辑分散在 data/methods/computed/watch 各处，难以维护
+- 代码复用只能用 Mixin，Mixin 有命名冲突和来源不透明问题
+
+**Composition API 的优势**：
+1. **逻辑组织**：相关逻辑集中在一起（不按选项类型分散），大型组件可读性大幅提升
+2. **逻辑复用**：自定义 Composable（`use*` 函数），完全可组合、类型安全、来源清晰
+3. **TypeScript 支持**：Options API 的 `this` 类型推断较难，Composition API 是普通函数，TS 支持天然
+4. **更好的 Tree Shaking**：按需引入 `ref/computed/watch`，未用的不打包
+
+**`<script setup>` 语法糖**：
+- 自动暴露顶层变量到模板
+- 使用 `defineProps/defineEmits` 替代 options
+- 编译后比手写 `setup()` 性能略好（减少代理）
+
+**考察点**：
+1. Mixin vs Composable 的核心差别（来源透明、无命名冲突）
+2. `<script setup>` 的编译优化
+3. setup 执行时机（比 created 更早，无 this）
+
+**示例答案**：
+Composition API 解决了 Options API 的两个核心问题：逻辑分散和复用困难。Options API 强制把同一功能的代码按类型拆分（data 里写状态、methods 写方法、watch 写监听），功能越复杂，同一 feature 的代码越分散。Composition API 允许把相关逻辑写在一起，还能抽取为 `useXxx` Composable 函数复用，相比 Mixin 来源完全透明、无命名冲突。我在项目里把用户权限逻辑封装为 `usePermission()`，返回 `{hasRole, canAccess, loading}`，多个组件直接 import 使用，比 Mixin 清晰多了。TypeScript 支持也更好，普通函数的类型推断比 Options API 的 this 容易多了。`<script setup>` 语法糖进一步减少样板代码，顶层定义的变量自动暴露给模板，`defineProps` 有类型推断，开发体验比手写 `setup()` 好很多。
+
+---
+
+## 七、性能优化
+
+---
+
