@@ -255,3 +255,39 @@ def minWindow(s: str, t: str) -> str:
 
 ---
 
+### Q7: 找到字符串中所有字母异位词 · LeetCode 438
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目**：找出 s 中所有 p 的字母异位词的起始索引。
+
+**题目讲解**：
+```python
+from collections import Counter
+
+def findAnagrams(s: str, p: str) -> list[int]:
+    if len(s) < len(p): return []
+    need = Counter(p)
+    window = Counter(s[:len(p)])
+    res = [0] if window == need else []
+    
+    for i in range(len(p), len(s)):
+        # 右侧进窗口
+        window[s[i]] += 1
+        # 左侧出窗口
+        left_char = s[i - len(p)]
+        window[left_char] -= 1
+        if window[left_char] == 0:
+            del window[left_char]
+        if window == need:
+            res.append(i - len(p) + 1)
+    return res
+```
+
+**复杂度**：时间 O(N)，空间 O(1)（字符集固定大小）
+
+**考察点**：固定大小滑动窗口，Counter 比较
+
+---
+
