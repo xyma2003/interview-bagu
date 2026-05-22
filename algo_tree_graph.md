@@ -102,3 +102,23 @@ def maxPathSum(root) -> int:
 
 ---
 
+### Q30: 二叉树的最近公共祖先 · LeetCode 236
+
+**🏢 高频公司**：字节、腾讯（高频）
+**难度**：中等 ⭐⭐
+
+**题目讲解**：
+```python
+def lowestCommonAncestor(root, p, q):
+    if not root or root == p or root == q:
+        return root
+    left  = lowestCommonAncestor(root.left,  p, q)
+    right = lowestCommonAncestor(root.right, p, q)
+    if left and right: return root   # p/q 分别在左右子树
+    return left or right             # 都在同一侧
+```
+
+**考察点**：递归的语义——返回在该子树中找到的节点（None/p/q/LCA）
+
+---
+
