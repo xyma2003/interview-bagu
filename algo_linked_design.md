@@ -261,3 +261,34 @@ class LRUCache:
 
 ---
 
+### Q59: 最小栈 · LeetCode 155
+
+**🏢 高频公司**：所有大厂
+**难度**：简单 ⭐
+
+**题目讲解**：
+```python
+class MinStack:
+    def __init__(self):
+        self.stack = []
+        self.min_stack = []   # 同步存当前最小值
+    
+    def push(self, val: int) -> None:
+        self.stack.append(val)
+        min_val = min(val, self.min_stack[-1]) if self.min_stack else val
+        self.min_stack.append(min_val)
+    
+    def pop(self) -> None:
+        self.stack.pop(); self.min_stack.pop()
+    
+    def top(self) -> int:
+        return self.stack[-1]
+    
+    def getMin(self) -> int:
+        return self.min_stack[-1]
+```
+
+**考察点**：辅助栈同步维护历史最小值（不是全局最小，是当前时刻的最小）
+
+---
+
