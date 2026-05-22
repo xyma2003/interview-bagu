@@ -424,3 +424,35 @@ def exist(board: list[list[str]], word: str) -> bool:
 
 ---
 
+### Q41: 被围绕的区域 · LeetCode 130
+
+**🏢 高频公司**：字节
+**难度**：中等 ⭐⭐
+
+**题目**：将所有不与边界相连的 'O' 改为 'X'。
+
+**题目讲解**：
+逆向思维：从边界的 'O' 出发 DFS，标记为 'S'（安全），最后 'O'→'X'，'S'→'O'：
+```python
+def solve(board: list[list[str]]) -> None:
+    rows, cols = len(board), len(board[0])
+    def dfs(r, c):
+        if not (0<=r<rows and 0<=c<cols) or board[r][c] != 'O': return
+        board[r][c] = 'S'
+        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]: dfs(r+dr, c+dc)
+    # 从四条边出发
+    for r in range(rows):
+        for c in [0, cols-1]: dfs(r, c)
+    for c in range(cols):
+        for r in [0, rows-1]: dfs(r, c)
+    # 转换
+    for r in range(rows):
+        for c in range(cols):
+            if   board[r][c] == 'O': board[r][c] = 'X'
+            elif board[r][c] == 'S': board[r][c] = 'O'
+```
+
+**考察点**：逆向 DFS（从答案反推），比正向判断更简洁
+
+---
+
