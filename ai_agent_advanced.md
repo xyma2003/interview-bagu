@@ -212,3 +212,37 @@ W_int8 = round(W / scale)
 
 ---
 
+### Q36: Embedding 模型的选择标准是什么？如何针对中文优化？
+
+**题目解析**：Embedding 模型选择直接影响 RAG 的检索质量，是工程实践中的核心决策。
+
+**题目讲解**：
+**Embedding 模型评估维度**：
+1. **检索质量**：MTEB（Massive Text Embedding Benchmark）榜单，涵盖检索、分类、聚类等任务
+2. **向量维度**：越高表达能力越强，但存储和计算开销更大（text-embedding-3-large: 3072维 vs small: 1536维）
+3. **最大 token 长度**：影响能处理的最长文本（m3e-base: 512，bge-large-zh: 512，OpenAI ada-002: 8191）
+4. **语言支持**：多语言模型 vs 单语言专门模型
+5. **推理速度与成本**：API 调用 vs 本地部署
+
+**中文优化 Embedding 选择**：
+- **BGE 系列（BAAI）**：目前中文综合最强，bge-large-zh-v1.5（1024维，512 token）
+- **M3E**：较早的中文开源模型，轻量但效果次于 BGE
+- **bge-m3**：多语言版，中英混合文档的最佳选择（支持稀疏+密集+多向量三模式）
+- **Jina Embeddings v3**：多语言，支持 8192 token 长文本
+- **OpenAI text-embedding-3-small**：性价比高，中文也不差
+
+**Fine-tune Embedding**：
+- 用业务语料（正负样本对）微调 embedding，提升领域内检索效果
+- 工具：sentence-transformers、FlagEmbedding（BGE 的训练框架）
+- 需要构建三元组：`(query, positive_doc, negative_doc)`
+
+**考察点**：
+1. MTEB 榜单的各 task 含义
+2. 长文本 embedding 的截断策略
+3. 稀疏 + 密集的混合检索（bge-m3）
+
+**示例答案**：
+选 Embedding 模型要先明确场景：纯中文用 BGE-large-zh-v1.5（MTEB 中文检索榜单长期前列）；中英混合或多语言用 bge-m3（支持 100+ 语言，还能同时输出 BM25 风格的稀疏向量，一个模型实现混合检索）；成本敏感且无法本地部署用 OpenAI text-embedding-3-small（768 维，效果不错，价格低廉）。中文 Embedding 的一个坑是 512 token 限制，很多文档段落超过 512 个 token 时需要截断，可能丢失重要信息，选模型时要看 max_sequence_length。对于业务领域专词很多的场景（金融/医疗/法律），用业务语料微调 embedding 能显著提升检索召回率——构建查询-文档正样本对（人工或用 LLM 生成），加上难负例挖掘，在 sentence-transformers 框架上微调 1-3 个 epoch，检索 Recall@5 通常能提升 10-20%。
+
+---
+
