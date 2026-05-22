@@ -519,3 +519,42 @@ def cloneGraph(node):
 
 ---
 
+### Q44: 网络延迟时间（Dijkstra）· LeetCode 743
+
+**🏢 高频公司**：字节、腾讯
+**难度**：中等 ⭐⭐
+
+**题目**：单源最短路，求从 k 出发到达所有节点的最短时间。
+
+**题目讲解**：
+```python
+import heapq
+from collections import defaultdict
+
+def networkDelayTime(times: list[list[int]], n: int, k: int) -> int:
+    graph = defaultdict(list)
+    for u, v, w in times:
+        graph[u].append((v, w))
+    
+    dist = {i: float('inf') for i in range(1, n+1)}
+    dist[k] = 0
+    heap = [(0, k)]  # (distance, node)
+    
+    while heap:
+        d, u = heapq.heappop(heap)
+        if d > dist[u]: continue  # 已有更短路径，跳过
+        for v, w in graph[u]:
+            if dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                heapq.heappush(heap, (dist[v], v))
+    
+    ans = max(dist.values())
+    return ans if ans < float('inf') else -1
+```
+
+**复杂度**：O((V+E) log V)
+
+**考察点**：Dijkstra 优先队列实现；`if d > dist[u]: continue` 懒删除优化
+
+---
+
