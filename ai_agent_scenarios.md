@@ -1363,3 +1363,132 @@ DISCLAIMER = "以上分析基于提供的财务数据，仅供内部参考，不
 
 ---
 
+### Q92: 设计一个多语言实时翻译 Agent（会议翻译场景）
+
+**🏢 高频公司**：腾讯（会议产品）、字节（飞书）
+
+**题目解析**：
+实时翻译对延迟极度敏感（< 500ms），结合 ASR + MT + TTS 的流式处理，考察低延迟 Agent 设计。
+
+---
+
+**一、技术链路**
+
+```
+发言者音频（麦克风）
+     │ ASR（流式）
+     ▼
+文字片段（每 500ms 一段）
+     │ 翻译（LLM 或专业 MT 模型）
+     ▼
+译文
+     │ TTS（可选，文字转语音）
+     ▼
+接收者耳机
+```
+
+**延迟预算**：
+```
+总延迟 < 3s（用户可接受的同声传译延迟）
+  ASR：200ms（流式 ASR，每段 500ms 音频 200ms 处理）
+  翻译：800ms（LLM TTFT）
+  TTS：400ms
+  网络：100ms
+  预留：1500ms buffer
+```
+
+---
+
+**二、关键设计**
+
+**2.1 分段翻译策略**
+
+不等完整句子再翻译，每 2-3 秒一段，用上下文保持连贯：
+```python
+class StreamingTranslator:
+    def __init__(self):
+        self.buffer = []
+        self.context_window = []   # 最近 5 段的翻译，保持连贯性
+    
+    async def translate_chunk(self, text: str, source_lang: str, target_lang: str) -> str:
+        prompt = f"""
+上文翻译（保持风格连贯）：{' '.join(self.context_window[-3:])}
+
+当前片段（{source_lang} → {target_lang}）：{text}
+
+直接输出译文，不要解释。
+"""
+        translation = await llm_stream(prompt)
+        self.context_window.append(translation)
+        return translation
+```
+
+**2.2 专业术语处理**
+
+会议常有专业术语（产品名/技术词汇）需要定制翻译：
+```python
+class TerminologyManager:
+    def __init__(self, meeting_context: MeetingContext):
+        # 会议开始前，从议程和参会方信息提取专业词汇表
+        self.term_dict = extract_terms(meeting_context)
+    
+    def pre_process(self, text: str) -> str:
+        # 把已知术语占位，防止 LLM 自由翻译
+        for term, translation in self.term_dict.items():
+            text = text.replace(term, f"[[{translation}]]")
+        return text
+```
+
+**2.3 多人会议的说话人识别**
+
+```python
+# 说话人切换时的处理
+async def handle_speaker_change(speaker_id: str, text: str):
+    speaker_profile = speakers[speaker_id]
+    # 不同说话人可能有不同的专业背景，影响翻译风格
+    context = f"说话者：{speaker_profile.role}（{speaker_profile.expertise}）"
+    return await translate_with_context(text, context)
+```
+
+**2.4 实时字幕展示**
+
+```
+发言者音频 ─────────────────────────────► 原文字幕（灰色，实时更新）
+                    │ 翻译完成（后几秒）
+                    ▼
+              译文字幕（白色，稳定显示）
+```
+
+---
+
+**难点与权衡**
+
+| 难点 | 解决方案 |
+|------|---------|
+| 分段边界导致语义中断 | 用上下文窗口保持连贯；在自然停顿处（语调/停顿检测）分段 |
+| 专有名词误译 | 预加载会议议程和参与方信息，构建临时术语表 |
+| 情感/语气保留 | 提示词要求保留原文语气（正式/幽默/强调），避免翻译腔 |
+| 多语言同时翻译 | 同一段文字并发翻译到多种目标语言，线性扩展 |
+
+**考察点**：
+1. 流式 ASR + 流式翻译的管道设计
+2. 分段翻译时的上下文连贯性保持
+3. 延迟预算分配（每个环节的时间约束）
+4. 专业术语的定制处理
+
+**示例答案**：
+
+实时翻译 Agent 的核心约束是延迟——同声传译 3 秒内必须有译文，容不得"等完整句子再翻"。
+
+设计上采用流式分段翻译：ASR 每 500ms 产生一个文字片段，立刻启动翻译（不等句子结束），用最近 3 段的译文作为上下文保证连贯性。翻译模型用专业 MT 模型（DeepL/自研 NMT）而非通用 LLM——专业 MT 延迟 < 200ms，LLM 虽然质量更高但 800ms+ 延迟对实时场景太慢。LLM 只用在需要深度理解的场景（幽默/隐喻/高度语境化表达），其余走 MT 快速通道。
+
+术语表是质量关键：会议开始前 5 分钟，系统自动从议程/PPT/参会方公司名解析术语，建立临时词典，翻译时先做术语替换再送模型，确保产品名/技术词汇准确翻译。
+
+字幕展示上，原文字幕实时更新（流式 ASR 持续修正），译文字幕在翻译完成后稳定显示，颜色区分，用户看原文实时字幕等待译文，体验流畅。
+
+---
+
+*本文件共 10 道场景设计题（Q83-Q92），涵盖企业最高频的 Agent 设计场景。*
+
+---
+
