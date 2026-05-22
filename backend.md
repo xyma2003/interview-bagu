@@ -402,3 +402,38 @@ Kafka 的高吞吐来自分区（Partition）设计：Topic 拆成多个 Partiti
 
 ---
 
+### Q11: Kafka 如何保证消息顺序消费？
+
+**题目解析**：顺序消费是 Kafka 使用中的常见需求，考察候选人对 Kafka 分区机制的深度理解。
+
+**题目讲解**：
+**Kafka 的顺序保证**：
+- **Partition 内有序**：同一 Partition 内的消息严格有序（按写入顺序）
+- **Partition 间无序**：不同 Partition 间没有顺序保证
+- **消费端**：同一 Consumer Group 内，一个 Partition 只被一个 Consumer 消费，保证单 Partition 内顺序消费
+
+**实现全局有序（不推荐）**：
+- Topic 只设一个 Partition，失去并行能力，一般不用
+
+**实现局部有序（推荐）**：
+- 需要有序的消息发送到同一 Partition，通过指定相同的 `message.key`（Kafka 对 key hash 取模选 Partition）
+- 例如：同一订单的所有消息用订单 ID 作为 key，保证落在同一 Partition
+
+**消费端注意**：
+- 消费者处理消息必须同步，不能并发处理同一 Partition 内的消息（否则无序）
+- 消费者的多线程处理需要按 Partition 分组
+
+**考察点**：
+1. Partition 内有序的保证机制
+2. key 路由到 Partition 的策略
+3. 消费端多线程保序的方案
+
+**示例答案**：
+Kafka 的顺序保证是 Partition 级别的，不是 Topic 级别的。要保证某类消息有序（如同一用户的操作日志），需要保证这类消息都发到同一 Partition：生产时指定相同的 `message.key`（如 user_id），Kafka 对 key 哈希取模决定 Partition，相同 key 必然路由到同一 Partition。消费端，Consumer Group 内每个 Partition 只被一个消费者线程消费，该线程串行处理消息即可保序。如果想提高消费吞吐量，可以在消费者内部按 key 拆分队列，同一 key 的消息排队处理，不同 key 并行处理。需要注意：增加 Partition 数量时，已有数据的路由关系不变，但新消息的路由会改变，短暂期间同一 key 的消息可能落在不同 Partition，应在低流量时操作并做好业务补偿。
+
+---
+
+## 五、系统设计
+
+---
+
