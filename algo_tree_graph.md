@@ -583,3 +583,27 @@ def longestCommonSubsequence(text1: str, text2: str) -> int:
 
 ---
 
+### Q46: 零钱兑换 · LeetCode 322
+
+**🏢 高频公司**：字节、腾讯、阿里
+**难度**：中等 ⭐⭐
+
+**题目**：凑成 amount 的最少硬币数（完全背包）。
+
+**题目讲解**：
+```python
+def coinChange(coins: list[int], amount: int) -> int:
+    dp = [float('inf')] * (amount + 1)
+    dp[0] = 0
+    for coin in coins:
+        for a in range(coin, amount + 1):
+            dp[a] = min(dp[a], dp[a - coin] + 1)
+    return dp[amount] if dp[amount] != float('inf') else -1
+```
+
+**复杂度**：O(amount × N)
+
+**考察点**：完全背包（正序遍历 amount）vs 0/1 背包（逆序）
+
+---
+
