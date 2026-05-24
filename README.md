@@ -9,6 +9,8 @@
 | `ai-agent` | AI Agent 开发八股（LLM/RAG/多智能体/Framework 等） |
 | `frontend` | 前端八股（JS/CSS/React/Vue/性能/网络等） |
 | `backend` | 后端八股（数据库/Redis/消息队列/系统设计/Python/Java等） |
+| `algorithm` | 算法题解析（考点、示例答案等） |
+
 
 ## 题目格式
 
