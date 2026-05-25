@@ -408,3 +408,64 @@ K-Means 的核心循环：把每个点分配给最近的中心，然后把中心
 
 ---
 
+### Q109: 决策树和随机森林的原理是什么？为什么 Bagging 能降低方差？
+
+**🏢 高频公司**：阿里（数据挖掘）、字节
+**难度**：中等 ⭐⭐
+
+**决策树**：
+```python
+# 每个节点选择"信息增益最大"的特征进行分裂
+# 信息增益 = 分裂前熵 - 分裂后加权熵
+
+def entropy(labels):
+    n = len(labels)
+    counts = np.bincount(labels)
+    probs = counts[counts > 0] / n
+    return -np.sum(probs * np.log2(probs))
+
+def information_gain(X_col, y, threshold):
+    left_mask = X_col <= threshold
+    H_before = entropy(y)
+    H_after = (left_mask.sum() * entropy(y[left_mask]) +
+               (~left_mask).sum() * entropy(y[~left_mask])) / len(y)
+    return H_before - H_after
+```
+
+**决策树的问题**：方差高（对训练数据非常敏感，换一批数据树结构可能完全不同）
+
+**随机森林（Random Forest）= Bagging + 特征随机**：
+```python
+# Bagging：每棵树用有放回抽样（Bootstrap）的不同数据集
+# 特征随机：每次分裂只考虑随机的 sqrt(n_features) 个特征
+
+from sklearn.ensemble import RandomForestClassifier
+rf = RandomForestClassifier(
+    n_estimators=100,   # 100 棵树
+    max_features='sqrt', # 每次分裂考虑 sqrt(特征数) 个特征
+    bootstrap=True,      # 有放回抽样
+)
+```
+
+**为什么 Bagging 降低方差**：
+单棵决策树方差高（不同训练集结果差异大）。Bagging 训练 N 棵树，对结果取平均（回归）或投票（分类）：
+```
+Var(均值) = Var(单棵树) / N × (1 + (N-1)×ρ)
+# ρ 是树间的相关性，特征随机降低树间相关性，进一步降低整体方差
+```
+
+**Boosting（Gradient Boosting/XGBoost）vs Bagging**：
+- Bagging：并行训练，降低方差，解决过拟合
+- Boosting：串行训练，每棵树修正上一棵的错误，降低偏差，解决欠拟合
+- XGBoost/LightGBM 是 Boosting 的工程优化版，在结构化数据比 DNN 还强
+
+**考察点**：
+1. 信息增益（决策树分裂标准）
+2. Bagging 降低方差的数学直觉
+3. Boosting 和 Bagging 解决不同问题（偏差 vs 方差）
+
+**示例答案**：
+决策树的优点是直觉可解释（可以画出树状图），缺点是方差极高——稍微改变训练数据，树结构可能完全不同，泛化能力弱。随机森林用 Bagging 解决这个问题：100 棵树各自用 Bootstrap 采样的不同数据训练，预测时投票平均，单棵树的随机误差在平均后相互抵消，整体方差大幅降低。额外加特征随机（每次分裂只看部分特征），减少树间相关性，让平均效果更好。随机森林 vs XGBoost：前者 Bagging 并行训练，适合快速建模；后者 Boosting 串行修正错误，精度通常更高但训练更慢、更容易过拟合。在实际工作中，推荐系统的粗排特征工程里我们用 LightGBM 做特征重要性分析，找出哪些用户特征对点击率贡献最大，比 LLM 更高效。
+
+---
+
