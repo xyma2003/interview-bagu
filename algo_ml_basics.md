@@ -248,3 +248,52 @@ Precision 是"找到的里有多少是对的"，Recall 是"该找到的找到了
 
 ---
 
+### Q106: 什么是 Embedding？为什么 Word2Vec 之后还需要 Contextual Embedding？
+
+**🏢 高频公司**：字节、MiniMax、小红书
+**难度**：中等 ⭐⭐
+
+**Embedding 的本质**：
+把离散符号（词/用户/商品）映射到连续向量空间，语义相近的向量距离近。
+
+**Word2Vec（静态 Embedding）**：
+```python
+# 每个词有固定的向量，不考虑上下文
+# "苹果" 在 "苹果公司发布" 和 "苹果好吃" 中向量相同
+
+from gensim.models import Word2Vec
+model = Word2Vec(sentences, vector_size=100, window=5, min_count=1)
+vec = model.wv['苹果']   # 固定的 100 维向量
+```
+
+训练方法：
+- **CBOW**：用上下文词预测中心词
+- **Skip-gram**：用中心词预测上下文词（对低频词效果更好）
+
+**Contextual Embedding（上下文感知）**：
+```
+"苹果" 在不同句子里的 Embedding 不同（由 Transformer 的 Attention 决定）：
+"苹果公司" → 向量偏向科技/品牌方向
+"苹果水果" → 向量偏向食物/口味方向
+```
+
+**演进历史**：
+```
+One-hot (稀疏，无语义) → Word2Vec (密集，静态) → ELMo (BiLSTM 上下文) → BERT/GPT (Transformer 上下文)
+```
+
+**在 RAG 系统里的应用**：
+- 文档用 Embedding 模型（如 bge-large）转为向量存向量库
+- 查询时也转向量，找相似文档
+- Embedding 质量直接决定检索召回率
+
+**考察点**：
+1. 静态 vs 动态 Embedding 的核心区别（一词一义 vs 上下文相关）
+2. Embedding 相似度计算（余弦相似度 vs 点积）
+3. Sentence Embedding vs Token Embedding（前者是整句的表示，用于检索）
+
+**示例答案**：
+Embedding 是把离散符号转为连续向量的技术，让机器能做语义计算。Word2Vec 是里程碑，但它给每个词一个固定向量，无法区分"苹果公司"和"苹果水果"里的"苹果"语义完全不同。BERT/GPT 的出现解决了这个问题，Transformer 的 Attention 机制让每个 token 的向量取决于它周围的上下文，同一个词在不同语境下有不同的表示，这就是 Contextual Embedding。在我做的 RAG 系统里，用 bge-large 把文档每个 chunk 转为 Contextual Sentence Embedding 存入向量库，查询时把用户问题也转为向量，找余弦相似度最高的 chunk——之所以用 bge 不用 Word2Vec 平均，是因为 Contextual Embedding 对语义理解更准确，检索召回率差距很明显。
+
+---
+
