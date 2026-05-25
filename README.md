@@ -10,35 +10,35 @@
 
 ```
 interview-bagu/
-├── ai-agent/          # AI Agent 开发 · 93 题
-│   ├── ai_agent.md              基础篇（LLM/RAG/Agent框架/多智能体）
-│   ├── ai_agent_advanced.md     进阶篇（LoRA/量化/GraphRAG/生产部署）
-│   ├── ai_agent_bigco.md        大厂专项（字节/MiniMax/小红书/阿里）
-│   ├── ai_agent_part3.md        结构化输出/并行工具/流式/记忆管理
-│   ├── ai_agent_part4.md        Prompt压缩/模型路由/幻觉检测/Guardrails
-│   └── ai_agent_scenarios.md    ★ 场景设计题（代码审查/知识库/推荐等 10道）
+├── ai-agent/          # AI Agent 开发 + AI/ML基础 · 107 题
+│   ├── ai_agent.md              基础篇（LLM/RAG/Agent框架/多智能体，30题）
+│   ├── ai_agent_advanced.md     进阶篇（LoRA/量化/GraphRAG/生产部署，17题）
+│   ├── ai_agent_bigco.md        大厂专项（字节/MiniMax/小红书/阿里，15题）
+│   ├── ai_agent_part3.md        结构化输出/并行工具/流式/记忆管理（10题）
+│   ├── ai_agent_part4.md        Prompt压缩/模型路由/幻觉检测/Guardrails（10题）
+│   ├── ai_agent_scenarios.md  ★ 场景设计题（代码审查/知识库/推荐等，10题）
+│   └── ai_ml_basics.md        ★ AI/ML算法基础（梯度下降/损失函数/评估指标等，14题）
 │
 ├── frontend/          # 前端开发 · 68 题
-│   ├── frontend.md              基础篇（HTML/CSS/JS/React/Vue/性能/网络）
-│   ├── frontend_advanced.md     进阶篇（Generator/Proxy/安全/React18/微前端）
-│   ├── frontend_bigco.md        大厂手写题（LRU/Promise/深拷贝/瀑布流）
-│   ├── frontend_part3.md        CSS动画/状态管理/Workers/大文件上传
-│   └── frontend_part4.md        Container Queries/i18n/TypeScript高级
+│   ├── frontend.md              基础篇（HTML/CSS/JS/React/Vue/性能/网络，24题）
+│   ├── frontend_advanced.md     进阶篇（Generator/Proxy/安全/React18/微前端，12题）
+│   ├── frontend_bigco.md        大厂手写题（LRU/Promise/深拷贝/瀑布流，12题）
+│   ├── frontend_part3.md        CSS动画/状态管理/Workers/大文件上传（12题）
+│   └── frontend_part4.md        Container Queries/i18n/TypeScript高级（8题）
 │
 ├── backend/           # 后端开发 · 57 题
-│   ├── backend.md               基础篇（OS/网络/MySQL/Redis/Kafka/系统设计）
-│   ├── backend_advanced.md      进阶篇（间隙锁/分库分表/JVM/ES/gRPC）
-│   ├── backend_bigco.md         大厂专项（短链/秒杀/IM系统/Spring/CAS）
-│   ├── backend_part3.md         JWT/SQL注入/幂等性/ServiceMesh/K8s
-│   └── backend_part4.md         Go/链路追踪/连接池/Pydantic/CQRS
+│   ├── backend.md               基础篇（OS/网络/MySQL/Redis/Kafka/系统设计，18题）
+│   ├── backend_advanced.md      进阶篇（间隙锁/分库分表/JVM/ES/gRPC，13题）
+│   ├── backend_bigco.md         大厂专项（短链/秒杀/IM系统/Spring/CAS，10题）
+│   ├── backend_part3.md         JWT/SQL注入/幂等性/ServiceMesh/K8s（9题）
+│   └── backend_part4.md         Go/链路追踪/连接池/Pydantic/CQRS（7题）
 │
-├── algorithm/         # 算法 · 114 题
+├── algorithm/         # 算法（LeetCode 高频题）· 100 题
 │   ├── algo_array.md            数组/双指针/滑动窗口/二分/单调栈（25题）
 │   ├── algo_tree_graph.md       树/图/BFS/DFS/回溯/DP经典（25题）
 │   ├── algo_linked_design.md    链表/栈/设计题/字符串/数学（20题）
-│   ├── algo_more.md             并查集/矩阵/KMP/洗牌/数字（10题）
-│   ├── algo_bigco.md            大厂高频专项（字节/腾讯/阿里，20题）
-│   └── algo_ml_basics.md        ★ AI/ML算法基础（梯度下降/评估指标等，14题）
+│   ├── algo_more.md             并查集/矩阵/KMP/洗牌/数学（10题）
+│   └── algo_bigco.md            大厂高频专项（字节/腾讯/阿里，20题）
 │
 ├── LEARNING_GUIDE.md  # 备战学习路线（12周计划 + 算法刷题顺序 + 大厂侧重）
 └── README.md
@@ -52,11 +52,11 @@ interview-bagu/
 git clone https://github.com/xyma2003/interview-bagu.git
 cd interview-bagu
 
-# AI Agent 题库
-cat ai-agent/ai_agent.md
+# AI Agent 题库（含 AI/ML 基础）
+ls ai-agent/
 
-# 算法题库（含 AI/ML 基础）
-cat algorithm/algo_ml_basics.md
+# 算法题库（LeetCode 高频题）
+ls algorithm/
 
 # 学习路线
 cat LEARNING_GUIDE.md
@@ -78,13 +78,19 @@ cat LEARNING_GUIDE.md
 | **面试官更想听** | 拉分角度，区别"背诵答案"和"真正理解" |
 | **示例答案** | 可直接参考的完整口头表达，200-400 字 |
 
-> 大厂专项题目标注 `🏢 高频公司`，场景设计题含完整架构设计思路
+> 大厂专项题目标注 `🏢 高频公司`，`ai_agent_scenarios.md` 含完整架构设计思路
 
-### 算法题（algorithm）
+### 算法题（algorithm/）
 
-每道题包含：题目 / 解题思路 / Python 代码实现 / 时空复杂度 / 考察点 / 大厂标注
+每道题包含：题目描述 / 解题思路 / Python 代码实现 / 时空复杂度 / 考察点 / 大厂标注
 
-> `algo_ml_basics.md` 为 AI 开发者定制，覆盖梯度下降、损失函数、评估指标、Embedding 等
+### AI/ML 算法基础（ai-agent/ai_ml_basics.md）
+
+定位：**AI 开发者需要知道的 ML 原理**，不是 LeetCode，是理解 LLM/RAG 背后机制的理论基础
+
+覆盖：梯度下降/Adam/AdamW · 过拟合与正则化 · 交叉熵损失 · BatchNorm vs LayerNorm ·
+Precision/Recall/AUC · Embedding/Word2Vec · 反向传播/梯度消失 · K-Means ·
+决策树/随机森林 · 数据不平衡 · 迁移学习 · Reward Hacking · 温度缩放/模型校准
 
 ---
 
