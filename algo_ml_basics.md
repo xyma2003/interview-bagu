@@ -591,3 +591,65 @@ y_pred = (y_scores > threshold).astype(int)
 
 ---
 
+### Q112: 什么是迁移学习（Transfer Learning）？Fine-tuning 和 Feature Extraction 有什么区别？
+
+**🏢 高频公司**：MiniMax、字节 AI、小红书
+**难度**：中等 ⭐⭐
+
+**迁移学习的动机**：
+从头训练大模型需要海量数据和算力。预训练模型已经学到了通用特征（BERT 的语言理解，ResNet 的图像特征），可以在新任务上"站在巨人肩膀上"微调。
+
+**两种使用方式**：
+
+**Feature Extraction（特征提取，冻结全部预训练权重）**：
+```python
+# 冻结 BERT，只训练新加的分类头
+from transformers import BertModel
+import torch.nn as nn
+
+class SentimentClassifier(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.bert = BertModel.from_pretrained('bert-base-chinese')
+        
+        # 冻结 BERT 所有参数
+        for param in self.bert.parameters():
+            param.requires_grad = False
+        
+        # 只训练这个分类头
+        self.classifier = nn.Linear(768, 2)
+    
+    def forward(self, input_ids, attention_mask):
+        outputs = self.bert(input_ids, attention_mask=attention_mask)
+        pooled = outputs.pooler_output   # [CLS] token 的表示
+        return self.classifier(pooled)
+```
+- 快，参数少，适合数据量很小的场景
+- 预训练表示可能不完全适合新任务
+
+**Fine-tuning（微调，更新全部或部分权重）**：
+```python
+# 解冻部分层，让整个模型适应新任务
+# 通常只解冻顶层（靠近输出），底层保留通用特征
+for i, layer in enumerate(self.bert.encoder.layer):
+    if i >= 10:   # 只微调最后 2 层（共 12 层）
+        for param in layer.parameters():
+            param.requires_grad = True
+```
+
+**为什么 LLM 微调通常用 LoRA 而非全量**：
+全量微调 7B 参数需要 28×4=112GB 显存（参数+梯度+优化器），LoRA 只更新 0.1% 的参数，同等效果下节省 99% 显存。
+
+**何时用哪种**：
+| 场景 | 推荐方式 |
+|------|---------|
+| 数据极少（< 1000 条）| Feature Extraction |
+| 数据充足（> 10000 条）+ 任务与预训练差异小 | Fine-tuning 全量/LoRA |
+| 任务与预训练差异大（代码/医学专业领域）| Fine-tuning 全量 |
+| 生产成本敏感 | LoRA/QLoRA |
+
+**示例答案**：
+迁移学习的核心逻辑是：大模型预训练学到的特征是通用的，比如 BERT 学到了词义、句子结构，ResNet 学到了边缘、纹理，这些通用特征可以迁移到新任务。Feature Extraction 把预训练模型当固定特征提取器，只训练最上面加的小分类头，速度快但上限低；Fine-tuning 解冻预训练模型的权重一起更新，让模型适应新任务，效果更好但需要更多数据和算力。对于 LLM 场景，全量 Fine-tuning 需要的显存是模型大小的 10 倍以上（参数+梯度+优化器状态），实际工程里 LoRA 是主流选择——冻结大部分权重，只训练少量插入的低秩矩阵，效果接近全量微调但资源消耗降低 10-100 倍，这也是我们做领域适配时的默认方案。
+
+---
+
