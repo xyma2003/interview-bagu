@@ -98,3 +98,57 @@ model = nn.Sequential(
 
 ---
 
+### Q103: 交叉熵损失函数是什么？为什么分类任务用它而不用 MSE？
+
+**🏢 高频公司**：字节、阿里、MiniMax
+**难度**：中等 ⭐⭐
+
+**交叉熵（Cross-Entropy Loss）**：
+衡量预测概率分布和真实分布之间的差异：
+```
+L = -Σ y_i * log(p_i)
+```
+二分类简化为：
+```
+L = -[y*log(p) + (1-y)*log(1-p)]
+```
+
+**LLM 的语言模型 Loss（下一个 token 预测）**：
+```python
+# 本质是多分类交叉熵（词表大小约 100K 类）
+loss = F.cross_entropy(logits, target_token_ids)
+# 等价于 -log(P(正确token)) 的均值
+```
+
+**为什么分类不用 MSE**：
+```python
+import numpy as np
+
+# 假设真实标签 y=1，预测 p=0.01（差很多）
+p = 0.01
+
+mse_loss = (1 - p) ** 2       # = 0.98，梯度 = 2*(p-1) = -1.98
+ce_loss  = -np.log(p)         # = 4.6，梯度 = -1/p = -100
+
+# CE 对错误更大的预测给出更强的梯度信号！
+```
+
+MSE 在预测很差时梯度很小（梯度消失），Cross-Entropy 通过 log 函数放大错误预测的惩罚。
+
+**困惑度（Perplexity）**：
+LLM 评估的常用指标，是交叉熵 Loss 的指数：
+```
+PPL = exp(average cross-entropy loss)
+# PPL 越低 = 模型越"不困惑" = 语言建模能力越强
+```
+
+**考察点**：
+1. 交叉熵和最大似然估计的关系（等价）
+2. Softmax + Cross-Entropy 组合的梯度形式（很简洁：`p - y`）
+3. PPL 作为 LLM 评估指标的意义
+
+**示例答案**：
+交叉熵衡量"预测概率分布和真实分布有多不一样"，对分类任务非常自然——正确类别的预测概率越高，Loss 越低。不用 MSE 是因为梯度信号质量：当模型预测很错（p=0.01，y=1），MSE 的梯度约为 -2，而 Cross-Entropy 的梯度约为 -100，后者给出更强的修正信号，训练收敛更快。LLM 预训练的损失就是下一个 token 的交叉熵，词表有 10 万个类，每次预测就是在 10 万类中的分类。困惑度（PPL）= exp(Loss)，是 NLP 模型质量的常用指标，GPT-3 在 WikiText 上 PPL 约 20，意味着模型平均每步"相当于从 20 个候选词中选"，越低越好。
+
+---
+
