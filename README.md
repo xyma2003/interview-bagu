@@ -1,6 +1,6 @@
 # 面试八股题库
 
-> 覆盖 **AI Agent / 前端 / 后端 / 算法** 四个方向，共 **318 道**高质量面试题
+> 覆盖 **AI Agent / 前端 / 后端 / 算法** 四个方向，共 **332 道**高质量面试题
 >
 > 每道题独立一个 commit，格式统一，大厂面经真实整理
 
@@ -13,7 +13,7 @@
 | [`ai-agent`](../../tree/ai-agent) | **93 题** | LLM基础 / Prompt Engineering / RAG / Agent框架(LangGraph/LangChain) / 多智能体 / 记忆系统 / 微调(LoRA/DPO) / 推理加速 / 生产部署 / 大厂专项(字节/MiniMax/小红书/阿里) / **场景设计题 10 道** |
 | [`frontend`](../../tree/frontend) | **68 题** | HTML/CSS / JavaScript核心 / ES6+ / 浏览器原理 / HTTP/网络 / React(Fiber/Hooks) / Vue(响应式/Composition API) / 性能优化(Web Vitals) / 工程化(Webpack/Vite) / TypeScript / 微前端 / PWA / 大厂手写题 |
 | [`backend`](../../tree/backend) | **57 题** | 操作系统 / 计算机网络 / MySQL(索引/事务/锁) / Redis(数据结构/持久化/集群) / Kafka / 系统设计(限流/熔断/分布式ID) / Python(asyncio/描述符) / Java(JVM/线程池/HashMap) / Elasticsearch / gRPC / K8s / CQRS |
-| [`algorithm`](../../tree/algorithm) | **100 题** | 数组/双指针/滑动窗口 / 二分查找 / 栈/队列/单调栈 / 链表 / 树/图 / BFS/DFS / 回溯 / 动态规划 / 贪心 / 并查集 / 设计题(LRU/LFU) / 字符串/数学 / **大厂高频专项** |
+| [`algorithm`](../../tree/algorithm) | **114 题** | 数组/双指针/滑动窗口 / 二分查找 / 栈/队列/单调栈 / 链表 / 树/图 / BFS/DFS / 回溯 / 动态规划 / 贪心 / 并查集 / 设计题(LRU/LFU) / 字符串/数学 / **大厂高频专项** / **AI/ML算法基础** |
 
 ---
 
