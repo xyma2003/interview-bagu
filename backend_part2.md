@@ -1,0 +1,581 @@
+# 后端开发面试八股 · 进阶篇
+
+> 接续基础篇，涵盖：MySQL进阶 / Redis进阶 / Elasticsearch / gRPC / Docker/K8s / Python高级 / Java JVM / 分布式进阶 / 算法
+
+---
+
+## 八、MySQL 进阶
+
+### Q19: MySQL 的锁机制有哪些？间隙锁（Gap Lock）是什么？
+
+**题目解析**：MySQL 锁机制是事务和并发控制的核心，深度考察候选人的数据库原理掌握。
+
+**题目讲解**：
+**锁的分类**：
+
+1. **按粒度**：
+   - 表锁（Table Lock）：开销小，并发低，MyISAM 默认
+   - 行锁（Row Lock）：InnoDB 默认，并发高，开销大
+   - 意向锁（Intention Lock）：表级锁，声明意图（IS/IX），兼容性检查用
+
+2. **按模式**：
+   - 共享锁（S Lock）：`SELECT ... LOCK IN SHARE MODE`，多个事务可同时持有，写会阻塞
+   - 排他锁（X Lock）：`SELECT ... FOR UPDATE` 或 DML，独占，其他读写均阻塞
+
+3. **InnoDB 行锁的三种形式**：
+   - **Record Lock（记录锁）**：锁定单行记录
+   - **Gap Lock（间隙锁）**：锁定索引间的"间隙"（不包含记录本身），防止其他事务在间隙中插入
+   - **Next-Key Lock**：Record Lock + Gap Lock，锁定记录及其前面的间隙，InnoDB 在 RR 级别的默认锁
+
+**Gap Lock 的作用**：
+防止幻读。在 RR 级别下，`SELECT WHERE id BETWEEN 10 AND 20 FOR UPDATE` 会对 10-20 的间隙加间隙锁，其他事务无法在这个范围内插入新记录，避免了幻读。
+
+**锁的升级（锁膨胀）**：
+大量行锁时，MySQL 可能把行锁升级为表锁（节省内存），导致并发急剧下降。
+
+**死锁检测**：
+InnoDB 有死锁检测机制，发现等待环路后回滚代价最小的事务，应用层需要处理重试。
+
+**考察点**：
+1. Next-Key Lock 如何防止幻读（范围 + 间隙都锁住）
+2. RC 级别下不需要 Gap Lock（RC 已经允许幻读）
+3. INSERT INTENTION LOCK（插入意向锁）和 Gap Lock 的冲突
+
+**示例答案**：
+InnoDB 行锁有三种：Record Lock 锁单行，Gap Lock 锁间隙（范围内没有记录的空间），Next-Key Lock = Record + Gap，是 RR 级别的默认锁形式。Gap Lock 是防幻读的关键——`SELECT * FROM orders WHERE amount BETWEEN 100 AND 200 FOR UPDATE` 不只锁定这个范围内已存在的行，还锁定了这个范围的"间隙"，其他事务想在 100-200 里 INSERT 会被阻塞，直到当前事务提交，这样两次范围查询的结果集不会变，实现了 RR 的幻读防护。代价是间隙锁可能导致并发下降，因为插入操作可能被莫名阻塞（实际没有记录冲突）。RC 级别不需要 Gap Lock（它本来就允许幻读），并发更好，很多公司生产环境把隔离级别降到 RC。死锁常见于两个事务以相反顺序加锁，InnoDB 自动检测并回滚代价小的那个，代码里要捕获 `ER_LOCK_DEADLOCK` 错误并重试。
+
+---
+
+### Q20: 如何设计 MySQL 分库分表？有哪些拆分策略和中间件？
+
+**题目解析**：分库分表是大数据量下的扩展方案，是大厂面试必考的系统设计题。
+
+**题目讲解**：
+**什么时候分库分表**：
+- 单表数据量 > 1000万行，查询开始变慢
+- 单库 QPS 超过瓶颈（通常 MySQL 单实例 5000-10000 QPS）
+- 磁盘容量不足
+
+**拆分维度**：
+1. **垂直分库**：按业务拆分（用户库/订单库/商品库），服务化拆分
+2. **垂直分表**：把大宽表按字段频率拆分（常用字段一张表，大字段/不常用字段另一张表）
+3. **水平分库**：同一业务数据按某个 key 分散到多个库
+4. **水平分表**：同一库内按 key 分散到多张表
+
+**水平分片策略**：
+- **Range 分片**：`user_id < 1000000` → shard0，按数字/时间范围。热点集中（新数据全到最新分片）
+- **Hash 分片**：`shard = hash(user_id) % shardCount`。数据均匀，但扩容需要数据迁移
+- **Range + Hash 组合**：先 Range 分出大区间（年份），再 Hash 均匀分布
+
+**中间件**：
+- **ShardingSphere（Apache）**：Java 生态最成熟，支持分片、读写分离、分布式事务
+- **MyCAT**：早期国产方案，代理层
+- **Vitess（YouTube）**：云原生 MySQL 扩展，支持 Kubernetes
+
+**分表后的痛点**：
+- 跨片 JOIN（无法直接，需要应用层聚合）
+- 跨片分页（每个分片 LIMIT 后聚合，效率低）
+- 分布式全局 ID（不能用自增，用 Snowflake）
+- 扩容时数据迁移（双写 + 迁移 + 切流）
+
+**考察点**：
+1. Hash 分片的扩容问题（一致性哈希缓解）
+2. 分页的解决方案（游标分页，避免大 offset）
+3. 分布式事务的处理（Saga / XA）
+
+**示例答案**：
+分库分表要先考虑是否真的必要——读写分离 + 索引优化 + 缓存通常能支撑更大的量。真正需要分片时，第一步是垂直拆分（按业务域拆库），减少单库压力，同时实现服务隔离。水平分片的 sharding key 选择是关键：选择基数大、分布均匀、查询条件总带的字段（如 user_id、order_id）。Hash 分片数据均匀但扩容麻烦（增加分片需要重新哈希，要做数据迁移，用一致性哈希可以缓解），Range 分片扩容简单但有热点问题（新数据都在最新分片）。跨片 JOIN 和分页是最大的痛点：JOIN 在应用层做（分两次查询再合并）；分页用游标（记录最后一条的 ID/时间，下次用 WHERE id > last_id LIMIT N），避免大 offset。ShardingSphere 是 Java 生态里最成熟的方案，能透明地处理分片路由，应用层几乎不需要感知分片逻辑。
+
+---
+
+### Q21: MySQL 的读写分离是如何实现的？主从延迟怎么处理？
+
+**题目解析**：读写分离是 MySQL 最常见的扩展方案，考察候选人的数据库高可用实践经验。
+
+**题目讲解**：
+**主从复制原理**：
+1. 主库写操作产生 binlog（Binary Log）
+2. 从库的 I/O 线程拉取 binlog，写入本地 relay log
+3. 从库的 SQL 线程回放 relay log，执行写操作
+4. 延迟 = 主库写入 → 从库执行完成的时间差
+
+**读写分离实现方式**：
+1. **代码层**：分别配置主库和从库数据源，写操作用主库，读操作用从库
+2. **中间件代理**：MyCat / ProxySQL / MaxScale，客户端只连代理，代理自动路由
+3. **Spring AbstractRoutingDataSource**：动态切换数据源，结合 `@ReadOnly` 注解
+
+**主从延迟处理**：
+- **延迟来源**：网络延迟、从库回放速度跟不上（单线程回放 → MySQL 5.6+ 并行复制）
+- **延迟监控**：`SHOW SLAVE STATUS` 的 `Seconds_Behind_Master` 字段
+- **应用策略**：
+  1. **强一致读走主库**：写后读（Write-After-Read）场景强制路由到主库，或等待从库同步后再读
+  2. **延迟容忍**：订单状态实时显示走主库，报表统计可以走从库（允许秒级延迟）
+  3. **半同步复制**：主库等至少一个从库确认收到 binlog 才提交，减少数据丢失但增加写延迟
+  4. **GTID（全局事务 ID）**：基于 GTID 的从库等待，确保特定事务已经在从库执行完
+
+**考察点**：
+1. 主从延迟的根本原因（异步复制）
+2. 写后读一致性的解决方案
+3. MySQL 8.0 的多源复制和增强并行复制
+
+**示例答案**：
+主从复制是异步的，主库 commit 就返回，从库拉 binlog 并回放，延迟可能从几十毫秒到几秒。读写分离下最常见的问题是"写完立刻读不到"——比如用户修改了密码，下一个请求读从库发现还是旧密码。解决方案分场景：对实时性要求高的读（刚写完立刻读）强制走主库，可以通过 ThreadLocal 标记"此次事务后的读也走主库"或者用 @Primary 注解；对实时性要求不高的读（列表页、报表）走从库。中间件方案（ProxySQL）可以根据 SQL 类型自动路由，还能做连接池复用，对应用透明。延迟监控要接入告警，`Seconds_Behind_Master > 10` 时告警，部分业务降级（全部走主库），防止用户看到脏旧数据。MySQL 5.7+ 的增强并行复制（基于 WRITESET）能让从库并行回放不冲突的事务，把延迟从秒级降到百毫秒级。
+
+---
+
+## 九、Redis 进阶
+
+### Q22: Redis 的持久化方式有哪些？RDB 和 AOF 如何选择？
+
+**题目解析**：Redis 持久化是生产环境数据安全的基础，考察候选人对 Redis 运维的理解。
+
+**题目讲解**：
+**RDB（Redis Database Snapshot）**：
+- 定时/手动 BGSAVE，将内存数据快照序列化到 `.rdb` 文件
+- `fork()` 子进程做 snapshot，主进程继续服务（COW - Copy-on-Write）
+- **优点**：文件紧凑，恢复速度快；fork 时主进程基本不影响（COW）
+- **缺点**：两次 snapshot 之间的数据丢失（通常 5-15 分钟一次）
+- 适合：数据丢失可接受几分钟的场景（缓存数据、非核心业务）
+
+**AOF（Append Only File）**：
+- 每个写命令追加到 `.aof` 文件（可配置 always/everysec/no 三种 fsync 策略）
+- `everysec`（默认）：每秒 fsync，最多丢 1 秒数据，性能影响小
+- **AOF 重写**：定期压缩 AOF 文件（去除过期/冗余命令，等效为当前状态的最小命令集）
+- **优点**：数据丢失少（最多 1 秒）；文件可读，可手动修复
+- **缺点**：文件比 RDB 大；恢复速度慢（需要重放所有命令）
+
+**Redis 4.0+ 混合持久化**：
+`aof-use-rdb-preamble yes`：AOF 重写时，前半段用 RDB 格式（快），后半段追加增量命令（近实时），兼顾两者优点。
+
+**生产选择**：
+- 缓存场景（允许丢数据）：只开 RDB 或不开持久化
+- 重要数据（不允许丢）：AOF（everysec）或混合持久化
+- 高可用：Redis Sentinel 或 Cluster，持久化是单机降级兜底
+
+**考察点**：
+1. RDB 的 COW 机制（fork 后父子进程共享内存，子进程修改时才复制）
+2. AOF 三种 fsync 策略的性能和可靠性权衡
+3. Redis Cluster 与持久化的关系（Cluster 本身是高可用，持久化是数据安全）
+
+**示例答案**：
+RDB 定时 snapshot，紧凑高效，恢复快，代价是两次 snapshot 间的数据可能丢失（配置 `save 900 1` 等触发条件）。AOF 记录每条写命令，`everysec` 模式下最多丢 1 秒数据，比 RDB 安全，但文件大、恢复慢。Redis 4.0 的混合持久化是最佳选择：AOF 重写时把 RDB 快照作为前缀（恢复时直接加载快照，非常快），后面追加增量 AOF（近实时），兼顾恢复速度和数据安全，生产推荐这个模式。持久化要注意 fork 的影响：BGSAVE/BGREWRITEAOF 时 fork 子进程，如果内存大（数十 GB），fork 本身可能需要数百毫秒（因为要复制页表），期间主进程可能被阻塞；COW 保证子进程看到 fork 时的内存快照，父进程继续接受写请求（写到 COW 复制的新页面），理论上对主进程影响极小，但实际大内存时要留意。另外持久化文件要定期备份到对象存储，本地磁盘故障时能从 S3/OSS 恢复。
+
+---
+
+### Q23: Redis Cluster 的架构是什么？Slot 分片是如何工作的？
+
+**题目解析**：Redis Cluster 是生产环境高可用和水平扩展的标准方案，考察候选人对 Redis 架构的理解。
+
+**题目讲解**：
+**Redis Cluster 架构**：
+- 16384 个 hash slot，均匀分配给各节点
+- `CLUSTER KEYSLOT key` = `CRC16(key) % 16384`，确定 key 所属 slot
+- 每个主节点管理一段连续的 slot（如 0-5460，5461-10922，10923-16383）
+- 每个主节点有 N 个从节点（副本），主节点宕机从节点自动选主
+
+**客户端路由**：
+- 客户端可以连接任意节点
+- 如果 key 不在当前节点，返回 `MOVED slot 目标节点ip:port`，客户端重定向
+- 智能客户端（如 Jedis Cluster）缓存 slot-节点映射表，直接路由，减少重定向
+
+**Hash Tags**：
+- `{user:1}:profile` 和 `{user:1}:settings` 会映射到同一 slot（只用 `{...}` 里的内容计算 slot）
+- 用于确保相关 key 在同一节点（支持 MSET/pipeline/Lua 跨 key 操作）
+
+**集群扩缩容**：
+- 新增节点：分配 slot 给新节点，迁移对应 slot 的数据（CLUSTER MIGRATE）
+- 节点下线：把 slot 重新分配给其他节点
+
+**Cluster 的局限**：
+- 不支持跨 slot 的 Multi-key 操作（MSET/MGET 等，除非用 Hash Tag 在同一 slot）
+- 不支持多数据库（只有 db0）
+- 事务（MULTI/EXEC）只能操作同一 slot 的 key
+
+**考察点**：
+1. slot 和节点的映射机制（16384 个 slot）
+2. MOVED vs ASK 重定向的区别（MOVED 持久迁移，ASK 临时迁移中）
+3. Hash Tag 的使用场景和风险（hash tag 设计不当导致 slot 倾斜）
+
+**示例答案**：
+Redis Cluster 用 16384 个虚拟 slot 做数据分片，每个 key 通过 CRC16 哈希取模映射到特定 slot，每个主节点负责一段 slot 范围。客户端操作时，如果路由到的节点不负责该 slot，会收到 MOVED 指令（包含正确节点地址），客户端重定向；智能客户端会缓存 slot 映射表，大部分操作直接路由，只有 slot 迁移期间才重定向。Hash Tag 是个重要机制：key 名里的 `{...}` 内容用于计算 slot，让相关 key 落到同一 slot，从而支持原子的跨 key 操作（MSET/pipeline）。但 Hash Tag 要谨慎用：如果所有 key 都用同一个 Hash Tag，会造成严重 slot 倾斜（全部在一个节点，失去分片意义）。Cluster 的主要局限是不支持跨 slot 事务和 Multi-key 操作，设计数据结构时要考虑是否需要把相关 key 放在同一 slot。推荐用 Redis Cluster + 客户端 SDK（Lettuce/Jedis 的 Cluster 模式），能自动处理重定向和 slot 感知。
+
+---
+
+## 十、Python 进阶
+
+### Q24: Python 的 asyncio 是如何工作的？async/await 和多线程有什么区别？
+
+**题目解析**：asyncio 是 Python 高性能 I/O 的核心，考察候选人对 Python 异步编程的深度理解。
+
+**题目讲解**：
+**asyncio 的核心组件**：
+- **Event Loop**：事件循环，单线程运行，调度协程和 I/O 回调
+- **Coroutine（协程）**：`async def` 定义，`await` 暂停并交还控制权给 event loop
+- **Task**：将协程包装为 Task（类似 Future），可以并发调度
+- **Future**：未来的结果容器，协程/回调完成后设置结果
+
+**执行流程**：
+```
+Event Loop 取出就绪协程
+→ 执行到下一个 await（I/O 等待点）
+→ 注册 I/O 事件回调（epoll）
+→ 取出下一个就绪协程
+→ I/O 完成，回调触发，恢复等待该 I/O 的协程
+```
+
+**async/await vs 多线程**：
+| | asyncio | 多线程 |
+|---|---|---|
+| 并发方式 | 单线程协作式调度 | 多线程抢占式调度 |
+| GIL | 不受 GIL 影响（单线程）| 受 GIL 限制 |
+| 适合场景 | I/O 密集（网络/数据库）| I/O 密集（但没 asyncio 高效）|
+| CPU 密集 | ❌（单线程，会阻塞）| ❌（GIL 限制并行）|
+| 并发量 | 数千协程，内存小 | 数百线程，内存大 |
+| 代码复杂性 | 全链路 async（传染性）| 相对简单 |
+
+**常见陷阱**：
+- `time.sleep()` 阻塞 event loop，应用 `await asyncio.sleep()`
+- CPU 密集操作阻塞 event loop，用 `loop.run_in_executor()` 交给线程池
+- `asyncio.gather()` 并发多个协程，任一抛出异常会取消其他（用 `return_exceptions=True`）
+
+**考察点**：
+1. Event Loop 的单线程本质（不真正并行 CPU）
+2. `asyncio.gather` vs `asyncio.wait` 的区别
+3. 同步代码和异步代码的互操作（asyncio.to_thread, run_in_executor）
+
+**示例答案**：
+asyncio 是单线程的协作式并发：Event Loop 维护一个就绪协程队列，遇到 await（I/O等待点）时协程主动让出控制权，Event Loop 切换到下一个就绪的协程，I/O 完成时（epoll 回调）唤醒等待该 I/O 的协程。相比多线程，asyncio 在 I/O 密集场景下能同时维护数千个并发"连接"，内存占用极小（协程很轻量），且没有线程切换开销和锁竞争。不需要加锁，因为单线程内协程调度是可控的（不会在任意点被打断）。主要限制是 CPU 密集操作会阻塞整个 Event Loop，解决办法是 `await loop.run_in_executor(None, cpu_bound_func)` 把 CPU 操作丢到线程池。实际项目里，aiohttp/httpx（异步 HTTP 客户端）、asyncpg（异步 PostgreSQL）、aiomysql 等库都是 asyncio 生态的，要发挥 asyncio 的优势需要整条链路都是 async。FastAPI 天然支持 asyncio，路由函数加 async def 即可享受并发。
+
+---
+
+### Q25: Python 的上下文管理器（Context Manager）是如何工作的？`__enter__` 和 `__exit__` 的作用是什么？
+
+**题目解析**：上下文管理器是 Python 资源管理的标准模式，考察候选人对 Python 协议的理解。
+
+**题目讲解**：
+**with 语句工作原理**：
+```python
+with expr as var:
+    body
+# 等价于
+mgr = expr
+var = mgr.__enter__()
+try:
+    body
+finally:
+    mgr.__exit__(exc_type, exc_val, exc_tb)
+```
+
+**`__exit__` 参数**：
+- 无异常时：三个参数均为 None
+- 有异常时：传入异常类型、实例、traceback
+- 返回 True：抑制异常（不再向外传播）；返回 False/None：异常正常传播
+
+**实现方式**：
+1. **实现 `__enter__`/`__exit__`**（类方式）
+2. **`@contextmanager` 装饰器**（生成器方式，更简洁）：
+   ```python
+   from contextlib import contextmanager
+   
+   @contextmanager
+   def managed_resource():
+       resource = acquire()
+       try:
+           yield resource  # yield 前是 __enter__，yield 后是 __exit__
+       finally:
+           release(resource)
+   
+   with managed_resource() as r:
+       use(r)
+   ```
+
+**异步上下文管理器**（`async with`）：
+- 实现 `__aenter__` 和 `__aexit__`（均为 async 函数）
+- `@asynccontextmanager` 装饰器
+
+**实际应用**：
+- 数据库连接管理（事务/连接池）
+- 文件操作（自动 close）
+- 线程锁（`with lock:`）
+- 单元测试的 mock patch
+- 临时修改全局状态（环境变量、配置）
+
+**考察点**：
+1. `__exit__` 返回 True 抑制异常的使用场景
+2. `contextmanager` 装饰器的异常处理（yield 外要用 try/finally）
+3. `contextlib.suppress` / `contextlib.redirect_stdout` 等工具
+
+**示例答案**：
+`with` 语句本质是调用对象的 `__enter__` 和 `__exit__` 方法，保证资源无论如何都会被正确释放。`__exit__` 接收异常信息，返回 True 可以"吞掉"异常（适合"预期中的异常可以忽略"的场景），返回 False 则异常继续传播。`@contextmanager` 是更优雅的实现：yield 前的代码是 `__enter__` 逻辑，yield 的值是 as 变量的值，yield 后的 finally 是 `__exit__` 清理逻辑，用法自然直观。实际项目里，SQLAlchemy 的 `with session.begin():` 自动处理事务提交/回滚，就是上下文管理器的典型应用：正常退出 commit，有异常 rollback。我在实现 Redis 分布式锁时也用了上下文管理器，`with redis_lock(key, timeout=30) as acquired:` 自动在退出时释放锁，哪怕异常也不会忘记释放，比手动管理安全多了。
+
+---
+
+## 十一、Java 进阶
+
+### Q26: JVM 的内存模型是什么？各区域的作用和常见 OOM 是什么？
+
+**题目解析**：JVM 是 Java 开发者必须掌握的底层知识，考察候选人对 JVM 内存管理的理解。
+
+**题目讲解**：
+**JVM 内存区域**：
+1. **堆（Heap）**：最大区域，存储对象实例。GC 的主要工作区
+   - Young Generation（年轻代）：Eden + S0 + S1
+   - Old Generation（老年代）：长期存活对象
+   - OOM：`java.lang.OutOfMemoryError: Java heap space`（对象太多/内存泄漏）
+
+2. **方法区/元空间（Metaspace）**：存储类元信息（类结构、方法字节码、静态变量）
+   - Java 8 以前是 PermGen（固定大小，容易 OOM），8 以后改为 Metaspace（使用本地内存）
+   - OOM：`OutOfMemoryError: Metaspace`（大量动态生成类，如 CGLIB/反射代理过多）
+
+3. **虚拟机栈（VM Stack）**：每个线程独立，每个方法调用创建一个栈帧（局部变量表/操作数栈/返回地址）
+   - StackOverflowError：递归太深
+   - OOM：`OutOfMemoryError: unable to create new native thread`（线程太多）
+
+4. **程序计数器（PC Register）**：记录当前线程执行的字节码位置
+
+5. **本地方法栈**：Native 方法使用
+
+**对象分配流程**：
+1. 对象优先分配在 Eden 区
+2. Eden 满 → Minor GC（Young GC），存活对象到 S0/S1，达到年龄阈值晋升老年代
+3. 老年代满 → Full GC（整个堆，STW 时间长）
+
+**考察点**：
+1. 年轻代/老年代的分代收集原理
+2. 常见 OOM 类型和排查方法
+3. `-Xms`、`-Xmx`、`-Xmn`、`-XX:MetaspaceSize` 等参数含义
+
+**示例答案**：
+JVM 内存分几块：堆是最大的，存对象实例，分年轻代（Eden+Survivor）和老年代，GC 在这里发生；方法区（Metaspace）存类的元信息，Java 8 之前是 PermGen（固定大小经常 OOM），8 以后改为 Metaspace 用本地内存（更灵活但也可能耗尽）；虚拟机栈每个线程一个，存栈帧（局部变量、返回地址），递归太深会 StackOverflow。常见 OOM 排查：`Java heap space` 先看是真的对象太多（加 heap）还是内存泄漏（用 jmap dump + MAT 分析对象引用链）；`Metaspace` 通常是动态代理/反射用太多，加 `-XX:MaxMetaspaceSize` 或找出动态生成类的地方；线程 OOM 是线程池配置不当或线程泄漏，`jstack` 看线程状态。GC 日志 `-XX:+PrintGCDetails -XX:+PrintGCDateStamps` 是诊断性能问题的第一步，看 GC 频率和 STW 时间是否异常。
+
+---
+
+### Q27: Java 的线程池（ThreadPoolExecutor）参数有哪些？如何合理配置？
+
+**题目解析**：线程池是 Java 并发编程的核心工具，合理配置线程池是后端开发的重要工程实践。
+
+**题目讲解**：
+**ThreadPoolExecutor 七个核心参数**：
+```java
+new ThreadPoolExecutor(
+    corePoolSize,          // 核心线程数，始终保活（即使空闲）
+    maximumPoolSize,       // 最大线程数
+    keepAliveTime,         // 非核心线程空闲超过此时间后销毁
+    TimeUnit,              // keepAliveTime 单位
+    workQueue,             // 任务队列
+    threadFactory,         // 线程创建工厂（可设线程名、daemon属性）
+    rejectedExecutionHandler // 拒绝策略
+);
+```
+
+**任务提交流程**：
+1. 线程数 < corePoolSize → 新建线程执行
+2. 线程数 >= corePoolSize → 放入队列
+3. 队列满 + 线程数 < maximumPoolSize → 新建线程执行
+4. 队列满 + 线程数 = maximumPoolSize → 触发拒绝策略
+
+**队列类型**：
+- `LinkedBlockingQueue`（无界）：maximumPoolSize 永远不生效，不推荐生产用
+- `ArrayBlockingQueue`（有界）：推荐，能触发扩容和拒绝策略
+- `SynchronousQueue`：不排队，直接移交，maximumPoolSize 要大
+
+**拒绝策略**：
+- `AbortPolicy`（默认）：抛出 RejectedExecutionException
+- `CallerRunsPolicy`：由提交任务的线程执行（降速反压）
+- `DiscardPolicy`：丢弃任务，不抛异常
+- `DiscardOldestPolicy`：丢弃队列最老的任务
+
+**线程数配置原则**：
+- CPU 密集型：核心数 + 1（防止一个线程缺页中断时充分利用 CPU）
+- I/O 密集型：核心数 × 2 或更多（等待 I/O 时 CPU 空闲，多线程利用率高）
+- 混合型：根据 CPU 占用比例计算
+
+**考察点**：
+1. 任务提交的优先级（核心线程 → 队列 → 非核心线程 → 拒绝）
+2. 无界队列的风险（OOM，maximumPoolSize 无效）
+3. 线程池监控（`getPoolSize()/getActiveCount()/getQueue().size()`）
+
+**示例答案**：
+ThreadPoolExecutor 的执行顺序要背熟：先用核心线程（corePoolSize 以内），满了放队列，队列满了才创建非核心线程（到 maximumPoolSize），再满了触发拒绝策略。生产配置注意：不要用 `Executors.newFixedThreadPool`（内部用无界 LinkedBlockingQueue，任务可以无限堆积直到 OOM），要用有界队列 ArrayBlockingQueue 并配合 CallerRunsPolicy（调用者执行，自然形成背压）。线程数：CPU 密集型用 `Runtime.getRuntime().availableProcessors() + 1`；I/O 密集型（HTTP 调用/数据库）通常设核心数的 2-4 倍，具体看压测下的 CPU 利用率。线程池一定要命名（自定义 threadFactory 设置 `thread-pool-xxx-thread-%d`），方便 jstack 时识别问题线程。监控上报 `activeCount/queueSize/completedTask` 到 metrics，队列积压告警是早期发现性能问题的关键信号。
+
+---
+
+## 十二、Elasticsearch
+
+### Q28: Elasticsearch 的倒排索引是什么？与 MySQL 全文索引的区别？
+
+**题目解析**：Elasticsearch 是后端常用的搜索引擎，理解其索引原理体现候选人的技术广度。
+
+**题目讲解**：
+**倒排索引（Inverted Index）**：
+- 正排索引：文档 → 内容（给文档找词）
+- 倒排索引：词 → 文档列表（给词找文档）
+
+**ES 倒排索引结构**：
+```
+词项（Term）| 文档 ID 列表（Posting List）| 词频 | 位置
+"苹果"      | [doc1, doc5, doc10]        | [3,1,2] | [(0,5),(2),(1,7)]
+"手机"      | [doc1, doc3, doc8]         | [1,2,1]
+```
+
+**分词（Tokenization）**：
+- 中文分词：IK Analyzer、jieba，把"苹果手机"分为"苹果"/"手机"
+- 英文：小写化、去停用词（the/is）、词干化（running → run）
+
+**ES vs MySQL 全文索引**：
+| | Elasticsearch | MySQL FULLTEXT |
+|---|---|---|
+| 分词 | 丰富（IK/jieba/自定义）| 基础（ngram）|
+| 查询语法 | 复杂（bool/range/nested/agg）| 基础（MATCH AGAINST）|
+| 相关性评分 | BM25 算法 | 简单 TF/IDF |
+| 横向扩展 | 原生分布式（Shard）| 需要额外方案 |
+| 实时性 | 近实时（1s 延迟）| 事务级实时 |
+| 运维成本 | 高 | 低（MySQL 已有）|
+
+**ES 核心概念**：
+- **Index**：类似数据库，存储同类文档
+- **Shard**：水平分片，每个 Shard 是独立 Lucene 实例
+- **Replica**：副本分片，提高可用性和读吞吐
+- **Mapping**：字段类型定义（text/keyword/integer/date 等）
+- **Analyzer**：分词器（character filter → tokenizer → token filter）
+
+**考察点**：
+1. 倒排索引为什么快（词 → 文档是 O(1) hash 查找，posting list 是有序数组方便 AND/OR 合并）
+2. Mapping 中 text vs keyword 的区别（text 会分词，keyword 不分词）
+3. ES 的近实时原理（先写 buffer，每秒 refresh 到 segment，可读但未 fsync）
+
+**示例答案**：
+倒排索引把文档里的每个词映射到"包含这个词的文档列表"，搜索时直接查词的 posting list，O(1) 找到候选文档，然后做集合运算（AND/OR/NOT）过滤，比 MySQL 的全表扫描 LIKE 查询快几个数量级。ES 的分词是核心优势：中文用 IK 分词把"苹果手机"拆成"苹果"+"手机"，搜索任一词都能命中；MySQL fulltext 的中文分词能力很弱（ngram 模式按字符切割，冗余 token 多）。ES 还有 BM25 相关性评分，能按"相关性最高"排序，而不是简单的 FULLTEXT 频率统计。实际工程里，常见模式是 MySQL 做主存储（事务、精确查询），ES 做搜索引擎（全文检索、聚合分析），数据通过 Canal（binlog 监听）同步到 ES。Mapping 里要注意 text vs keyword：name 字段要全文搜索用 text（分词），要精确过滤/聚合用 keyword，通常两个都要（multi_fields）。
+
+---
+
+## 十三、gRPC 与微服务通信
+
+### Q29: gRPC 和 REST API 的区别是什么？什么场景下应该用 gRPC？
+
+**题目解析**：gRPC 是微服务内部通信的主流方案，考察候选人对 RPC 框架的理解。
+
+**题目讲解**：
+**gRPC vs REST**：
+| | gRPC | REST |
+|---|---|---|
+| 传输协议 | HTTP/2 | HTTP/1.1（也可 HTTP/2）|
+| 数据格式 | Protocol Buffers（二进制）| JSON（文本）|
+| 接口定义 | .proto 文件（强类型）| OpenAPI/Swagger（可选）|
+| 性能 | 高（二进制压缩，HTTP/2 多路复用）| 中（文本序列化，HTTP/1.1 队头阻塞）|
+| 类型安全 | 编译期保证 | 运行时（JSON Schema 可选验证）|
+| 浏览器支持 | 受限（需要 gRPC-Web）| 完全支持 |
+| 流式传输 | 原生支持（客户端流/服务端流/双向流）| SSE/WebSocket 额外实现 |
+| 代码生成 | 自动生成客户端和服务端 stub | 需要 OpenAPI Generator |
+
+**Protocol Buffers**：
+```protobuf
+syntax = "proto3";
+message User {
+  int32 id = 1;
+  string name = 2;
+  repeated string emails = 3;
+}
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc ListUsers(ListUsersRequest) returns (stream User);  // 服务端流
+}
+```
+
+**适用场景**：
+- **用 gRPC**：微服务内部通信、高性能低延迟要求、强类型约束、需要双向流、多语言服务
+- **用 REST**：对外 API（浏览器/第三方）、需要可读性（调试方便）、简单 CRUD、团队不熟悉 proto
+
+**考察点**：
+1. Protocol Buffers 的字段编号（数字而非名字，向后兼容）
+2. gRPC 的四种流模式（Unary/Server/Client/BiDi Stream）
+3. gRPC 与 HTTP/2 的关系
+
+**示例答案**：
+gRPC 的核心优势是性能和类型安全。Protocol Buffers 序列化比 JSON 快 3-10 倍，体积小 2-5 倍，配合 HTTP/2 的多路复用，微服务内部通信延迟极低。强类型接口定义（.proto）能在编译时发现接口不匹配，比 JSON API 调试时才发现类型错误好很多，代码生成也节省大量手写客户端的工作。流式传输是 gRPC 的另一个优势：服务端流（Server Streaming）让一次请求可以持续接收响应（如实时日志、大数据导出），双向流（BiDi）支持实时语音/视频信令。限制是不能直接从浏览器调用（需要 gRPC-Web 代理），所以外部 API 还是用 REST。我们的微服务架构是：对外的 API Gateway 暴露 REST，内部服务间通信全用 gRPC，这样既有良好的外部体验又有高效的内部通信。.proto 文件作为接口契约存在独立 repo，所有服务从同一来源生成 stub，接口变更必须向后兼容（字段编号不能复用，只能新增）。
+
+---
+
+## 十四、算法与数据结构
+
+### Q30: 分析时间复杂度：如何判断一个算法是 O(N log N)？
+
+**题目解析**：时间复杂度分析是算法面试的基础，考察候选人的算法思维。
+
+**题目讲解**：
+**常见复杂度从好到坏**：
+O(1) < O(log N) < O(N) < O(N log N) < O(N²) < O(2^N) < O(N!)
+
+**判断规则**：
+1. **O(1)**：固定次数操作（数组下标、哈希表查找）
+2. **O(log N)**：每次把问题规模减半（二分查找、平衡树操作、堆的上浮/下沉）
+3. **O(N)**：遍历所有元素一次
+4. **O(N log N)**：外层 O(N) + 内层 O(log N)（快排均摊、归并排序、堆排序）；或者把 N 个问题各做 O(log N) 的操作
+5. **O(N²)**：两层嵌套循环（冒泡/选择/插入排序）
+6. **O(2^N)**：每次决策二选一（回溯/DFS 全排列）
+
+**主定理（Master Theorem）**：
+对于递归 `T(N) = aT(N/b) + f(N)`：
+- a=2, b=2 → 归并排序 T(N) = 2T(N/2) + O(N) → O(N log N)
+
+**空间复杂度**：
+- 递归深度 → O(depth) 的栈空间（DFS 树深度 O(log N) vs 链表 O(N)）
+- 额外数据结构大小
+
+**考察点**：
+1. 均摊复杂度（动态数组扩容：单次 O(N) 但均摊 O(1)）
+2. 递归的空间复杂度（尾递归优化）
+3. 常见数据结构操作的复杂度（hashtable O(1)，BST O(log N)，sorted array 二分 O(log N) 但插入 O(N)）
+
+**示例答案**：
+判断 O(N log N) 的直觉是"N 个元素，每个元素做了 O(log N) 的工作"。归并排序最典型：把数组分两半（log N 层），每层合并操作是 O(N)，总共 O(N log N)。堆排序同理：建堆 O(N)，N 次 pop 每次 O(log N)，总 O(N log N)。二分查找 + 遍历的组合也常见：有序数组里找所有满足条件的元素，先二分找起点 O(log N) 再线性扫描 O(K)，如果 K 是 O(N) 的就是 O(N + log N) = O(N)。均摊复杂度要理解：`list.append()` 偶尔触发扩容是 O(N)，但 N 次 append 的总代价是 O(N)（每次翻倍扩容，总扩容次数是 N+N/2+N/4+... = 2N），均摊每次是 O(1)。面试时分析时间复杂度要说清楚：是最坏/平均/均摊，快排的最坏是 O(N²)（已排序数组 + 总选第一个 pivot），平均是 O(N log N)。
+
+---
+
+### Q31: 动态规划的核心思路是什么？如何设计状态转移方程？
+
+**题目解析**：动态规划是算法面试的核心难点，考察候选人的算法设计能力。
+
+**题目讲解**：
+**DP 的三要素**：
+1. **最优子结构**：问题的最优解包含子问题的最优解
+2. **重叠子问题**：子问题会被重复计算（递归会有大量重复）
+3. **状态转移方程**：`dp[i]` 如何从前面的状态推出
+
+**解题框架**：
+1. 定义 dp 数组的含义（最关键的一步）
+2. 写出状态转移方程
+3. 确定初始值
+4. 确定遍历顺序
+
+**经典例题**：
+
+**爬楼梯（斐波那契）**：
+- `dp[i]` = 爬到第 i 阶的方法数
+- 转移：`dp[i] = dp[i-1] + dp[i-2]`
+
+**最长递增子序列（LIS）**：
+- `dp[i]` = 以 nums[i] 结尾的 LIS 长度
+- 转移：`dp[i] = max(dp[j]+1 for j<i if nums[j]<nums[i])`
+- O(N²)，进阶：patience sort + 二分 O(N log N)
+
+**0/1 背包**：
+- `dp[i][j]` = 前 i 件物品，容量 j 的最大价值
+- 转移：`dp[i][j] = max(dp[i-1][j], dp[i-1][j-w[i]] + v[i])`
+- 滚动数组优化到 O(N) 空间：逆序遍历容量
+
+**记忆化搜索（Top-Down DP）**：
+- 递归 + cache，比自底向上更直观，只计算需要的子问题
+- Python：`@functools.lru_cache(None)` 一行实现
+
+**考察点**：
+1. 如何定义 dp 状态（通常是"前 i 个/到第 i 个位置"为止的最优值）
+2. 空间优化（二维 dp 通常能优化到一维）
+3. 记忆化搜索 vs 自底向上 DP 的选择
+
+**示例答案**：
+DP 的本质是"用已知子问题的答案推导当前问题"，避免重复计算。关键是定义 dp 状态——"dp[i] 表示什么"，这步定义清楚了，转移方程通常就自然了。以最长递增子序列为例，把 dp[i] 定义为"以 nums[i] 结尾的最长递增子序列长度"，转移就是遍历 j<i，如果 nums[j]<nums[i] 则可以把 nums[i] 接在 j 结尾的 LIS 后面，`dp[i] = max(dp[j]+1)`。初始值每个 dp[i]=1（自身就是长度为1的子序列）。背包问题状态定义是"前 i 个物品在容量 j 时的最大价值"，状态转移考虑"第 i 件取不取"两种选择。Python 开发中我常用 `@lru_cache` 配合递归写记忆化搜索，比自底向上更容易想，且只计算实际用到的子问题（稀疏 DP 时有优势）。面试里遇到 DP 先想"可以抽象成已知哪种经典模型"（背包/LCS/LIS/区间DP），对号入座后再调整状态定义适应具体问题。
+
+---
+
+*进阶篇完，与基础篇合计约 31 道后端面试题，覆盖 MySQL进阶/Redis进阶/Python高级/Java JVM/ES/gRPC/算法。*
