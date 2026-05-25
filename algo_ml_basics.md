@@ -699,3 +699,70 @@ for i, layer in enumerate(self.bert.encoder.layer):
 
 ---
 
+### Q114: 什么是 Softmax 的温度缩放（Temperature Scaling）？如何用于模型校准？
+
+**🏢 高频公司**：MiniMax、字节
+**难度**：中等 ⭐⭐
+
+**Softmax 温度**：
+```python
+import torch
+import torch.nn.functional as F
+
+logits = torch.tensor([2.0, 1.0, 0.1])
+
+# 标准 Softmax
+probs_standard = F.softmax(logits, dim=-1)
+# tensor([0.6590, 0.2424, 0.0986])
+
+# 高温度 T=2（分布更均匀/平坦）
+probs_high_T = F.softmax(logits / 2.0, dim=-1)
+# tensor([0.5060, 0.3122, 0.1818])
+
+# 低温度 T=0.5（分布更尖锐/确定）
+probs_low_T = F.softmax(logits / 0.5, dim=-1)
+# tensor([0.8756, 0.1185, 0.0059])
+```
+
+**模型校准（Calibration）**：
+
+神经网络输出的概率往往过于自信（predicts 0.99 but actual accuracy is only 0.85），温度缩放是最简单的事后校准方法：
+
+```python
+# 在验证集上找最优温度 T，使模型预测概率与实际准确率对齐
+from scipy.optimize import minimize_scalar
+
+def nll_loss(T, logits_val, labels_val):
+    scaled_logits = logits_val / T
+    return F.cross_entropy(torch.tensor(scaled_logits),
+                           torch.tensor(labels_val)).item()
+
+result = minimize_scalar(nll_loss, bounds=(0.1, 10.0), method='bounded',
+                         args=(logits_val, labels_val))
+optimal_T = result.x
+```
+
+**校准前后对比**：
+```
+未校准：模型预测置信度 90% → 实际准确率只有 70%（过度自信）
+校准后：模型预测置信度 70% → 实际准确率 70%（匹配）
+```
+
+**在 RAG/Agent 中的应用**：
+- 置信度校准后，可以可靠地用模型输出的置信度决定是否需要检索
+- Self-Consistency 中，校准后的概率可以更准确地加权聚合
+
+**考察点**：
+1. 温度 T 对 Softmax 分布的数学影响（T→0 趋向 argmax，T→∞ 趋向均匀）
+2. 模型校准的含义（predicted probability = actual accuracy）
+3. Expected Calibration Error（ECE）指标
+
+**示例答案**：
+温度缩放是 Softmax 的一个参数：T < 1 让分布更尖锐（更自信），T > 1 让分布更平坦（更均匀），T = 1 是原始输出。LLM 推理时的 temperature 参数就是这个原理，影响输出的多样性。模型校准解决的是另一个问题：神经网络训练时过度自信，预测置信度 90% 但实际上只有 70% 准确，这在需要用概率做下游决策时很危险。温度缩放是最简单的校准方法：在验证集上优化一个全局温度 T，让预测概率和实际准确率对齐。校准后的模型才能可靠地用"我有 X% 置信度"做决策，在 Agent 里这很有用——置信度低于阈值时触发检索或人工确认，而不是瞎猜。
+
+---
+
+*本文件共 14 题（Q101-Q114），覆盖 AI 开发者应知的 ML 基础。*
+
+---
+
