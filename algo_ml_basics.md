@@ -345,3 +345,66 @@ def sigmoid_grad(x): s = sigmoid(x); return s * (1 - s)  # 最大值 0.25！
 
 ---
 
+### Q108: 什么是 K-Means 聚类？它在 RAG/推荐系统中有哪些应用？
+
+**🏢 高频公司**：小红书（推荐系统）、阿里
+**难度**：简单 ⭐
+
+**K-Means 算法**：
+```python
+import numpy as np
+
+def kmeans(X, k, max_iter=100):
+    # 随机初始化 k 个中心点
+    centers = X[np.random.choice(len(X), k, replace=False)]
+    
+    for _ in range(max_iter):
+        # 每个点归入最近的中心
+        distances = np.linalg.norm(X[:, None] - centers[None, :], axis=2)
+        labels = distances.argmin(axis=1)
+        
+        # 更新中心为簇内均值
+        new_centers = np.array([X[labels == i].mean(axis=0) for i in range(k)])
+        
+        if np.allclose(centers, new_centers): break
+        centers = new_centers
+    
+    return labels, centers
+```
+
+**时间复杂度**：O(n × k × d × 迭代次数)，n=样本数，d=维度
+
+**选 K 的方法（肘部法则）**：
+```python
+# 画不同 k 下的 inertia（簇内距离之和），找"拐点"
+inertias = []
+for k in range(1, 11):
+    km = KMeans(n_clusters=k)
+    km.fit(X)
+    inertias.append(km.inertia_)
+# 增益开始变小的地方就是合适的 k
+```
+
+**在 AI 系统中的应用**：
+
+1. **向量数据库的 IVF 索引**：把向量空间聚成 N 个簇（K-Means），检索时只搜最近的 nprobe 个簇，大幅加速
+2. **推荐系统的用户聚类**：把用户向量聚类，相同簇的用户共享推荐策略（冷启动）
+3. **文档聚类**：把文档按内容聚类，辅助知识库分类
+4. **Hard Negative Mining**：找离正样本最近的负样本，提升 Embedding 模型训练质量
+
+**K-Means 的缺点**：
+- 需要预先指定 k
+- 对异常值敏感
+- 只能发现球形簇（不能处理非凸形状）
+- 结果依赖初始化（K-Means++ 改进初始化策略）
+
+**考察点**：
+1. K-Means 的两个步骤（分配+更新）
+2. K-Means++ 初始化的优势
+3. 在 IVF 向量索引里的具体作用
+
+**示例答案**：
+K-Means 的核心循环：把每个点分配给最近的中心，然后把中心更新为簇内均值，反复直到收敛。选 K 用肘部法则，找 inertia 曲线的拐点。在我们 RAG 系统里，向量数据库（Qdrant/Milvus）的 IVF 索引底层就是 K-Means——把高维向量空间聚成 N 个"区域"，检索时只搜最近的几个区域而非全量，把 O(N) 搜索加速到近似 O(√N)，这也是向量检索能在毫秒内完成的秘诀之一。K-Means 的主要局限是要提前指定 K，且对初始化敏感，实际用 K-Means++ 改进初始化（让初始中心尽量分散），稳定性好很多。
+
+---
+
