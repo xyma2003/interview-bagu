@@ -152,3 +152,47 @@ PPL = exp(average cross-entropy loss)
 
 ---
 
+### Q104: Batch Normalization 和 Layer Normalization 有什么区别？为什么 Transformer 用 LayerNorm？
+
+**🏢 高频公司**：MiniMax、字节 AI
+**难度**：中等 ⭐⭐
+
+**BatchNorm（BN）**：
+沿 **batch 维度** 归一化，计算每个特征在当前 batch 所有样本上的均值和方差：
+```python
+# BN：对 batch 中所有样本的同一特征做归一化
+# 输入 shape: [batch_size, features]
+mean = x.mean(dim=0)   # 每个特征的均值，shape: [features]
+var  = x.var(dim=0)
+x_norm = (x - mean) / sqrt(var + eps)
+```
+
+**LayerNorm（LN）**：
+沿 **特征维度** 归一化，对同一样本的所有特征做归一化：
+```python
+# LN：对每个样本自己的所有特征做归一化
+# 输入 shape: [batch_size, seq_len, hidden_size]
+mean = x.mean(dim=-1, keepdim=True)   # 每个 token 自身的均值
+var  = x.var(dim=-1, keepdim=True)
+x_norm = (x - mean) / sqrt(var + eps)
+```
+
+**Transformer 为什么用 LayerNorm**：
+1. NLP 中 batch 通常较小（显存限制），BN 在小 batch 时均值/方差估计不准
+2. 序列长度可变（不同 batch 的序列长度不同），BN 的 batch 统计量计算困难
+3. LN 对每个样本独立归一化，不依赖 batch 大小，更适合自回归生成（推理时 batch=1 也正常）
+
+**Pre-LN vs Post-LN**：
+- Post-LN（原始 Transformer）：`x = LayerNorm(x + sublayer(x))`——训练不稳定
+- Pre-LN（现代 LLM）：`x = x + sublayer(LayerNorm(x))`——梯度更稳定，训练更容易
+
+**考察点**：
+1. BN 和 LN 的归一化维度差异
+2. BN 在推理时使用训练时统计的 running mean/var（LN 不需要）
+3. Pre-LN 提升训练稳定性的原因
+
+**示例答案**：
+BatchNorm 在 batch 维度归一化，适合图像 CNN（batch 够大，尺寸固定）；LayerNorm 在特征维度归一化，每个样本独立计算，不依赖 batch。Transformer 用 LN 的原因：NLP 的 batch 通常很小（8-32），BN 的均值/方差估计不准；序列长度可变让 BN 更难处理；推理时生成下一个 token 的 batch size 是 1，BN 在 batch=1 时完全失效，LN 则没有这个问题。现代 LLM 几乎全用 Pre-LN（归一化放在子层输入前），相比原始 Transformer 的 Post-LN，梯度流动更稳定，可以不用 warmup 就直接训练。
+
+---
+
