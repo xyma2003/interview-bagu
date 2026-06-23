@@ -1,6 +1,6 @@
 # 面试八股题库
 
-> 覆盖 **AI Agent / 前端 / 后端 / 算法** 四个方向，共 **332 道**高质量面试题
+> 覆盖 **AI Agent / 前端 / 后端 / 算法** 四个方向，共 **339 道**高质量面试题
 >
 > 大厂面经真实整理，每道题含：题目解析 · 深度讲解 · 考察点 · 面试官更想听 · 示例答案
 
@@ -26,12 +26,13 @@ interview-bagu/
 │   ├── frontend_part3.md        CSS动画/状态管理/Workers/大文件上传（12题）
 │   └── frontend_part4.md        Container Queries/i18n/TypeScript高级（8题）
 │
-├── backend/           # 后端开发 · 57 题
+├── backend/           # 后端开发 · 64 题
 │   ├── backend.md               基础篇（OS/网络/MySQL/Redis/Kafka/系统设计，18题）
 │   ├── backend_advanced.md      进阶篇（间隙锁/分库分表/JVM/ES/gRPC，13题）
 │   ├── backend_bigco.md         大厂专项（短链/秒杀/IM系统/Spring/CAS，10题）
 │   ├── backend_part3.md         JWT/SQL注入/幂等性/ServiceMesh/K8s（9题）
-│   └── backend_part4.md         Go/链路追踪/连接池/Pydantic/CQRS（7题）
+│   ├── backend_part4.md         Go/链路追踪/连接池/Pydantic/CQRS（7题）
+│   └── backend_concurrency_distributed.md  ★ 并发与分布式深度（竞态/无锁/内存模型/Raft/数据复制/向量时钟，7题）
 │
 ├── algorithm/         # 算法（LeetCode 高频题）· 100 题
 │   ├── algo_array.md            数组/双指针/滑动窗口/二分/单调栈（25题）
