@@ -1,6 +1,6 @@
 # 面试八股题库
 
-> 覆盖 **AI Agent / 前端 / 后端 / 算法** 四个方向，共 **339 道**高质量面试题
+> 覆盖 **AI Agent / 前端 / 后端 / 算法** 四个方向，共 **338 道**高质量面试题
 >
 > 大厂面经真实整理，每道题含：题目解析 · 深度讲解 · 考察点 · 面试官更想听 · 示例答案
 
@@ -10,7 +10,7 @@
 
 ```
 interview-bagu/
-├── ai-agent/          # AI Agent 开发 + AI/ML基础 · 107 题
+├── ai-agent/          # AI Agent 开发 + AI/ML基础 · 106 题
 │   ├── ai_agent.md              基础篇（LLM/RAG/Agent框架/多智能体，30题）
 │   ├── ai_agent_advanced.md     进阶篇（LoRA/量化/GraphRAG/生产部署，17题）
 │   ├── ai_agent_bigco.md        大厂专项（字节/MiniMax/小红书/阿里，15题）
