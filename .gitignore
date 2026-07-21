@@ -1,0 +1,10 @@
+# OS
+.DS_Store
+*.swp
+
+# IDE
+.vscode/
+.idea/
+
+# Editor backups
+*~
