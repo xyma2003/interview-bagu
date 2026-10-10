@@ -65,6 +65,20 @@ cat LEARNING_GUIDE.md
 
 ---
 
+## 示例验证
+
+已为 [前端 Q37 的 `Promise.myAll`](frontend/frontend_bigco.md) 添加可执行检查。测试直接运行题目正文中的代码，与原生 `Promise.all` 对照。
+
+在仓库根目录执行（Node.js 22+，无额外依赖）：
+
+```bash
+node --test tests/promise-all.test.cjs
+```
+
+当前覆盖空输入、稀疏数组、可迭代对象、thenable、完成顺序与异常传播。CI 在 Node.js 22 和 24 上运行这项检查；其他题目和 Q37 的其余简化实现尚未纳入，不代表全库已验证。
+
+---
+
 ## 题目格式
 
 ### 八股题（ai-agent / frontend / backend）

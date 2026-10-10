@@ -17,21 +17,51 @@
 **题目讲解**：
 
 **Promise.all 实现**：
+
+接收**同步可迭代对象（iterable）**，例如数组、`Set`、字符串和生成器；输出顺序与输入的迭代顺序一致。
+
 ```javascript
-Promise.myAll = function(promises) {
+Promise.myAll = function(iterable) {
   return new Promise((resolve, reject) => {
-    if (!promises.length) return resolve([]);
     const results = [];
-    let count = 0;
-    promises.forEach((p, i) => {
-      Promise.resolve(p).then(val => {
-        results[i] = val;  // 保持顺序
-        if (++count === promises.length) resolve(results);
-      }).catch(reject);  // 任一失败立即 reject
-    });
+    let index = 0;
+    let remaining = 1; // 为“遍历结束”预留一次计数
+
+    for (const item of iterable) {
+      const currentIndex = index++;
+      remaining++;
+      Promise.resolve(item).then(value => {
+        results[currentIndex] = value; // 按输入顺序存放，而非完成顺序
+        if (--remaining === 0) resolve(results);
+      }, reject);
+    }
+
+    // 空 iterable 也会走到这里，此时直接完成；then 回调仍异步执行。
+    if (--remaining === 0) resolve(results);
   });
 };
 ```
+
+**边界与实现范围**：
+
+- 不能用 `.length` 判断 iterable 是否为空：`Set` 和生成器没有数组的 `length`。
+- 不能用 `forEach` 遍历数组：它会跳过空位。`for...of` 会把稀疏数组的空位读为 `undefined`，所以 `Promise.myAll(new Array(2))` 得到 `[undefined, undefined]`，不会一直等待。
+- `remaining` 同时记录未完成的元素和“遍历尚未结束”这一项；全部扣完才完成，结果数组的 `length` 不能替代这个计数。
+- `Promise.resolve` 统一处理普通值、Promise 和 thenable；任一输入拒绝后，外层 Promise 拒绝，其他任务不会因此取消。
+- 非 iterable（如 `null`、数字、只有 `length` 的普通对象）以及迭代过程抛错，会由 Promise executor 转为返回 Promise 的拒绝，而不是从 `myAll` 调用处同步抛出。不要用 `Array.from` 替代迭代，它还会接受不可迭代的 array-like 对象。
+- 这是使用原生 `Promise` 的教学实现，要求内建方法未被改写；不是完整 polyfill。不覆盖自定义构造器、Promise 子类的返回类型，以及改写 `resolve` / `then` 后的完整规范行为。
+
+**运行本题验证**（仓库根目录，Node.js 22+，无额外依赖）：
+
+```bash
+node --test tests/promise-all.test.cjs
+```
+
+测试直接提取本节的 `Promise.myAll` 代码块，与原生 `Promise.all` 对照空输入、稀疏数组、iterable、thenable、顺序、拒绝和迭代异常。核验范围仅为这一实现，不代表整份题库已验证。
+
+规范依据：[Promise.all](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.all)、[PerformPromiseAll](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseall)（核验日期：2026-10-10）。
+
+> 以下 `allSettled` / `race` / `any` 是面向稠密数组的简化示例，未纳入上述验证；完整 iterable 支持和边界核验仍待补齐。
 
 **Promise.allSettled 实现**：
 ```javascript
@@ -77,11 +107,12 @@ Promise.myAny = function(promises) {
 
 **考察点**：
 1. `results[i] = val` 而非 `results.push(val)`（保持顺序）
-2. 空数组时的边界处理
-3. `Promise.resolve(p)` 包裹（处理非 Promise 值）
+2. 同步迭代协议、空输入和稀疏数组的边界处理
+3. `Promise.resolve(p)` 包裹（处理普通值和 thenable）
+4. 拒绝传播与迭代异常；拒绝不会自动取消其他任务
 
 **示例答案**：
-实现 Promise.all 要注意三个关键点：一是用索引赋值而非 push 保持结果顺序；二是用 count 计数而非 results.length 判断完成（results 是稀疏数组）；三是对传入的每个值用 Promise.resolve 包裹，处理普通值和非标准 thenable。allSettled 的技巧是把每个 Promise 都转成"永不 reject 的 Promise"，成功时包装为 `{status:'fulfilled', value}`，失败时包装为 `{status:'rejected', reason}`，然后用 all 等所有完成。race 最简单，谁先完成就 resolve/reject 谁。any 是 all 的反面，任一 fulfilled 就 resolve，全部 rejected 才 reject，用 AggregateError 包含所有错误。
+实现 Promise.all 时，先用 for...of 读取同步 iterable，避免依赖数组的 length 或跳过稀疏数组空位。每个元素通过 Promise.resolve 统一处理，完成后按输入索引写入结果；用剩余计数判断是否全部完成，不能看结果数组的 length。额外预留一次“遍历结束”计数，让空输入也自然完成。拒绝回调直接交给外层 reject，迭代异常则由 executor 转为拒绝；拒绝不会取消其他任务。这个版本限定原生 Promise，不是完整 polyfill。延伸到 allSettled 时，可把每个输入的成功和失败包装成状态对象；race 取最先完成的结果，any 取最先成功的结果，全部失败时才用 AggregateError 汇总错误。
 
 ---
 
