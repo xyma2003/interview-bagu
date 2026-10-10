@@ -39,7 +39,14 @@ def findCircleNum(isConnected: list[list[int]]) -> int:
     return uf.components
 ```
 
-**复杂度**：近似 O(N × α(N))，α 是反阿克曼函数，实际近似 O(1)
+**复杂度**：设 `N` 为城市数量（矩阵边长），`E` 为矩阵严格上三角（`i < j`）中值为 1 的元素个数，即调用 `union` 的次数。
+
+- 初始化并查集需要 O(N)；双层循环无论城市是否相连，都会检查 `N(N−1)/2` 个矩阵元素，扫描成本为 O(N²)。
+- 路径压缩与按秩合并使每次并查集操作的摊还成本为 O(α(N))，其中 α 是反阿克曼函数；`E` 次合并的摊还成本为 O(E × α(N))。
+- 总时间上界为 **O(N² + E × α(N))**。由于 `E ≤ N(N−1)/2`，可写成最坏情形的摊还上界 **O(N² × α(N))**；实际规模下 α(N) 很小，可近似看作 O(N²)，不能忽略矩阵扫描而写成近似线性时间。
+- 额外空间为 **O(N)**，用于 `parent`、`rank` 和递归调用栈；不计输入矩阵本身的 O(N²) 空间。
+
+并查集摊还分析参考：[Cornell ORIE 6125：Union-find / Path compression](https://people.orie.cornell.edu/prs233/orie-6125/data-structures/union-find.html)（核验日期：2026-10-10）。
 
 **考察点**：路径压缩 + 按秩合并的双重优化；岛屿数量也可用并查集
 
@@ -79,7 +86,7 @@ def setZeroes(matrix: list[list[int]]) -> None:
 
 ---
 
-### Q93: 最长公共前缀（Trie 优化）· LeetCode 14 进阶
+### Q93: 最长公共前缀（分治法）· LeetCode 14 进阶
 
 **题目讲解**（分治法）：
 ```python
@@ -100,7 +107,9 @@ def longestCommonPrefix(strs: list[str]) -> str:
     return divide(0, len(strs) - 1) if strs else ""
 ```
 
-**考察点**：分治将问题拆为两半，每半求 LCP，合并；时间同样 O(S)，但更利于并行
+**复杂度**：设 `N` 为字符串数量、`S` 为所有输入字符串的字符总数，时间为 O(N + S)；若字符串均非空，可简写为 O(S)。
+
+**考察点**：分治将字符串数组拆为两半，分别求最长公共前缀（LCP），再合并两侧结果；这里没有构建 Trie。当前代码顺序执行左右递归；子问题相互独立，但并未实现并行。
 
 ---
 
