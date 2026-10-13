@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  promise-all:
+  promise-examples:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -19,5 +19,5 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Verify the documented Promise.myAll implementation
-        run: node --test tests/promise-all.test.cjs
+      - name: Verify the documented Promise.myAll and Promise.myAny implementations
+        run: node --test tests/promise-*.test.cjs

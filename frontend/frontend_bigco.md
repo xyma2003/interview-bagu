@@ -61,7 +61,7 @@ node --test tests/promise-all.test.cjs
 
 规范依据：[Promise.all](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.all)、[PerformPromiseAll](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseall)（核验日期：2026-10-10）。
 
-> 以下 `allSettled` / `race` / `any` 是面向稠密数组的简化示例，未纳入上述验证；完整 iterable 支持和边界核验仍待补齐。
+> 以下 `allSettled` / `race` 仍是面向稠密数组的简化示例，未纳入验证；完整 iterable 支持和边界核验仍待补齐。`any` 的实现与独立验证见后文。
 
 **Promise.allSettled 实现**：
 ```javascript
@@ -86,24 +86,53 @@ Promise.myRace = function(promises) {
 ```
 
 **Promise.any 实现**：
+
+接收同步 iterable；第一个成功的输入决定结果，只有所有输入都拒绝时，才以 `AggregateError` 拒绝。其 `errors` 按输入顺序排列，而不是按拒绝顺序。
+
 ```javascript
-Promise.myAny = function(promises) {
+Promise.myAny = function(iterable) {
   return new Promise((resolve, reject) => {
-    let errors = [];
-    let count = 0;
-    promises.forEach((p, i) => {
-      Promise.resolve(p)
-        .then(resolve)  // 任一成功立即 resolve
-        .catch(err => {
-          errors[i] = err;
-          if (++count === promises.length)
-            reject(new AggregateError(errors, 'All promises were rejected'));
-        });
-    });
-    if (!promises.length) reject(new AggregateError([], 'No promises'));
+    const errors = [];
+    let index = 0;
+    let remaining = 1; // 为“遍历结束”预留一次计数
+
+    for (const item of iterable) {
+      const currentIndex = index++;
+      remaining++;
+      Promise.resolve(item).then(resolve, reason => {
+        errors[currentIndex] = reason;
+        if (--remaining === 0) {
+          reject(new AggregateError(errors, 'All promises were rejected'));
+        }
+      });
+    }
+
+    // 空 iterable 直接拒绝，errors 为 []；非空则等待成功或全部拒绝。
+    if (--remaining === 0) {
+      reject(new AggregateError(errors, 'All promises were rejected'));
+    }
   });
 };
 ```
+
+**any 的边界与实现范围**：
+
+- 使用 `for...of` 和独立计数，支持 `Set`、生成器及稀疏数组；`new Array(2)` 中的空位作为 `undefined` 参与，结果成功为 `undefined`。调用后修改原数组的 `length`，不会改变已经收集的任务数量。
+- 空 iterable 拒绝且 `errors` 为 `[]`；如果有输入一直 pending，其他输入全部拒绝，也不能判断“全部拒绝”，返回值会继续等待。任一输入成功后不会取消其他任务，后续拒绝仍有处理函数。
+- 非 iterable 和同步迭代异常会使返回的 Promise 拒绝；迭代异常直接作为拒绝原因，不包装成 `AggregateError`。`Promise.resolve` 负责普通值、thenable 和重复回调的归一化。
+- 与上面的 `myAll` 一样，限定未改写内建方法的原生 `Promise`，不是完整 polyfill；不覆盖自定义构造器或子类行为。错误文案不要求与各运行时逐字相同。
+
+**运行 any 验证**（Node.js 22+，无额外依赖）：
+
+```bash
+node --test tests/promise-any.test.cjs
+# 同时验证本题已核验的 all 和 any
+node --test tests/promise-*.test.cjs
+```
+
+测试直接提取本节代码，与原生 `Promise.any` 对照边界、成功及拒绝语义；不代表 `allSettled`、`race` 或整份题库已验证。
+
+规范依据：[Promise.any](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.any)、[PerformPromiseAny](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseany)（核验日期：2026-10-13）。
 
 **考察点**：
 1. `results[i] = val` 而非 `results.push(val)`（保持顺序）
@@ -981,4 +1010,3 @@ SSR、SSG、ISR 的本质是"数据获取在什么时候执行"。SSR 每次请�
 *本专项题库覆盖字节/腾讯/小红书/阿里的前端高频题，共 12 题（Q37-Q48），与基础+进阶篇合计约 48 道前端面试题。*
 
 ---
-
