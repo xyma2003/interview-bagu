@@ -66,6 +66,10 @@ def maxDepth_bfs(root) -> int:
     return depth
 ```
 
+**适用范围**：无环二叉树，节点具有 `val`、`left`、`right` 属性。递归版便于理解，但深树可能超出 Python 递归深度限制；不确定树高时使用 `maxDepth_bfs`。两者时间 O(N)，递归调用栈 O(H)，BFS 队列 O(W)，H 为树高、W 为最大层宽。
+
+**运行检查**：[选定示例与边界用例](../EXAMPLE_CHECKS.md#algorithm-checks)对小树检查两种写法，深树单独验证 BFS。
+
 **考察点**：递归 vs 迭代 BFS，面试时两种都会
 
 ---
@@ -113,7 +117,25 @@ def isValidBST(root, lo=float('-inf'), hi=float('inf')) -> bool:
     if not (lo < root.val < hi): return False
     return (isValidBST(root.left,  lo, root.val) and
             isValidBST(root.right, root.val, hi))
+
+# 迭代中序版：深树也不依赖 Python 调用栈
+def isValidBST_iterative(root) -> bool:
+    stack = []
+    previous = None
+    node = root
+    while node or stack:
+        while node:
+            stack.append(node)
+            node = node.left
+        node = stack.pop()
+        if previous is not None and node.val <= previous:
+            return False
+        previous = node.val
+        node = node.right
+    return True
 ```
+
+**适用范围**：无环二叉树，整数节点值；不允许重复值。递归版通过祖先上下界判断，深树可能触发递归深度限制，此时使用 `isValidBST_iterative`。两者时间 O(N)、辅助空间 O(H)，H 为树高；[运行检查](../EXAMPLE_CHECKS.md#algorithm-checks)覆盖重复值、违反祖先约束和深树。
 
 **考察点**：传递上下界（不只是和父节点比），中序遍历结果必须严格递增
 
@@ -206,24 +228,28 @@ def buildTree(preorder: list[int], inorder: list[int]):
 def numIslands(grid: list[list[str]]) -> int:
     if not grid: return 0
     rows, cols = len(grid), len(grid[0])
-    
-    def dfs(r, c):
-        if not (0 <= r < rows and 0 <= c < cols) or grid[r][c] != '1':
-            return
-        grid[r][c] = '0'   # 标记已访问（原地修改）
-        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:
-            dfs(r+dr, c+dc)
-    
     count = 0
     for r in range(rows):
         for c in range(cols):
             if grid[r][c] == '1':
-                dfs(r, c)
                 count += 1
+                grid[r][c] = '0'  # 入栈时标记，避免同一格重复入栈
+                stack = [(r, c)]
+                while stack:
+                    row, col = stack.pop()
+                    for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+                        nr, nc = row + dr, col + dc
+                        if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == '1':
+                            grid[nr][nc] = '0'
+                            stack.append((nr, nc))
     return count
 ```
 
-**复杂度**：O(M×N)
+**适用范围**：矩形网格，元素为字符串 `'0'` / `'1'`；仅上下左右相连。此实现原地把陆地改为 `'0'`，需要保留输入时先复制各行。显式栈避免大连通区域触发 Python 递归深度限制。
+
+**复杂度**：时间 O(M×N)，辅助空间最坏 O(M×N)，其中 M、N 分别为行数、列数。
+
+**运行检查**：[选定示例与边界用例](../EXAMPLE_CHECKS.md#algorithm-checks)包含 300×300 全陆地网格。
 
 **考察点**：DFS/BFS 都行；追问：BFS 写法？Union-Find 写法？
 

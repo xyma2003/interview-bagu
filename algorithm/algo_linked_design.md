@@ -53,13 +53,17 @@ def reverseList(head):
     return prev
 
 # 递归版
-def reverseList(head):
+def reverseList_recursive(head):
     if not head or not head.next: return head
-    new_head = reverseList(head.next)
+    new_head = reverseList_recursive(head.next)
     head.next.next = head
     head.next = None
     return new_head
 ```
+
+**适用范围**：无环单链表，节点具有 `val` 和 `next` 属性，两种写法均原地修改链接。两个函数分别命名，复制整段时不会覆盖迭代实现；长链优先用 `reverseList`。递归版用于理解过程，链长受 Python 递归深度限制，不通过调高限制冒充通用解法。
+
+**复杂度**：两种写法时间均为 O(N)；迭代辅助空间 O(1)，递归调用栈 O(N)。[运行检查](../EXAMPLE_CHECKS.md#algorithm-checks)同时覆盖两种写法，并用长链验证迭代实现。
 
 **考察点**：迭代三指针；递归的语义（返回反转后的新头节点）
 

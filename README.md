@@ -97,15 +97,21 @@ cat LEARNING_GUIDE.md
 
 ## 示例验证
 
-已为 [前端 Q37 的 `Promise.myAll` / `Promise.myAny` / 简化 `Promise.myRace`](frontend/frontend_bigco.md#review-frontend-q37) 添加可执行检查。测试直接运行题目正文中的代码，与对应原生实现对照。
+目前自动检查 **16 / 338 道题**：15 道算法题，以及前端 Q37 的 `myAll` / `myAny` / 简化 `myRace`。测试直接提取文档代码运行，具体题目、输入范围与限制见[示例验证清单](EXAMPLE_CHECKS.md)。
 
-在仓库根目录执行（Node.js 22+，无额外依赖）：
+在仓库根目录执行，无额外依赖：
 
 ```bash
+# Python 3.12+：算法示例
+python3 -m unittest discover -s tests -p 'test_algorithm*.py' -v
+
+# Node.js 22+：Promise 示例
 node --test tests/promise-*.test.cjs
 ```
 
-`myAll` / `myAny` 覆盖空输入、稀疏数组、可迭代对象、thenable、完成顺序、错误顺序与异常传播；简化 `myRace` 只验证普通稠密数组的成功／拒绝竞争和异步回调，不是完整 polyfill。CI 在 Node.js 22 和 24 上运行这些检查；简化 `myAllSettled` 尚无独立自动回归。本轮算法样例的临时执行记录见来源核验表，不等同于已纳入 CI。
+算法检查覆盖数组、字符串、树图、动态规划、链表和 LRU 的选定边界；Promise 与原生实现对照。CI 覆盖 Node.js 22 / 24、Python 3.12 / 3.13。简化 `myRace` 只检查普通稠密数组，`myAllSettled` 尚无独立回归；这些教学示例不是完整 polyfill。其余 322 题及算法手册中的相似实现未自动获得测试覆盖，来源核验仍单独按 20/338 统计。
+
+发现内容问题，可以提交[具体纠错](https://github.com/xyma2003/interview-bagu/issues/new?template=content-correction.yml)；修改方式见[贡献说明](CONTRIBUTING.md)。
 
 ---
 

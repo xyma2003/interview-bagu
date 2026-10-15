@@ -21,3 +21,16 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Verify the documented Promise examples
         run: node --test tests/promise-*.test.cjs
+
+  algorithm-examples:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify the documented algorithm examples
+        run: python3 -m unittest discover -s tests -p 'test_algorithm*.py' -v
