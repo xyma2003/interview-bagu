@@ -1,6 +1,7 @@
-# 算法面试题库 · 大厂高频专项
+# 算法面试题库 · 综合练习专题
 
-> 字节/腾讯/小红书/阿里 真实面试算法题，含详细解析
+> 算法题型练习，含详细解析；未提供可追溯的公司面经原文。
+> 本页只核验 Q73。其他题中的旧公司／频率标签不作为事实；范围见[来源规范与核验记录](../SOURCE_AUDIT.md)。
 
 ---
 
@@ -64,19 +65,28 @@ def longestConsecutive(nums: list[int]) -> int:
 
 ---
 
-### Q73: 腾讯 面试：滑动窗口最大值 · LeetCode 239
+<a id="review-algorithm-q73"></a>
 
-**🏢 高频公司**：腾讯、字节（困难高频）
+### Q73: 滑动窗口最大值 · LeetCode 239
+
+> **核验日期**：2026-10-15
+>
+> **适用范围**：Python 3.9+，collections.deque；LC 239 约束为非空数组且 1 ≤ k ≤ len(nums)。返回数组的空间单独计算。
+>
+> **技术参考**：[LC 239：题意与窗口约束](https://leetcode.com/problems/sliding-window-maximum/)；[Python 3.12：deque 两端操作](https://docs.python.org/3.12/library/collections.html#collections.deque)
+>
+> **面经来源**：未提供可追溯面经；不标注公司或出现频率。
+
 **难度**：困难 ⭐⭐⭐
 
-**题目**：给定数组和窗口大小 k，返回每个滑动窗口的最大值。
+**题目**：给定非空数组和窗口大小 `1 ≤ k ≤ len(nums)`，返回每个滑动窗口的最大值。示例遵循原题前提，不处理 `k=0` 或超长窗口。
 
-**题目讲解**（单调递减双端队列）：
+**题目讲解**（单调非递增双端队列）：
 ```python
 from collections import deque
 
 def maxSlidingWindow(nums: list[int], k: int) -> list[int]:
-    dq = deque()   # 存下标，维护单调递减（队首是当前窗口最大值的下标）
+    dq = deque()   # 存下标，对应值单调非递增（队首是当前窗口最大值的下标）
     res = []
     for i, x in enumerate(nums):
         # 移出窗口外的元素
@@ -90,7 +100,7 @@ def maxSlidingWindow(nums: list[int], k: int) -> list[int]:
             res.append(nums[dq[0]])
     return res
 ```
-**复杂度**：O(N) 时间，O(K) 空间
+**复杂度**：O(N) 时间，O(K) 辅助空间；返回数组另占 O(N−K+1) 空间。每个下标入队一次、至多出队一次，循环内的 while 不会把整体变成 O(NK)。
 
 **考察点**：单调双端队列；队首是窗口最大值，入队前清理比当前值小的元素
 
@@ -454,7 +464,6 @@ def topKFrequent(words: list[str], k: int) -> list[str]:
 
 ---
 
-*本文件共 20 题（Q71-Q90），大厂高频算法专项。*
+*本文件共 20 题（Q71-Q90），算法综合练习专题。*
 
 ---
-

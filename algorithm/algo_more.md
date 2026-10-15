@@ -1,11 +1,24 @@
 # 算法面试题库 · 第五批（冲刺 100 题）
 
+> 来源状态：本页只核验 Q91。其他题中的旧公司／频率标签未有可追溯面经支持，不作为事实；范围见[来源规范与核验记录](../SOURCE_AUDIT.md)。
+
 ---
 
-### Q91: 并查集（Union-Find）实现 · 朋友圈 LC 547
+<a id="review-algorithm-q91"></a>
 
-**🏢 高频公司**：字节、腾讯
+### Q91: 并查集（Union-Find）实现 · 省份数量 LC 547
+
+> **核验日期**：2026-10-15
+>
+> **适用范围**：Python 3.9+；LC 547 的非空、对称 0/1 邻接矩阵，主对角线为 1；采用按秩合并与路径压缩。
+>
+> **技术参考**：[LC 547：省份数量与矩阵约束](https://leetcode.com/problems/number-of-provinces/)；[Cornell ORIE 6125：Union-find](https://people.orie.cornell.edu/prs233/orie-6125/data-structures/union-find.html)
+>
+> **面经来源**：未提供可追溯面经；不标注公司或出现频率。
+
 **难度**：中等 ⭐⭐
+
+**题目**：给定城市之间直接连通关系的对称 0/1 矩阵，求连通分量数量。矩阵对角线为 1；遍历严格上三角即可处理每条无向关系一次。示例按原题约束使用，不适用于一般非对称矩阵。
 
 **题目讲解**：
 ```python
@@ -45,8 +58,6 @@ def findCircleNum(isConnected: list[list[int]]) -> int:
 - 路径压缩与按秩合并使每次并查集操作的摊还成本为 O(α(N))，其中 α 是反阿克曼函数；`E` 次合并的摊还成本为 O(E × α(N))。
 - 总时间上界为 **O(N² + E × α(N))**。由于 `E ≤ N(N−1)/2`，可写成最坏情形的摊还上界 **O(N² × α(N))**；实际规模下 α(N) 很小，可近似看作 O(N²)，不能忽略矩阵扫描而写成近似线性时间。
 - 额外空间为 **O(N)**，用于 `parent`、`rank` 和递归调用栈；不计输入矩阵本身的 O(N²) 空间。
-
-并查集摊还分析参考：[Cornell ORIE 6125：Union-find / Path compression](https://people.orie.cornell.edu/prs233/orie-6125/data-structures/union-find.html)（核验日期：2026-10-10）。
 
 **考察点**：路径压缩 + 按秩合并的双重优化；岛屿数量也可用并查集
 

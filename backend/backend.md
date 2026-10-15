@@ -2,48 +2,37 @@
 
 > 覆盖：操作系统 / 计算机网络 / MySQL / Redis / 消息队列 / 系统设计 / Python / Java / 微服务 / 分布式
 
+> 本页本轮仅核验 Q1、Q5、Q7、Q14、Q16，其余题目待核验。范围与来源规则见 [技术来源核验记录](../SOURCE_AUDIT.md)。
+
 ---
 
 ## 一、操作系统
 
+<a id="review-backend-q1"></a>
+
 ### Q1: 进程、线程、协程有什么区别？各自的适用场景是什么？
 
-**题目解析**：并发基础知识，是所有后端岗位的必考题，理解三者有助于做正确的并发模型选择。
+> **核验日期**：2026-10-15
+>
+> **适用范围**：常见操作系统的进程/线程；CPython 3.13/3.14 的 asyncio；Go 官方 gc 运行时（Go 1.14 已在支持的平台引入异步抢占）。
+>
+> **技术参考**：[Python 3.14 asyncio Task](https://docs.python.org/3.14/library/asyncio-task.html#task-object)、[Go FAQ：goroutine 与线程](https://go.dev/doc/faq#goroutines)、[Go 1.14 运行时说明](https://go.dev/doc/go1.14#runtime)。
+>
+> **面经来源**：未提供可追溯面经；不标注公司或出现频率。
 
-**题目讲解**：
-**进程（Process）**：
-- 操作系统资源分配的基本单位，有独立的虚拟地址空间、文件描述符等
-- 进程间通信（IPC）：管道、消息队列、共享内存、Socket、信号
-- 切换代价：需保存整个进程上下文，代价高（上下文切换 μs 级）
-- 隔离性好，一个进程崩溃不影响其他进程
+**核心要点**：
 
-**线程（Thread）**：
-- CPU 调度的基本单位，同进程内的线程共享地址空间和文件描述符
-- 线程间通信：共享内存（需要同步），比进程通信快
-- 切换代价：比进程小，但仍需切换寄存器、栈等
-- 并发问题：多线程共享数据需要加锁（互斥量、读写锁等），易产生死锁、竞态条件
+| 模型 | 资源与调度 | 选择时关注什么 |
+|------|------------|----------------|
+| 进程 | 通常有独立地址空间；通过 IPC 或显式共享内存交换数据 | 隔离、启动成本、通信与序列化开销 |
+| 操作系统线程 | 同一进程内共享内存，线程由操作系统调度 | 阻塞库兼容性、共享数据同步、运行时对并行的限制 |
+| asyncio Task | 事件循环在所在的线程内协作调度协程；一个循环同一时刻执行一个 Task | 使用异步 I/O；阻塞调用或长时间计算会阻塞整个循环 |
+| Go goroutine | Go 运行时把 goroutine 调度到多个操作系统线程，可利用多核并行 | 它并非只能靠用户显式 yield 的协程；调度包含抢占机制 |
 
-**协程（Coroutine）**：
-- 用户态轻量线程，由用户代码调度（非 OS），一个线程可以跑数千个协程
-- 切换代价：极低，只需保存/恢复几个寄存器，不涉及系统调用
-- 协作式调度：协程主动让出（yield/await），非抢占式
-- Python asyncio、Go goroutine、Lua coroutine
-
-**选择依据**：
-- CPU 密集型：多进程（Python 绕过 GIL）
-- I/O 密集型、高并发网络：协程（asyncio / Go）
-- 后台任务并行：线程池
-
-**考察点**：
-1. 进程 vs 线程的地址空间区别
-2. 协程和线程的调度方式区别（OS 调度 vs 用户调度）
-3. Python GIL 对多线程的影响
-
-**面试官更想听**：
-结合 Python 说出 GIL 使得多线程无法并行执行 CPU 密集型任务，应用场景要用 multiprocessing；I/O 密集型用 asyncio 协程效率更高。
+`await` 等待尚未完成的操作时可以让出执行权，不能理解为每写一个 `await` 都必然切换任务。asyncio 也不会绕过 GIL，不能仅靠给计算函数加 `async` 获得 CPU 并行。CPython 默认启用 GIL 的构建、释放 GIL 的扩展代码与 free-threaded 构建需要分别讨论，见 [Q14](#review-backend-q14)。
 
 **示例答案**：
-进程是资源分配的基本单位，有独立内存空间，隔离性强，进程崩溃不影响他人，但创建和切换代价大。线程共享进程的内存，切换代价比进程低，适合并行处理但要注意线程安全（加锁）。协程是用户态的并发，由代码控制调度（yield/await），切换代价极低，适合 I/O 密集、高并发场景——Go 的 goroutine 可以轻松启动百万个，asyncio 的协程也比线程省资源得多。Python 里因为 GIL，多线程不能真正并行执行 Python 字节码（CPU 密集型任务还是串行），CPU 密集任务要用 multiprocessing 绕过 GIL；I/O 密集型（网络请求、数据库查询）用 asyncio 协程，切换代价极小且不需要 GIL，性能远超多线程。
+我会先区分资源隔离、并发与并行。进程适合需要隔离或以进程池执行纯 Python 计算的场景；线程方便接入阻塞 I/O 库，但共享状态要同步。asyncio 适合采用异步接口的 I/O 工作流，不能在事件循环里直接放长时间阻塞任务。Go goroutine 由运行时复用线程，与单线程 asyncio 的调度模型不同。最终根据负载、库支持和实际测量选择，不预设协程一定比线程快。
 
 ---
 
@@ -163,39 +152,39 @@ B+ 树是 MySQL InnoDB 的核心数据结构。与 B 树的区别是：B+ 树内
 
 ---
 
+<a id="review-backend-q5"></a>
+
 ### Q5: MySQL 事务的四个隔离级别分别是什么？MVCC 是如何工作的？
 
-**题目解析**：事务隔离是数据库面试的核心，MVCC 是 MySQL 实现高并发读的关键机制。
+> **核验日期**：2026-10-15
+>
+> **适用范围**：MySQL 8.4、InnoDB；区分普通一致性读、锁定读与写操作，隔离级别可由配置修改。
+>
+> **技术参考**：[InnoDB 8.4 隔离级别](https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html)、[一致性非锁定读](https://dev.mysql.com/doc/refman/8.4/en/innodb-consistent-read.html)、[InnoDB 多版本机制](https://dev.mysql.com/doc/refman/8.4/en/innodb-multi-versioning.html)。
+>
+> **面经来源**：未提供可追溯面经；不标注公司或出现频率。
 
-**题目讲解**：
-**并发问题**：
-- **脏读**：读到其他事务未提交的数据（提交前可能回滚）
-- **不可重复读**：同一事务两次读同一行，值不同（中间被其他事务 UPDATE）
-- **幻读**：同一事务两次范围查询，结果集不同（中间被其他事务 INSERT/DELETE）
+**核心要点**：
 
-**四个隔离级别**：
-| 级别 | 脏读 | 不可重复读 | 幻读 |
-|------|------|-----------|------|
-| READ UNCOMMITTED | 可能 | 可能 | 可能 |
-| READ COMMITTED | ✅ | 可能 | 可能 |
-| REPEATABLE READ（MySQL 默认）| ✅ | ✅ | ✅（InnoDB MVCC+间隙锁防止）|
-| SERIALIZABLE | ✅ | ✅ | ✅ |
+| 隔离级别 | InnoDB 8.4 的主要读取行为 |
+|----------|--------------------------|
+| READ UNCOMMITTED | 普通读取可能看到未提交修改，即脏读 |
+| READ COMMITTED（RC） | 每次一致性读取得新快照；其他事务提交后，同一事务再次查询可能看到不同值或行集合 |
+| REPEATABLE READ（RR，默认） | 通常在事务第一次一致性读时建立快照，后续一致性读复用；不是执行 `BEGIN` 就必然生成 Read View |
+| SERIALIZABLE | 更严格地隔离事务；关闭 autocommit 时，普通 `SELECT` 隐式转为 `SELECT ... FOR SHARE`；autocommit 开启时，单独只读 `SELECT` 可以采用一致性读 |
 
-**MVCC（多版本并发控制）**：
-- 每行数据有两个隐藏字段：`trx_id`（最后修改该行的事务 ID）和 `roll_pointer`（指向 undo log 中旧版本）
-- Read View：事务开始时创建快照，记录当前活跃事务 ID 列表
-- 读取时，通过 `trx_id` 和 Read View 判断版本是否可见：
-  - 版本的 trx_id < min_trx_id（ReadView 创建时最小活跃事务 ID）→ 可见
-  - 版本的 trx_id > max_trx_id → 不可见，通过 roll_pointer 查旧版本
-- **RC 和 RR 的区别**：RC 每次 SELECT 创建新 Read View，RR 只在事务开始时创建一次
+**MVCC 与 Read View**：
 
-**考察点**：
-1. 幻读 vs 不可重复读的区别（行 vs 范围）
-2. RR 级别下 MVCC 防止不可重复读的机制
-3. 当前读 vs 快照读（SELECT FOR UPDATE 是当前读，不走 MVCC）
+- InnoDB 利用 undo 信息重建旧版本；聚簇记录中的 `DB_TRX_ID` 标识最近修改事务，`DB_ROLL_PTR` 指向 undo 记录。不要把它概括为“所有记录只有两个隐藏字段”。
+- 一致性读按快照判断版本可见性，排除其他事务在快照时尚未提交或之后产生的修改；本事务先前的写入仍然可见，因此结果不一定对应数据库历史上的某个完整状态。
+- RR 的 `START TRANSACTION WITH CONSISTENT SNAPSHOT` 可显式在启动时取得一致性快照。RC 每次一致性读重新取快照；“每次 SELECT”必须排除锁定读等其他读取方式。
+
+**幻读与锁的边界**：
+
+RR 下重复的一致性读使用同一快照；锁定读和写操作则不受这个旧快照限制。RR 对范围扫描可使用 gap/next-key 锁阻止相应间隙插入；唯一索引的唯一等值命中通常只锁记录。锁住哪里取决于扫描的索引范围，不能把 `BETWEEN 1 AND 10` 简化为固定锁住数学区间 1—10。RC 通常不使用间隙锁，但外键和重复键检查是例外。
 
 **示例答案**：
-MySQL 默认的隔离级别是 REPEATABLE READ，通过 MVCC 实现了无锁的一致性读。每行数据在 undo log 里保存历史版本，事务开始时创建 Read View（快照），记录当前所有活跃事务。读取时，通过版本链和 Read View 找到"对当前事务可见"的最新版本——比当前事务早提交的版本可见，当前事务创建后才开始的事务修改的版本不可见。RR 级别的 Read View 在整个事务期间只创建一次，所以两次读到的数据一致（防不可重复读）；RC 级别每次 SELECT 都创建新 Read View，能看到最新提交，所以会出现不可重复读。InnoDB 在 RR 级别还通过间隙锁（Gap Lock）解决了范围查询的幻读：`SELECT ... WHERE id BETWEEN 1 AND 10 FOR UPDATE` 会锁住 1-10 的间隙，防止其他事务插入新行。注意：FOR UPDATE 是当前读（读最新版本+加锁），不走 MVCC。
+我会先说明讨论的是 InnoDB 8.4。RC 每次一致性读建立新快照，RR 通常从第一次一致性读开始复用快照；两者都能看见自己的修改。MVCC 通过版本可见性和 undo 支持读取旧版本。`FOR UPDATE` 等锁定读不沿用普通查询的旧快照，而是按当前数据状态加锁；范围保护还与隔离级别、索引及查询条件有关，所以不能承诺 RR 中任意混合读写都永远得到相同结果。
 
 ---
 
@@ -245,39 +234,37 @@ MySQL 默认的隔离级别是 REPEATABLE READ，通过 MVCC 实现了无锁的�
 
 ---
 
-### Q7: Redis 的六种数据类型和底层数据结构是什么？
+<a id="review-backend-q7"></a>
 
-**题目解析**：Redis 是后端必用中间件，理解其数据结构有助于选择正确的类型和理解性能特征。
+### Q7: Redis 常用的六类数据类型及其底层编码是什么？
 
-**题目讲解**：
-| 数据类型 | 底层实现 | 适用场景 |
-|---------|---------|---------|
-| String | SDS（简单动态字符串）| 缓存、计数器、分布式锁 |
-| List | quicklist（ziplist + 双向链表）| 消息队列、最新列表（LPUSH+LRANGE）|
-| Hash | ziplist（小）/ hashtable（大）| 对象存储（用户信息）|
-| Set | intset（整数集合）/ hashtable | 标签、去重、交并差集 |
-| Sorted Set | ziplist（小）/ skiplist + hashtable | 排行榜、延迟队列 |
-| Stream | 专用 listpack + Radix Tree | 消息队列（支持 consumer group）|
+> **核验日期**：2026-10-15
+>
+> **适用范围**：以下内部实现固定以 Redis Open Source 7.2.4 为例；六类是本题选取的常用类型，并非完整类型清单。
+>
+> **技术参考**：[Redis OBJECT ENCODING](https://redis.io/docs/latest/commands/object-encoding/)、[Redis 7.2.4 List 实现](https://raw.githubusercontent.com/redis/redis/7.2.4/src/t_list.c)、[Redis 7.2.4 对象与 ZSet 结构](https://raw.githubusercontent.com/redis/redis/7.2.4/src/server.h)。
+>
+> **面经来源**：未提供可追溯面经；不标注公司或出现频率。
 
-**跳表（Skip List）**：
-- 有序链表的多层索引，查询 O(log N)
-- 为什么 ZSet 用跳表而非红黑树：
-  - 跳表范围查询（ZRANGEBYSCORE）只需找到起始节点沿链表遍历，红黑树需要中序遍历更复杂
-  - 跳表实现简单，内存占用接近
-  - 支持并发更新性能好
+**核心要点**：逻辑类型与内部编码是两层概念，同一类型的编码会随内容、大小和配置改变。
 
-**SDS（Simple Dynamic String）vs C 字符串**：
-- 记录字符串长度（O(1) 获取），C 字符串 O(N)
-- 预分配空间，减少内存重分配
-- 二进制安全（可存 `\0`）
+| 逻辑类型 | Redis 7.2.4 的编码/结构 | 常见用途 |
+|----------|-----------------------|----------|
+| String | `int`、`embstr`、`raw`；字符串存储涉及 SDS，不能概括成所有值都直接使用同一种 SDS 布局 | 缓存、计数 |
+| List | `listpack` 或 `quicklist`；quicklist 是链式结构，紧凑节点装载 listpack | 按插入顺序保存与弹出元素 |
+| Hash | 小对象可用 `listpack`，超出适用条件转为 `hashtable` | 字段—值对象 |
+| Set | `intset`、`listpack` 或 `hashtable`；7.2 已支持小集合的 listpack 编码 | 去重、集合运算 |
+| Sorted Set | `listpack` 或 `skiplist` 编码；后者结合跳表与字典 | 按分数排序、排行榜 |
+| Stream | `stream` 编码，由 radix tree 组织 listpack 数据 | 带 ID 的追加记录、消费者组处理 |
 
-**考察点**：
-1. 跳表的时间复杂度和使用场景
-2. ziplist 何时转为其他结构（元素数量阈值）
-3. Redis 5.0 新增 Stream 的优势
+**版本与性能边界**：
+
+- 旧资料中的 ziplist 不能直接套用到本题版本；尤其不要遗漏 7.2.4 的独立 List listpack 和 Set listpack。
+- 编码转换受元素数量、元素大小及服务器配置等条件影响，不能只背一个固定阈值。排查实例时可分别查看 `TYPE key` 与 `OBJECT ENCODING key`。
+- ZSet 的跳表维护有序访问，字典支持按成员定位；不能据此推出“跳表天然比红黑树更适合 Redis 并发更新”。Stream 的消费者组/确认机制也不能单独证明消息永不丢失，持久化、复制和消费处理仍需另外设计。
 
 **示例答案**：
-Redis 六种数据类型各有不同的底层实现。String 底层是 SDS（自研动态字符串），相比 C 字符串有 O(1) 的 len 字段、自动扩容、二进制安全。List 是 quicklist，本质是分段的 ziplist + 双向链表，小 list 用紧凑的 ziplist，大了拆分成链表节点。Hash 小时用 ziplist 节省内存，超过阈值（默认 512 字段或 64 字节）转 hashtable。Sorted Set 用跳表 + hashtable，跳表保证有序，hashtable 保证 score 查询 O(1)，相比红黑树，跳表在范围查询时直接链表遍历更自然，代码也更简单。Set 纯整数时用 intset（有序整数数组），效率很高，否则用 hashtable。Stream 是 Redis 5.0 加的，支持消费者组（consumer group）、ACK 机制，适合需要可靠性保证的消息队列场景，比 List 更像专业 MQ。
+我会先确认 Redis 版本，再区分类型和编码。以 7.2.4 为例，小 Hash 和 ZSet 可用 listpack；较大 ZSet 使用跳表加字典。List 可能直接是 listpack，也可能是 quicklist；Set 不只有整数集合和哈希表，还可能使用 listpack。类型决定操作语义，内部编码是实现细节，实际对象应以 `OBJECT ENCODING` 检查，不能把旧版 ziplist 结论当成所有版本通用。
 
 ---
 
@@ -528,34 +515,37 @@ Snowflake 生成的 ID 是 64 位整数，结构是：1 bit 符号位（始终 0
 
 ---
 
+<a id="review-backend-q14"></a>
+
 ### Q14: Python 的 GIL 是什么？它对多线程并发有什么影响？
 
-**题目解析**：GIL 是 Python 最常被问到的特性，也是很多开发者误解的地方。
+> **核验日期**：2026-10-15
+>
+> **适用范围**：CPython 3.13/3.14；必须区分默认启用 GIL 的构建、可选 free-threaded 构建及运行时的实际 GIL 状态，不泛化到所有 Python 实现。
+>
+> **技术参考**：[Python 3.14 threading](https://docs.python.org/3.14/library/threading.html)、[Python 3.14 free-threading 指南](https://docs.python.org/3.14/howto/free-threading-python.html)、[PEP 779：free-threaded 支持状态](https://peps.python.org/pep-0779/)。
+>
+> **面经来源**：未提供可追溯面经；不标注公司或出现频率。
 
-**题目讲解**：
-**GIL（Global Interpreter Lock）**：
-- CPython 解释器的一个互斥锁，在任意时刻只允许一个线程执行 Python 字节码
-- 保护 Python 对象的引用计数不被并发修改（内存安全）
+**核心要点**：
 
-**对多线程的影响**：
-- **CPU 密集型任务**：多线程无法真正并行（GIL 串行化），性能甚至比单线程差（线程切换开销）
-- **I/O 密集型任务**：线程在 I/O 等待时会释放 GIL，其他线程可以运行，多线程有效果（但远不如协程）
+在启用 GIL 的 CPython 解释器中，同一时刻通常只有一个线程执行 Python 字节码。GIL 保护解释器内部操作，但不是业务共享状态的锁，不能据此认为多步“检查再修改”自动线程安全。
 
-**绕过 GIL 的方案**：
-1. **multiprocessing**：多进程，每个进程有独立 GIL，真正并行 CPU 运算
-2. **concurrent.futures.ProcessPoolExecutor**：多进程的高级封装
-3. **Cython / C 扩展**：可以在不需要 GIL 的代码段释放 GIL（NumPy 就是这样实现并行计算的）
-4. **asyncio（协程）**：适合 I/O 密集型，单线程内切换，无 GIL 问题
+| 运行方式 | 对并发/并行的影响 |
+|----------|------------------|
+| 默认 GIL 构建中的纯 Python 计算 | 多线程通常不能借助多核并行执行这些字节码；可评估进程池等方案 |
+| 阻塞 I/O 或释放 GIL 的扩展代码 | 其他线程可以在释放 GIL 后执行；是否加速取决于工作负载和扩展实现 |
+| asyncio | 在事件循环中组织 I/O 并发；不关闭 GIL，也不会自动把计算任务变成多核并行 |
+| free-threaded 构建且 GIL 实际禁用 | 线程可以并行执行 Python 代码，但仍需处理竞态、依赖兼容性和性能开销 |
 
-**Python 3.12+ 的改进**：sub-interpreter 支持每个解释器独立 GIL，为未来去除 GIL 做铺垫（PEP 703 在实验中）。
+**3.13 与 3.14 的区别**：
 
-**考察点**：
-1. GIL 存在的原因（保护引用计数）
-2. CPU 密集 vs I/O 密集的不同影响
-3. 多进程 vs 多线程的选择
+- CPython 3.13 提供可选、实验性的 free-threaded 构建。
+- CPython 3.14 的 free-threaded 构建进入正式支持阶段，仍是可选构建；不能写成“3.14 默认已经移除 GIL”。
+- free-threaded 构建仍可在运行时启用 GIL，未声明支持 free threading 的 C 扩展也可能触发启用。可用 `sysconfig.get_config_var("Py_GIL_DISABLED")` 区分构建支持，再用 `sys._is_gil_enabled()` 查看当前进程状态。
 
 **示例答案**：
-GIL 是 CPython 的一把全局锁，任意时刻只有一个线程能执行 Python 字节码，保护解释器内部的引用计数不被并发破坏。对于 CPU 密集任务，GIL 导致多线程实际上是串行的，性能没有提升甚至因切换开销更慢——应该用 `multiprocessing` 或 `ProcessPoolExecutor`，多进程各有独立 GIL 可以真正并行。I/O 密集任务（网络请求、文件读写）线程在等待 I/O 时会释放 GIL，其他线程可以运行，多线程有一定效果，但更推荐 asyncio 协程，切换代价更小、代码更清晰。NumPy/scipy 等科学计算库在 C 扩展里临时释放 GIL，所以 NumPy 的矩阵运算是真正多核并行的，这也是 Python 在数据科学领域仍然高效的原因。Python 3.13 正在实验性支持"无 GIL 模式"，未来有望真正解决这个限制。
+GIL 的结论必须带上实现和构建条件。默认 CPython 的纯 Python 计算通常不能通过多线程获得多核并行，但线程对等待 I/O 仍有价值，释放 GIL 的扩展也要另看实现。asyncio 解决的是异步任务调度，不是去掉 GIL。3.13 的 free-threaded 是实验性可选构建，3.14 已正式支持但还不是默认；选择它之前需要验证依赖、共享数据同步和实际性能，不能只看 Python 版本号。
 
 ---
 
@@ -620,32 +610,32 @@ def fetch_data(): ...
 
 ---
 
+<a id="review-backend-q16"></a>
+
 ### Q16: 什么是 CAP 定理？在分布式系统中如何做出权衡？
 
-**题目解析**：CAP 是分布式系统设计的基础理论，面试中考察候选人的分布式思维。
+> **核验日期**：2026-10-15
+>
+> **适用范围**：可能发生网络分区的分布式读写服务；C 指线性一致性，A 指未故障节点收到的请求最终能够完成操作，而非日常监控的可用率。
+>
+> **技术参考**：[Gilbert 与 Lynch：Perspectives on the CAP Theorem](https://groups.csail.mit.edu/tds/papers/Gilbert/Brewer2.pdf)、[Brewer：CAP Twelve Years Later（IEEE/InfoQ 作者原文）](https://www.infoq.com/articles/cap-twelve-years-later-how-the-rules-have-changed/)。
+>
+> **面经来源**：未提供可追溯面经；不标注公司或出现频率。
 
-**题目讲解**：
-**CAP 三元素**：
-- **C（Consistency，一致性）**：所有节点在同一时刻看到相同的数据（强一致性）
-- **A（Availability，可用性）**：每个请求都能收到（非错误的）响应，但不保证是最新数据
-- **P（Partition Tolerance，分区容错性）**：网络分区（节点间通信中断）时系统仍能运行
+**核心要点**：
 
-**CAP 定理**：分布式系统不可能同时满足三者，最多满足其中两个。由于网络分区（P）在分布式系统中必然存在，实际选择是 **CP 或 AP**：
-- **CP**（牺牲可用性）：分区时拒绝服务而非返回不一致数据。例：ZooKeeper、Etcd、HBase
-- **AP**（牺牲一致性）：分区时仍然服务，但数据可能不一致。例：Cassandra、CouchDB、DNS
+- **C（Consistency）**：这里指线性一致性，操作看起来在调用与返回之间某一瞬间生效，并尊重已经完成操作的先后关系；不是要求所有副本每时每刻物理内容相同。
+- **A（Availability）**：未故障节点收到的每个请求最终获得操作结果；单纯返回“服务不可用”并不满足所要求的读写服务可用性，定义也没有给出固定毫秒级时限。
+- **P（Partition tolerance）**：需要考虑节点组之间无法通信、消息可能持续丢失的执行情形；不能靠应用配置保证网络永远不分区。
 
-**BASE 理论**（AP 系统的工程化）：
-- **Basically Available**：基本可用（允许部分降级）
-- **Soft State**：软状态（数据允许短暂不一致）
-- **Eventually Consistent**：最终一致（一定时间后数据收敛一致）
+**定理的边界**：面对分区，不能对所有请求同时保证线性一致性与上述可用性。它不是无条件的“任何时候三选二”，也不要求没有分区时主动丢弃 C 或 A；工程上还要处理无法立即区分分区与长延迟的问题。
 
-**考察点**：
-1. 为什么实际选择是 CP vs AP（而非 CA）
-2. BASE 是对强一致性的放宽
-3. 实际系统的例子（MySQL 主从是 AP，Paxos/Raft 是 CP）
+**如何落到设计上**：
+
+优先保证线性一致性的操作，可能需要在无法完成协调的一侧等待或拒绝执行，不代表整个系统所有节点都必须停止服务。若要求分区两侧继续接受相应读写，就必须明确允许的旧值、冲突及恢复后的合并规则。最终收敛需要额外的传播和冲突处理机制，不是选择“AP”就自动获得的保证。应按操作、复制协议和部署条件讨论，不能仅凭“MySQL 主从”“某数据库”或“Raft”名称给整个系统贴固定 CP/AP 标签。
 
 **示例答案**：
-CAP 定理说分布式系统不能同时满足一致性、可用性和分区容错性。由于网络分区（节点间通信故障）在分布式环境里是必须容忍的（不然两机房网络一断就全崩），P 必须保留，所以真正的选择是 CP 还是 AP。CP 系统（如 ZooKeeper）在分区时会拒绝写入请求，保证读到的数据一定是一致的，适合需要强一致的协调服务（选主、分布式锁）；AP 系统（如 Cassandra）在分区时仍然服务，允许不同节点数据短暂不一致，适合高可用优先的场景（购物车、点赞计数）。MySQL 主从复制是 AP 的——主库写入后从库可能还没同步，此时读从库会得到旧数据，但服务不中断。BASE 是 AP 系统的工程规范：接受暂时不一致，设计补偿机制保证最终一致。实际系统里往往按操作类型分别处理：写入用 CP（保证不丢数据），读取允许 AP（提高可用性和性能）。
+我会用跨分区读写同一个值来解释：一侧已经确认新写入，另一侧无法获知它；另一侧若立刻给出旧值就失去线性一致性，若一直等待通信恢复就不能保证分区期间每个请求都完成。实际设计先定义每类操作需要的语义，再决定等待、降级或允许冲突，并补充分区恢复方案；CAP 本身不回答数据持久性和业务补偿的全部问题。
 
 ---
 

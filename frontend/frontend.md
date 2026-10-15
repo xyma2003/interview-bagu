@@ -6,42 +6,37 @@
 
 ## 一、HTML / CSS
 
+<a id="review-frontend-q1"></a>
+
 ### Q1: 什么是 BFC（块级格式化上下文）？如何创建 BFC？有哪些应用场景？
 
-**题目解析**：BFC 是 CSS 布局的核心概念，理解它能解释很多"神奇"的 CSS 行为，是高频面试题。
+> **核验日期**：2026-10-15
+>
+> **适用范围**：CSS 2.2 / CSS Display Level 3 / CSS Overflow Level 3；以下外边距示例采用水平书写模式与普通块布局。
+>
+> **技术参考**：[CSS 块格式化上下文](https://www.w3.org/TR/CSS22/visuren.html#block-formatting)、[CSS Display：格式化上下文](https://drafts.csswg.org/css-display-3/#formatting-context)、[CSS Overflow：overflow](https://www.w3.org/TR/css-overflow-3/#overflow-properties)
+>
+> **面经来源**：未提供可追溯面经。
+
+**题目解析**：区分块格式化上下文、浮动与外边距折叠，避免把所有独立布局都叫作 BFC。
 
 **题目讲解**：
-BFC（Block Formatting Context）是页面上的一个独立渲染区域，内部元素的布局不受外部影响，外部也不受内部影响。
+BFC 是按块与行内布局规则排版的格式化上下文。它隔离内外浮动等布局影响，但容器的尺寸仍参与外部布局，不能理解为内外完全没有影响。
 
-**创建 BFC 的方式**：
-- `overflow: hidden / auto / scroll`（不是 visible）
-- `display: flex / inline-flex / grid / inline-grid`
-- `display: flow-root`（最语义化的方式）
-- `position: absolute / fixed`
-- `float: left / right`
-- `contain: layout / content / paint`
+**常见创建方式**：
+- `display: flow-root`，明确为内容建立新的 BFC。
+- 浮动元素、绝对定位元素，以及 `inline-block`、表格单元格等块容器。
+- 块盒的 `overflow` 计算值为 `hidden`、`auto` 或 `scroll`。`overflow: clip` 单独使用不会建立 BFC；两轴取值混用时应看计算值。
 
-**BFC 的特性**：
-1. 内部 box 垂直排列
-2. 同一 BFC 内相邻 margin 会合并，不同 BFC 不会
-3. BFC 区域不会与 float 元素重叠
-4. BFC 计算高度时包含内部浮动子元素
+`flex` / `inline-flex` 建立 **flex formatting context**，`grid` / `inline-grid` 建立 **grid formatting context**。它们也有隔离浮动、阻止外边距跨上下文折叠等性质，但内部布局规则不同，不应直接称为 BFC。
 
-**应用场景**：
-- **清除浮动**：父容器设 `overflow: hidden` 创建 BFC，让父容器包住浮动子元素（解决高度塌陷）
-- **避免 margin 合并**：父子 margin 合并时，给父元素创建 BFC
-- **自适应两栏布局**：左 float，右 `overflow: hidden` 创建 BFC，右侧不与左侧重叠
-
-**考察点**：
-1. BFC 的创建方式（至少说出 3 种）
-2. 解决浮动高度塌陷的原理
-3. Margin Collapse 的触发条件和解决方案
-
-**面试官更想听**：
-能解释 `display: flow-root` 为什么是最佳实践（语义明确，无副作用），以及 margin 合并只发生在垂直方向、同一 BFC 内相邻块级元素。
+**应用与边界**：
+1. **包住内部浮动**：BFC 根的自动高度计算会计入参与该 BFC 的浮动后代，常用 `flow-root` 解决浮动内容不撑开父容器的问题。
+2. **阻止父子外边距折叠**：新 BFC 的边界阻止其内容的 margin 与容器外部折叠；容器内部符合条件的相邻块仍可能折叠，不能说“有 BFC 就不会折叠”。
+3. **避开外部浮动**：建立 BFC 的普通流块盒可避开同一外部上下文中的浮动，用于传统浮动两栏布局。
 
 **示例答案**：
-BFC 是 CSS 渲染中一块独立的格式化区域，内部元素按块级规则排列，且这个区域不会与外部浮动元素重叠，计算高度时也会包含内部浮动子元素。创建 BFC 最常用的方式是 `overflow: hidden` 或 `display: flow-root`（flow-root 是最语义化的，没有副作用）；`flex/grid` 容器本身也是 BFC。实际应用中，BFC 主要解决三个问题：1）清除浮动高度塌陷——给浮动元素的父容器设 `overflow: hidden`，父容器变为 BFC 后会将内部浮动纳入高度计算；2）阻止 margin 合并——父子元素 margin 合并时，给父元素创建 BFC 即可隔断；3）两栏自适应布局——左栏 float，右栏创建 BFC，右栏不会被浮动元素覆盖。
+如果目的只是建立 BFC，我会优先考虑 `display: flow-root`，因为它不额外要求裁剪内容或创建滚动机制；但它本身会改变浮动和 margin 的布局关系，不能称为“完全无副作用”。需要 Flex/Grid 的排布能力时则直接使用相应布局，不把它们与块格式化上下文混为一谈。
 
 ---
 
@@ -108,27 +103,26 @@ Flex 是一维布局，沿一个轴（行或列）分配空间，适合组件内
 
 ---
 
+<a id="review-frontend-q4"></a>
+
 ### Q4: JavaScript 的事件循环（Event Loop）是如何工作的？宏任务和微任务有什么区别？
 
-**题目解析**：Event Loop 是 JavaScript 异步机制的核心，是前端面试的必考题。
+> **核验日期**：2026-10-15
+>
+> **适用范围**：WHATWG HTML Living Standard 的浏览器 Window 事件循环；示例是同一次普通脚本执行，不套用于 Node.js 的事件循环阶段或 `process.nextTick`。
+>
+> **技术参考**：[HTML：事件循环处理模型](https://html.spec.whatwg.org/multipage/webappapis.html#event-loop-processing-model)、[HTML：微任务检查点](https://html.spec.whatwg.org/multipage/webappapis.html#perform-a-microtask-checkpoint)、[HTML：计时器](https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#timers)
+>
+> **面经来源**：未提供可追溯面经。
 
 **题目讲解**：
-JavaScript 是单线程语言，通过 Event Loop 实现非阻塞异步。
+同一 JavaScript agent 的执行上下文按调用栈运行；浏览器还可有 Worker 等其他 agent，不能据此把整个浏览器说成单线程。异步操作由宿主调度，`new Promise` 的 executor 本身仍同步执行。
 
-**执行栈（Call Stack）**：同步代码直接在栈上执行。
+- **任务（task，常被口头称为宏任务）**：如计时器回调、消息事件。事件循环可有多个任务队列与来源，不是所有任务共用一个全局 FIFO。
+- **微任务（microtask）**：如已就绪的 Promise reaction、`queueMicrotask` 回调和 MutationObserver 通知。在微任务检查点，队列会处理至空，期间加入的微任务也会继续处理。
+- **渲染机会**：渲染有专门调度，`requestAnimationFrame` 回调属于更新渲染流程。当前规范还定义 rendering task source；不能把“UI 渲染”简单当成与计时器同队列的普通宏任务，也不能保证每处理一个任务就绘制一帧。
 
-**任务队列**：
-- **宏任务（MacroTask）**：setTimeout、setInterval、I/O、UI 渲染、postMessage、MessageChannel
-- **微任务（MicroTask）**：Promise.then/catch/finally、MutationObserver、queueMicrotask
-
-**Event Loop 流程**：
-1. 执行完当前宏任务（初始时是整个脚本）
-2. 清空所有微任务队列（微任务执行过程中产生的新微任务也会立即加入并清空）
-3. 如果需要，执行 UI 渲染
-4. 取出下一个宏任务执行
-5. 重复
-
-**关键规则**：每个宏任务执行完后，立即清空所有微任务，然后才执行下一个宏任务。
+**分析顺序**：先执行当前同步代码，再看哪些微任务已经入队；任务完成后的检查点会处理它们，然后事件循环才选择后续任务。规范也在其他位置设置检查点，并非只有“宏任务结束”这一处。持续递归添加微任务可能延迟后续任务与渲染。
 
 ```javascript
 console.log('1');                    // 同步
@@ -138,16 +132,8 @@ console.log('4');                    // 同步
 // 输出: 1, 4, 3, 2
 ```
 
-**考察点**：
-1. 微任务比宏任务优先执行
-2. async/await 的微任务本质
-3. Node.js 的 process.nextTick 优先级
-
-**面试官更想听**：
-能举出代码例子，说明微任务队列在每个宏任务后清空的机制；能分析 async/await 的实际执行顺序。
-
 **示例答案**：
-JavaScript 单线程通过 Event Loop 实现异步。执行栈处理同步代码，遇到异步操作（setTimeout、Promise 等）将回调分别注册到宏任务队列或微任务队列。Event Loop 的关键规则是：每执行完一个宏任务，立即清空全部微任务（包括微任务执行中新产生的微任务），然后才执行下一个宏任务。宏任务包括：script（整体代码）、setTimeout、setInterval、I/O；微任务包括：Promise 回调、MutationObserver、queueMicrotask。所以 Promise.then 总比 setTimeout 先执行，不管 setTimeout 的延迟设为多少。async/await 的本质是 Promise 的语法糖，await 后面的代码等价于 .then() 回调，即微任务，理解这一点就能正确分析 async 函数的执行顺序。
+上例的 Promise 已经 fulfilled，因此 reaction 在当前脚本结束后的检查点执行，输出为 `1, 4, 3, 2`。这不意味着任意 `Promise.then` 都早于任意 `setTimeout`：如果 Promise 尚未解决，它的回调可能尚未入队。`await` 会暂停当前 async 函数，后续恢复通过 Promise 的异步机制安排；仍需结合被等待值的完成时机分析。计时器延迟表示调度条件，不保证精确执行时间。
 
 ---
 
@@ -626,35 +612,41 @@ Composition API 解决了 Options API 的两个核心问题：逻辑分散和复
 
 ---
 
-### Q19: 什么是 Web Vitals？LCP、FID/INP、CLS 分别是什么？如何优化？
+<a id="review-frontend-q19"></a>
 
-**题目解析**：Web Vitals 是 Google 定义的用户体验标准，也是 SEO 排名因素，前端性能必考。
+### Q19: 什么是 Web Vitals？LCP、INP、CLS 分别是什么？FID 有何变化？
+
+> **核验日期**：2026-10-15
+>
+> **适用范围**：当前 Core Web Vitals 的 LCP / INP / CLS 定义与现场评估口径；工具版本和真实用户数据覆盖范围需另行确认。
+>
+> **技术参考**：[Web Vitals 总览](https://web.dev/articles/vitals)、[INP 定义](https://web.dev/articles/inp)、[CLS 定义](https://web.dev/articles/cls)
+>
+> **面经来源**：未提供可追溯面经。
 
 **题目讲解**：
-**Core Web Vitals（核心指标）**：
+Web Vitals 是用户体验度量倡议，Core Web Vitals 是其中的核心指标集合。[INP 已于 2024-03-12 取代 FID](https://web.dev/blog/inp-cwv-march-12)。FID 只测首次交互的输入延迟；INP 还覆盖事件处理和到下一次绘制的等待，并观察页面访问期间的交互。
 
-1. **LCP（Largest Contentful Paint，最大内容绘制）**：
-   - 衡量页面加载性能：最大可见内容（图片/视频/文本块）的渲染时间
-   - 良好：< 2.5s
-   - 优化：预加载关键图片（`<link rel="preload">`）、SSR、CDN、压缩图片（WebP/AVIF）、消除渲染阻塞资源
+| 核心指标 | 衡量什么 | 良好阈值 |
+|---|---|---|
+| LCP | 视口中符合条件的最大内容元素的绘制时间，反映加载体验 | ≤ 2.5 秒 |
+| INP | 点击、触摸、键盘交互的响应延迟；按规则排除异常值后取代表性的最慢交互 | ≤ 200 毫秒 |
+| CLS | 整个页面生命周期内，意外布局偏移的最大 session window 得分 | ≤ 0.1 |
 
-2. **INP（Interaction to Next Paint，交互响应时间）**：
-   - 替代 FID，衡量用户交互（点击/键盘/触摸）到下一帧绘制的延迟
-   - 良好：< 200ms
-   - 优化：减少长任务（>50ms），拆分 JS 任务，减少主线程阻塞，使用 Web Worker
+这些阈值应看真实用户页面访问的 **第 75 百分位**，移动端与桌面端分开评估，三个指标均达标才算通过。它们不是“超过这一数值每位用户都会感到卡顿”的绝对边界。
 
-3. **CLS（Cumulative Layout Shift，累积布局偏移）**：
-   - 衡量视觉稳定性：页面加载过程中元素意外移动的总量
-   - 良好：< 0.1
-   - 优化：给图片/视频设置宽高属性（避免加载后撑开页面），避免在内容上方动态插入元素，字体使用 `font-display: swap`
+**容易混淆的口径**：
+- CLS 不是只统计加载阶段，也不是把整个生命周期的偏移全部相加；一个 session window 内相邻偏移间隔小于 1 秒、总时长最多 5 秒，取累计得分最大的窗口。
+- INP 不覆盖滚动、悬停等所有动作；没有符合条件的交互时，可能没有 INP 数据。
+- Lighthouse 的单次加载实验不能代替真实用户的完整交互数据，应结合现场数据与交互诊断定位问题。
 
-**考察点**：
-1. 三个指标分别衡量的用户体验维度
-2. 如何用 Chrome DevTools / Lighthouse 测量
-3. 具体优化手段和预期收益
+**优化思路**：
+- LCP：先定位实际 LCP 元素与关键路径，再改善服务器响应、资源发现和下载；按需预加载关键资源，而非盲目预加载全部图片。
+- INP：分别检查输入等待、事件处理、呈现等待，减少长任务与不必要的 DOM 工作；适合的计算可移到 Worker。
+- CLS：为媒体与广告预留空间，减少内容插入造成的挤动，并匹配备用字体的尺寸。`font-display: swap` 本身不保证降低 CLS，字体替换也可能造成偏移；参见[官方 CLS 优化指南](https://web.dev/articles/optimize-cls#web_fonts)。
 
 **示例答案**：
-Web Vitals 是 Google 提出的三个核心用户体验指标。LCP 衡量"加载速度感知"，是最大内容块（通常是主图或标题）多久可见，优化重点是预加载 Hero 图片（`<link rel="preload">`）、SSR 减少白屏时间、用 WebP 格式压缩图片体积。INP（已替换 FID）衡量"交互响应性"，测量从用户交互到下一帧绘制的时间，超过 200ms 用户会感觉卡顿，优化方式是把长任务（>50ms）拆分为更小的任务（`setTimeout(fn, 0)` 切片），将 CPU 密集计算移到 Web Worker。CLS 衡量"视觉稳定性"，图片/广告加载后撑开页面导致内容位移是主要原因，解决方案是给所有图片和视频元素明确指定 width/height，用 `aspect-ratio` 占位，避免在现有内容上方动态注入内容。用 Lighthouse 定期测量，在 Search Console 里监控真实用户数据。
+我会先确认是实验数据还是现场数据，再分别定位 LCP 的关键资源、INP 的慢交互和 CLS 的位移窗口。优化后比较相同设备分组与统计口径，不能仅凭一次 Lighthouse 分数就宣布所有真实用户体验已经改善。
 
 ---
 
@@ -777,36 +769,37 @@ identity(42);  // T = number（类型推断）
 
 ---
 
+<a id="review-frontend-q23"></a>
+
 ### Q23: TypeScript 中的 `type` 和 `interface` 有什么区别？何时该用哪个？
 
-**题目解析**：type 和 interface 是 TypeScript 中的基础类型定义方式，考察候选人的实际使用经验。
+> **核验日期**：2026-10-15
+>
+> **适用范围**：TypeScript 5.x 的常见对象类型写法，按 `strict: true` 讨论；类型声明不提供运行时数据校验。
+>
+> **技术参考**：[类型别名与接口](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces)、[对象类型与扩展](https://www.typescriptlang.org/docs/handbook/2/objects.html#extending-types)、[结构类型兼容性](https://www.typescriptlang.org/docs/handbook/type-compatibility.html)
+>
+> **面经来源**：未提供可追溯面经。
 
 **题目讲解**：
-**相同点**：
-- 都能描述对象结构
-- 都能被 implements 和 extends
+两者都能描述对象与调用签名。普通对象的兼容性主要由结构决定，给对象起不同类型名不会自动产生名义类型隔离；但这不表示任何“看起来相似”的类型都可互换，新鲜对象字面量的多余属性检查、类的 private/protected 成员来源等仍有额外规则。
 
-**主要区别**：
-| | interface | type |
+| 维度 | `interface` | `type` |
 |---|---|---|
-| 声明合并 | ✅ 支持（可多次声明同名 interface，自动合并） | ❌ 不支持，重名报错 |
-| 表达能力 | 只能描述对象/函数 | 可以是任意类型（联合类型、元组、基本类型别名）|
-| 计算类型 | ❌ 不支持条件类型等 | ✅ 支持所有类型操作 |
-| 扩展语法 | extends 关键字 | & 交叉类型 |
-| 错误信息 | 通常更友好（显示接口名） | 有时展开类型，较长 |
+| 声明合并 | 同一声明空间内允许合并；成员冲突仍会报错 | 类型别名不能重新打开并合并 |
+| 表达范围 | 声明对象形状，包括调用、构造、索引签名 | 可命名对象、联合、元组、基本类型及条件/映射类型等 |
+| 组合方式 | `extends` 合适的对象类型；会检查继承冲突 | 使用交叉类型 `&` 等操作；冲突属性可能产生 `never` |
+
+**扩展的边界**：
+- interface 可以扩展成员静态已知的对象类型别名，不是只能扩展 interface。
+- 类可以 `implements` 合适的对象接口或类型别名，但不能据此声称任意联合类型都可被实现；类的 `extends` 需要运行时基类，不能继承一个纯类型别名。
+- `implements` 只检查类实例是否符合要求，不会自动生成属性或改变方法参数推断，参见[官方类文档](https://www.typescriptlang.org/docs/handbook/2/classes.html#implements-clauses)。
 
 **使用建议**：
-- **公共 API / 库类型定义**：用 `interface`（支持声明合并，用户可扩展）
-- **组件 Props、函数类型、联合类型**：用 `type`（表达能力更强）
-- **实践中**：统一用 `type` 也完全可以（很多大项目如此）
-
-**考察点**：
-1. 声明合并的应用场景（扩展第三方库类型）
-2. type 独有的类型操作（联合、条件、映射类型）
-3. 团队规范的重要性（统一选一种）
+需要用户通过声明合并扩展公共对象契约时可选 interface；需要联合、条件或映射类型时选 type。Props、DTO、函数类型都不要求只能选其中一种；按表达需求与项目约定选择，两者并用本身不是错误。
 
 **示例答案**：
-interface 和 type 大部分情况可以互换，核心区别是：interface 支持声明合并（同名 interface 自动合并），这在扩展第三方库类型时有用（比如给 `Window` 加自定义属性，直接 `interface Window { myProp: string }`）；type 的表达能力更强，可以定义联合类型（`type Status = 'active' | 'inactive'`）、交叉类型、条件类型、映射类型等，这些 interface 做不到。选择上，如果是描述对象结构、尤其是会被他人扩展的公共类型，用 interface；如果是联合类型、函数类型、组件 Props、DTO 类型，用 type。实践中很多团队选择"全部用 type"来减少心智负担，只要团队内统一就好，两者混用才是问题（代码风格不一致，难以阅读）。
+我先看类型是否需要被重新打开扩展，还是需要组合成联合或计算类型，再选择 interface 或 type。两者都属于编译期工具，接受 JSON 或接口响应时仍需独立的运行时校验，不能仅靠类型名保证实际数据正确。
 
 ---
 
@@ -849,4 +842,3 @@ type Shape = { kind: 'circle'; radius: number } | { kind: 'rect'; width: number;
 *本题库持续更新，当前版本涵盖 24 道核心前端面试题，覆盖 HTML/CSS / JS / 浏览器 / 网络 / React / Vue / 性能 / 工程化 / TypeScript。*
 
 ---
-

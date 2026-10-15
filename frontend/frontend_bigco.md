@@ -1,18 +1,36 @@
-# 前端面试专项 · 大厂高频题
+# 前端开发专项 · 实现与原理
 
-> 来源：字节跳动 / 腾讯 / 小红书 / 阿里 真实面经整理
-> 每题标注高频出现公司
+> 本页未提供可追溯的面经记录，不能作为某公司出题或题目出现频率的证据。
+>
+> 未核验题保留的旧公司标签不作为事实；选定题以本轮逐题核验记录为准，见[来源核验清单](../SOURCE_AUDIT.md)。
 
 ---
 
-## 字节跳动高频
+## JavaScript 实现与异步控制
 
-### Q37: 字节 面试：实现一个 `Promise.all`，要求 all settled 和 race 版本
+<a id="review-frontend-q37"></a>
 
-**🏢 高频公司**：字节（必考）、腾讯、阿里
+### Q37: 如何实现 `Promise.all`，并区分 allSettled、race 和 any？
+
+> **核验日期**：2026-10-15
+>
+> **适用范围**：原生 Promise、未改写内建方法；`any` / `AggregateError` 需要 ES2021 或更新运行时。现有自动回归要求 Node.js 22+；以下是教学实现，不是完整 polyfill。
+>
+> **技术参考**：[ECMAScript：Promise.all](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.all)、[Promise.allSettled](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.allsettled)、[Promise.race](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.race)
+>
+> **面经来源**：未提供可追溯面经。
 
 **题目解析**：
-手写 Promise 相关方法是字节前端必考题，考察候选人对 Promise 原理的深度理解和编码能力。
+重点是输入迭代、结果顺序、拒绝传播与空输入，而非背诵函数名。原生四种方法均接受同步 iterable；它们不负责启动传入的 Promise，也不会因聚合结果已确定而自动取消其他操作。
+
+| 原生方法 | 何时决定结果 | 空 iterable |
+|---|---|---|
+| `all` | 全部成功，或有输入拒绝；成功结果保持输入顺序 | fulfilled，值为 `[]` |
+| `allSettled` | 所有输入均已 settled，结果保持输入顺序 | fulfilled，值为 `[]` |
+| `race` | 首个使聚合结果 settled 的输入，无论成功或拒绝 | 一直 pending |
+| `any` | 任一成功；全部拒绝时用 `AggregateError` 汇总，errors 保持输入顺序 | rejected，errors 为 `[]` |
+
+即使空输入立即确定状态，后续 `.then` / `.catch` reaction 也异步运行。迭代器自身抛错等错误则另按返回 Promise 的拒绝处理。
 
 **题目讲解**：
 
@@ -61,7 +79,7 @@ node --test tests/promise-all.test.cjs
 
 规范依据：[Promise.all](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.all)、[PerformPromiseAll](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseall)（核验日期：2026-10-10）。
 
-> 以下 `allSettled` / `race` 仍是面向稠密数组的简化示例，未纳入验证；完整 iterable 支持和边界核验仍待补齐。`any` 的实现与独立验证见后文。
+> 以下 `allSettled` / `race` 仅展示普通稠密 Array 的组合思路，不是原生 API 的完整替代。`map` / `forEach` 会跳过稀疏空位，也不支持 Set、生成器等通用 iterable。`allSettled` 的映射阶段异常还可能同步抛出，与原生方法返回拒绝的行为不同，且没有独立自动回归；`race` 仅对下述稠密输入的拒绝顺序与异步回调设有自动回归。`any` 的 iterable 实现与独立验证见后文。
 
 **Promise.allSettled 实现**：
 ```javascript
@@ -80,10 +98,20 @@ Promise.myAllSettled = function(promises) {
 ```javascript
 Promise.myRace = function(promises) {
   return new Promise((resolve, reject) => {
-    promises.forEach(p => Promise.resolve(p).then(resolve).catch(reject));
+    promises.forEach(p => Promise.resolve(p).then(resolve, reject));
   });
 };
 ```
+
+成功和拒绝处理器必须在同一层 `.then(resolve, reject)` 注册。如果写成 `.then(resolve).catch(reject)`，拒绝会多经过一层 reaction；例如输入 `[Promise.reject('first'), Promise.resolve('second')]` 时，简化实现就可能错误地让后面的成功胜出。
+
+**运行 race 回归**（Node.js 22+，仅核验上述稠密数组范围）：
+
+```bash
+node --test tests/promise-race.test.cjs
+```
+
+测试从本题提取 `Promise.myRace`，在隔离 VM 中与原生实现对照先拒绝、先成功和异步回调；不代表已覆盖通用 iterable 或完整 polyfill 行为。
 
 **Promise.any 实现**：
 
@@ -126,11 +154,11 @@ Promise.myAny = function(iterable) {
 
 ```bash
 node --test tests/promise-any.test.cjs
-# 同时验证本题已核验的 all 和 any
+# 同时运行 all、any 与稠密数组 race 的现有回归
 node --test tests/promise-*.test.cjs
 ```
 
-测试直接提取本节代码，与原生 `Promise.any` 对照边界、成功及拒绝语义；不代表 `allSettled`、`race` 或整份题库已验证。
+any 测试直接提取本节代码，与原生 `Promise.any` 对照边界、成功及拒绝语义；race 另有上述限定范围的回归，`allSettled` 仍无独立自动回归。这些测试不代表整份题库已验证。
 
 规范依据：[Promise.any](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.any)、[PerformPromiseAny](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseany)（核验日期：2026-10-13）。
 
@@ -538,7 +566,7 @@ function deepClone(target, map = new WeakMap()) {
 
 ---
 
-## 腾讯高频
+## 浏览器与实时通信
 
 ---
 
@@ -693,7 +721,7 @@ WebSocket 用一次 HTTP Upgrade 握手把 HTTP 连接升级为持久双工 TCP 
 
 ---
 
-## 小红书高频
+## 页面布局与资源展示
 
 ---
 
@@ -937,7 +965,7 @@ Sass/Less mixin 封装 transform 方案，按 DPR 自动适配：
 
 ---
 
-## 阿里高频
+## 服务端渲染与缓存
 
 ---
 
@@ -1007,6 +1035,6 @@ SSR、SSG、ISR 的本质是"数据获取在什么时候执行"。SSR 每次请�
 
 ---
 
-*本专项题库覆盖字节/腾讯/小红书/阿里的前端高频题，共 12 题（Q37-Q48），与基础+进阶篇合计约 48 道前端面试题。*
+*本页包含 12 题（Q37-Q48）。题号与主题不代表面经来源；逐题核验范围以[来源核验清单](../SOURCE_AUDIT.md)为准。*
 
 ---

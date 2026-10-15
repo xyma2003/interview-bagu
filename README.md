@@ -1,8 +1,14 @@
 # 面试八股题库
 
-> 覆盖 **AI Agent / 前端 / 后端 / 算法** 四个方向，共 **338 道**高质量面试题
+> 覆盖 **AI Agent / 前端 / 后端 / 算法** 四个方向，共 **338 道**学习与面试练习题
 >
-> 大厂面经真实整理，每道题含：题目解析 · 深度讲解 · 考察点 · 面试官更想听 · 示例答案
+> 个人整理的技术学习材料，主要包含：题目解析 · 知识讲解 · 考察点 · 表达建议 · 示例答案
+
+## 来源与核验状态
+
+截至 **2026-10-15**，已逐题核验 **20 / 338 题**，四个方向各 5 题；其余 **318 题待核验**。本轮补充一手技术参考、适用版本或输入前提、核验日期，并修正发现的技术表述问题。[逐题记录与来源规范](SOURCE_AUDIT.md)列出了准确范围、改动和执行边界。
+
+仓库尚未提供可追溯的逐题公司面经及频率统计，本轮范围内的公司／“高频”“必考”标签已撤下；其他题目和学习路线中的旧标签仍待处理，不能作为公司出题或出现概率的依据。技术参考证明知识点来源，不证明某公司曾经考过。本轮核验也不代表全库正确、所有代码已运行或所有版本适用。
 
 ---
 
@@ -13,7 +19,7 @@ interview-bagu/
 ├── ai-agent/          # AI Agent 开发 + AI/ML基础 · 106 题
 │   ├── ai_agent.md              基础篇（LLM/RAG/Agent框架/多智能体，30题）
 │   ├── ai_agent_advanced.md     进阶篇（LoRA/量化/GraphRAG/生产部署，17题）
-│   ├── ai_agent_bigco.md        大厂专项（字节/MiniMax/小红书/阿里，15题）
+│   ├── ai_agent_bigco.md        专题练习（LLM底层/RAG/评测，15题）
 │   ├── ai_agent_part3.md        结构化输出/并行工具/流式/记忆管理（10题）
 │   ├── ai_agent_part4.md        Prompt压缩/模型路由/幻觉检测/Guardrails（10题）
 │   ├── ai_agent_scenarios.md  ★ 场景设计题（代码审查/知识库/推荐等，10题）
@@ -22,26 +28,27 @@ interview-bagu/
 ├── frontend/          # 前端开发 · 68 题
 │   ├── frontend.md              基础篇（HTML/CSS/JS/React/Vue/性能/网络，24题）
 │   ├── frontend_advanced.md     进阶篇（Generator/Proxy/安全/React18/微前端，12题）
-│   ├── frontend_bigco.md        大厂手写题（LRU/Promise/深拷贝/瀑布流，12题）
+│   ├── frontend_bigco.md        手写与工程专题（LRU/Promise/深拷贝/瀑布流，12题）
 │   ├── frontend_part3.md        CSS动画/状态管理/Workers/大文件上传（12题）
 │   └── frontend_part4.md        Container Queries/i18n/TypeScript高级（8题）
 │
 ├── backend/           # 后端开发 · 64 题
 │   ├── backend.md               基础篇（OS/网络/MySQL/Redis/Kafka/系统设计，18题）
 │   ├── backend_advanced.md      进阶篇（间隙锁/分库分表/JVM/ES/gRPC，13题）
-│   ├── backend_bigco.md         大厂专项（短链/秒杀/IM系统/Spring/CAS，10题）
+│   ├── backend_bigco.md         专题练习（短链/秒杀/IM系统/Spring/CAS，10题）
 │   ├── backend_part3.md         JWT/SQL注入/幂等性/ServiceMesh/K8s（9题）
 │   ├── backend_part4.md         Go/链路追踪/连接池/Pydantic/CQRS（7题）
 │   └── backend_concurrency_distributed.md  ★ 并发与分布式深度（竞态/无锁/内存模型/Raft/数据复制/向量时钟，7题）
 │
-├── algorithm/         # 算法（LeetCode 高频题）· 100 题
+├── algorithm/         # 算法（LeetCode 题型练习）· 100 题
 │   ├── algo_array.md            数组/双指针/滑动窗口/二分/单调栈（25题）
 │   ├── algo_tree_graph.md       树/图/BFS/DFS/回溯/DP经典（25题）
 │   ├── algo_linked_design.md    链表/栈/设计题/字符串/数学（20题）
 │   ├── algo_more.md             并查集/矩阵/KMP/洗牌/数学（10题）
-│   └── algo_bigco.md            大厂高频专项（字节/腾讯/阿里，20题）
+│   └── algo_bigco.md            综合练习（投票/单调队列/DP等，20题）
 │
-├── LEARNING_GUIDE.md  # 备战学习路线（12周计划 + 算法刷题顺序 + 大厂侧重）
+├── SOURCE_AUDIT.md    # 来源规范 + 本轮20题逐题核验记录
+├── LEARNING_GUIDE.md  # 学习路线（12周计划 + 算法顺序；公司侧重待核验）
 └── README.md
 ```
 
@@ -56,7 +63,7 @@ cd interview-bagu
 # AI Agent 题库（含 AI/ML 基础）
 ls ai-agent/
 
-# 算法题库（LeetCode 高频题）
+# 算法题库（LeetCode 题型练习）
 ls algorithm/
 
 # 学习路线
@@ -67,15 +74,15 @@ cat LEARNING_GUIDE.md
 
 ## 示例验证
 
-已为 [前端 Q37 的 `Promise.myAll`](frontend/frontend_bigco.md) 添加可执行检查。测试直接运行题目正文中的代码，与原生 `Promise.all` 对照。
+已为 [前端 Q37 的 `Promise.myAll` / `Promise.myAny` / 简化 `Promise.myRace`](frontend/frontend_bigco.md#review-frontend-q37) 添加可执行检查。测试直接运行题目正文中的代码，与对应原生实现对照。
 
 在仓库根目录执行（Node.js 22+，无额外依赖）：
 
 ```bash
-node --test tests/promise-all.test.cjs
+node --test tests/promise-*.test.cjs
 ```
 
-当前覆盖空输入、稀疏数组、可迭代对象、thenable、完成顺序与异常传播。CI 在 Node.js 22 和 24 上运行这项检查；其他题目和 Q37 的其余简化实现尚未纳入，不代表全库已验证。
+`myAll` / `myAny` 覆盖空输入、稀疏数组、可迭代对象、thenable、完成顺序、错误顺序与异常传播；简化 `myRace` 只验证普通稠密数组的成功／拒绝竞争和异步回调，不是完整 polyfill。CI 在 Node.js 22 和 24 上运行这些检查；简化 `myAllSettled` 尚无独立自动回归。本轮算法样例的临时执行记录见来源核验表，不等同于已纳入 CI。
 
 ---
 
@@ -83,7 +90,7 @@ node --test tests/promise-all.test.cjs
 
 ### 八股题（ai-agent / frontend / backend）
 
-每道题统一包含六要素：
+主要采用以下五个内容字段；部分旧题仍待补齐。已核验题另附日期、适用范围、技术参考与面经来源状态。
 
 | 字段 | 说明 |
 |------|------|
@@ -93,11 +100,11 @@ node --test tests/promise-all.test.cjs
 | **面试官更想听** | 拉分角度，区别"背诵答案"和"真正理解" |
 | **示例答案** | 可直接参考的完整口头表达，200-400 字 |
 
-> 大厂专项题目标注 `🏢 高频公司`，`ai_agent_scenarios.md` 含完整架构设计思路
+> 旧版 `🏢 高频公司` 标签没有完整证据，按待核验内容处理；`ai_agent_scenarios.md` 提供开放式架构设计练习。
 
 ### 算法题（algorithm/）
 
-每道题包含：题目描述 / 解题思路 / Python 代码实现 / 时空复杂度 / 考察点 / 大厂标注
+主要包含：题目描述 / 解题思路 / Python 代码实现 / 时空复杂度 / 考察点；题目出处与输入边界以已核验题的来源块为准。
 
 ### AI/ML 算法基础（ai-agent/ai_ml_basics.md）
 
@@ -109,7 +116,7 @@ Precision/Recall/AUC · Embedding/Word2Vec · 反向传播/梯度消失 · K-Mea
 
 ---
 
-## 大厂高频场景设计题
+## 场景设计练习
 
 `ai-agent/ai_agent_scenarios.md` 包含 10 道开放式场景设计题：
 
@@ -138,7 +145,7 @@ Precision/Recall/AUC · Embedding/Word2Vec · 反向传播/梯度消失 · K-Mea
 - 🔢 **算法刷题顺序**（Phase 1-4，含 LeetCode 题号）
 - 📚 **八股文学习路线**（通用 / 前端 / AI Agent 三条线）
 - 🏗️ **系统设计答题框架** + 经典题目列表
-- 🏢 **按公司调整侧重**（字节 / 腾讯 / 小红书 / 阿里 / MiniMax）
+- 🏢 旧版公司侧重建议仍待来源核验，不作为公司出题规律
 
 ---
 

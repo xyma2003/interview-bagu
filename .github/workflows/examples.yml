@@ -19,5 +19,5 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Verify the documented Promise.myAll and Promise.myAny implementations
+      - name: Verify the documented Promise examples
         run: node --test tests/promise-*.test.cjs
