@@ -1,8 +1,31 @@
 # 后端面试八股 · 第三篇
 
+<!-- navigation:start -->
+[← 后端目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（9 题，点击展开）</summary>
+
+- [Q42 · 什么是 JWT？它和 Session 认证有什么区别？JWT 的安全问题有哪些？](#q42)
+- [Q43 · SQL 注入原理和防御方法是什么？ORM 为什么能防止 SQL 注入？](#q43)
+- [Q44 · 分布式系统中如何保证接口幂等性？](#q44)
+- [Q45 · 如何设计一个秒杀系统？应对瞬时高并发的核心手段？](#q45)
+- [Q46 · 什么是服务网格（Service Mesh）？Istio 的 Sidecar 模式解决了什么问题？](#q46)
+- [Q47 · Docker 和 K8s 的核心概念是什么？Pod、Deployment、Service 的关系？](#q47)
+- [Q48 · Python 的 `__slots__` 是什么？它如何节省内存？](#q48)
+- [Q49 · 什么是 Python 的描述符（Descriptor）？`@property` 的底层实现是什么？](#q49)
+- [Q50 · 谈谈 MySQL 的 EXPLAIN 输出，如何定位慢查询的根本原因？](#q50)
+
+</details>
+<!-- navigation:end -->
+
 > 覆盖：微服务 / 安全 / 高并发 / Python 进阶 / 数据库进阶 / K8s/Docker
 
 ---
+
+<a id="q42"></a>
 
 ### Q42: 什么是 JWT？它和 Session 认证有什么区别？JWT 的安全问题有哪些？
 
@@ -46,6 +69,8 @@ Signature: HMACSHA256(base64(header) + "." + base64(payload), secret)
 Session 是有状态的，服务端存 session 数据；JWT 是无状态的，状态编码在 token 里。JWT 的优势是横向扩展友好（任何节点都能验证，不需要共享存储），缺点是无法主动吊销。解决方案：短期 access_token（15分钟）+ 长期 refresh_token（7天），access_token 过期用 refresh_token 换新的同时使旧 refresh_token 失效（Rotation），如果旧 refresh_token 被重用则检测到盗用，使所有该用户的 token 失效。安全上，alg 必须在服务端强制指定，不接受客户端传来的 alg 值（防 Algorithm None 攻击）；Payload 不存密码、身份证号等敏感信息（因为 base64 不是加密，任何人都能解码）。
 
 ---
+
+<a id="q43"></a>
 
 ### Q43: SQL 注入原理和防御方法是什么？ORM 为什么能防止 SQL 注入？
 
@@ -99,6 +124,8 @@ ORM 在底层总是使用参数化查询，用户输入作为参数传递而非�
 SQL 注入的根本原因是把用户数据和 SQL 代码混在一起。参数化查询把两者分离：数据库先解析 SQL 模板（固定结构），再绑定参数（用户输入当数据），无论用户输入什么都不会改变 SQL 结构。ORM 框架（SQLAlchemy/Django ORM）底层总是用参数化查询，只要不手写 `text()` 拼接 SQL，就不会有注入风险。二阶注入是个进阶陷阱：第一步存储用户输入（存储时安全，没有执行），第二步读出来后拼接到 SQL 里执行（这时才注入）——所以从 DB 读出来再拼 SQL 也是危险的，始终要参数化。
 
 ---
+
+<a id="q44"></a>
 
 ### Q44: 分布式系统中如何保证接口幂等性？
 
@@ -156,6 +183,8 @@ WHERE product_id = 1 AND version = {expected_version}
 幂等实现的核心思路是"同一请求只处理一次"。最通用的方案是 Idempotency Key：客户端请求时生成唯一 ID（UUID），服务端用 Redis SETNX 以这个 ID 为 key 原子地"占位"，占到的处理并缓存结果，没占到的直接返回已有结果，实现完全幂等。电商订单场景通常组合使用：Idempotency Key 防重试，数据库唯一索引防并发重复下单（兜底），乐观锁防止库存超卖。Kafka 消费者的幂等靠消息 ID：消费前检查 Redis 是否已有该消息 ID 的处理记录，有则 skip，无则处理并记录，形成"恰好一次"语义（At-Least-Once + 幂等 = Exactly-Once）。
 
 ---
+
+<a id="q45"></a>
 
 ### Q45: 如何设计一个秒杀系统？应对瞬时高并发的核心手段？
 
@@ -225,6 +254,8 @@ WHERE product_id = 1001 AND stock > 0
 
 ---
 
+<a id="q46"></a>
+
 ### Q46: 什么是服务网格（Service Mesh）？Istio 的 Sidecar 模式解决了什么问题？
 
 **🏢 高频公司**：腾讯、字节、阿里
@@ -265,6 +296,8 @@ Service A → [Envoy Sidecar A] → [Envoy Sidecar B] → Service B
 Service Mesh 解决微服务通信的横切关注点问题——服务发现、熔断、链路追踪等每个服务都要写一遍，而且各语言的实现可能不一致。Istio 的 Sidecar 方案是每个 Pod 注入 Envoy Proxy，所有流量经过 Proxy，功能在基础设施层统一实现，应用代码完全不感知。控制平面（Istiod）管理配置和证书，数据平面（Envoy）执行规则和加密。代价是多一个 Sidecar 的资源开销和额外延迟，对延迟敏感的服务要权衡。新兴的 eBPF 方案（Cilium）把网络处理下沉到 Linux 内核，不需要 Sidecar，性能更好，是 Service Mesh 的未来方向。
 
 ---
+
+<a id="q47"></a>
 
 ### Q47: Docker 和 K8s 的核心概念是什么？Pod、Deployment、Service 的关系？
 
@@ -316,6 +349,8 @@ Service → 负载均衡访问 →  Pod Pod Pod
 Docker 提供轻量级容器化（镜像打包 + 隔离运行），K8s 是容器编排系统，管理大量容器的部署、扩缩容、服务发现。核心三层：Pod 是最小单位（一个或多个容器共享网络），Deployment 管理 Pod 的声明式部署（"始终保持 3 个副本"，有挂立即重建），Service 提供稳定访问入口（Pod IP 会变，Service IP 不变，通过 Label Selector 找到后端 Pod 并负载均衡）。实际部署：Dockerfile 打镜像 → 推 Registry → K8s 通过 Deployment yaml 拉镜像启动 Pod → Service 暴露端口供外部/内部访问。配置用 ConfigMap（非敏感）和 Secret（敏感，Base64 编码），挂载到 Pod 里，修改 ConfigMap 不需要重建 Pod。
 
 ---
+
+<a id="q48"></a>
 
 ### Q48: Python 的 `__slots__` 是什么？它如何节省内存？
 
@@ -378,6 +413,8 @@ class Point:
 Python 对象默认用 `__dict__` 存属性，字典是哈希表结构，内存开销大（约 200 字节以上）。`__slots__` 把属性存储改为固定偏移量的内存块（类似 C 的 struct），消除哈希表开销，每个实例内存减少约 50-70%。百万级实例时节省数百 MB 显著。代价是属性列表固定，不能动态添加，在灵活性和性能之间取舍。Python 3.10+ 推荐用 `@dataclass(slots=True)`，语义更清晰，比手写 `__slots__` 更不容易出错（自动处理继承场景）。
 
 ---
+
+<a id="q49"></a>
 
 ### Q49: 什么是 Python 的描述符（Descriptor）？`@property` 的底层实现是什么？
 
@@ -455,6 +492,8 @@ class Circle:
 
 ---
 
+<a id="q50"></a>
+
 ### Q50: 谈谈 MySQL 的 EXPLAIN 输出，如何定位慢查询的根本原因？
 
 **🏢 高频公司**：所有大厂（必考 SQL 优化）
@@ -528,3 +567,7 @@ WHERE phone = 13812345678          -- 类型不匹配（字符串列传数字）
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回后端目录](README.md)
+<!-- navigation:end -->

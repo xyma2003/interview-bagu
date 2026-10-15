@@ -1,6 +1,27 @@
 # 后端面试八股 · 第四篇
 
+<!-- navigation:start -->
+[← 后端目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（7 题，点击展开）</summary>
+
+- [Q51 · Go 语言的 goroutine 和 channel 是什么？与 Python 协程有什么区别？](#q51)
+- [Q52 · 什么是 OpenTelemetry？如何在服务中实现链路追踪（Distributed Tracing）？](#q52)
+- [Q53 · 如何设计 API 的版本管理策略？RESTful API 最佳实践有哪些？](#q53)
+- [Q54 · 什么是数据库连接池？HikariCP 和 SQLAlchemy Pool 的关键参数是什么？](#q54)
+- [Q55 · Python 的 `dataclass` 和 `pydantic` 有什么区别？各自的适用场景是什么？](#q55)
+- [Q56 · 如何在 Python 异步代码中正确使用数据库？asyncpg vs psycopg2 有什么区别？](#q56)
+- [Q57 · 什么是 CQRS 模式？它解决了什么问题？](#q57)
+
+</details>
+<!-- navigation:end -->
+
 ---
+
+<a id="q51"></a>
 
 ### Q51: Go 语言的 goroutine 和 channel 是什么？与 Python 协程有什么区别？
 
@@ -74,6 +95,8 @@ Go 的 goroutine 是真正的轻量并发，Go 运行时内置调度器，在多
 
 ---
 
+<a id="q52"></a>
+
 ### Q52: 什么是 OpenTelemetry？如何在服务中实现链路追踪（Distributed Tracing）？
 
 **🏢 高频公司**：字节、阿里、腾讯
@@ -141,6 +164,8 @@ opentelemetry-instrument --traces_exporter otlp \
 OpenTelemetry 是链路追踪、指标、日志三合一的可观测性标准框架，各大云厂商和监控产品都支持。核心是 Span 的父子关系：HTTP 请求进来创建根 Span，调用其他服务创建子 Span，子 Span 通过 HTTP Header（traceparent）传递 trace_id，在 Jaeger 里就能看到完整的调用链树，哪个 Span 耗时最长、在哪出错一目了然。Python 里 OTEL auto-instrumentation 能自动给 FastAPI/Flask/aiohttp/SQLAlchemy 等常用库埋点，不需要改业务代码，启动时加个命令行参数就完成。生产中重要的是采样策略——全量追踪成本太高，通常对出错的请求全量采样，正常请求按 1-5% 采样，重要业务（支付）可以单独提高采样率。
 
 ---
+
+<a id="q53"></a>
 
 ### Q53: 如何设计 API 的版本管理策略？RESTful API 最佳实践有哪些？
 
@@ -223,6 +248,8 @@ API 版本管理首选 URL Path（`/v1/`, `/v2/`），简单直观，文档好�
 
 ---
 
+<a id="q54"></a>
+
 ### Q54: 什么是数据库连接池？HikariCP 和 SQLAlchemy Pool 的关键参数是什么？
 
 **🏢 高频公司**：阿里（Java/Python 必考）
@@ -277,6 +304,8 @@ MySQL 默认 8 小时无活动断开连接，但连接池不知道，会把"已�
 连接池通过预建并复用 TCP 连接，把每次查询的连接建立开销从 10-100ms 降到接近 0。`pool_size` 决定"同时可活跃的最大连接数"，设为 CPU 核心数 × 2 是经验值（线程等待 DB I/O 时 CPU 可处理其他请求）；不能设太大，MySQL 端每个连接耗约 200KB 内存。`pool_recycle` 是最重要的生产参数：必须小于 MySQL 的 `wait_timeout`（默认 28800s/8h），否则空闲太久的连接被 MySQL 关闭，应用还以为有效，使用时报错。`pool_pre_ping=True`（SQLAlchemy）或 `keepalive-time`（HikariCP）都是解决这个问题的方法。生产中监控连接池的 `waiting` 指标，长时间 waiting 说明连接数不足，需要扩充或优化查询时间。
 
 ---
+
+<a id="q55"></a>
 
 ### Q55: Python 的 `dataclass` 和 `pydantic` 有什么区别？各自的适用场景是什么？
 
@@ -359,6 +388,8 @@ dataclass 是标准库提供的轻量数据类，自动生成 `__init__/__repr__
 
 ---
 
+<a id="q56"></a>
+
 ### Q56: 如何在 Python 异步代码中正确使用数据库？asyncpg vs psycopg2 有什么区别？
 
 **🏢 高频公司**：小红书、字节
@@ -430,6 +461,8 @@ result = await asyncio.get_event_loop().run_in_executor(
 
 ---
 
+<a id="q57"></a>
+
 ### Q57: 什么是 CQRS 模式？它解决了什么问题？
 
 **🏢 高频公司**：阿里、字节（系统设计进阶）
@@ -496,3 +529,7 @@ CQRS 把读操作和写操作的模型、存储彻底分离。写侧用规范化
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回后端目录](README.md)
+<!-- navigation:end -->

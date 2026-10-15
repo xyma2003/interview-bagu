@@ -1,9 +1,37 @@
 # 算法面试题库 · AI / 机器学习基础
 
+<!-- navigation:start -->
+[← AI Agent目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（14 题，点击展开）</summary>
+
+- [Q101 · 梯度下降的原理是什么？SGD / Adam / AdamW 有什么区别？](#q101)
+- [Q102 · 什么是过拟合和欠拟合？常见的解决手段有哪些？](#q102)
+- [Q103 · 交叉熵损失函数是什么？为什么分类任务用它而不用 MSE？](#q103)
+- [Q104 · Batch Normalization 和 Layer Normalization 有什么区别？为什么 Transformer 用 LayerNorm？](#q104)
+- [Q105 · 什么是 Precision、Recall 和 F1？什么时候分别侧重哪个？](#q105)
+- [Q106 · 什么是 Embedding？为什么 Word2Vec 之后还需要 Contextual Embedding？](#q106)
+- [Q107 · 什么是反向传播（Backpropagation）？为什么深度网络会有梯度消失问题？](#q107)
+- [Q108 · 什么是 K-Means 聚类？它在 RAG/推荐系统中有哪些应用？](#q108)
+- [Q109 · 决策树和随机森林的原理是什么？为什么 Bagging 能降低方差？](#q109)
+- [Q110 · 什么是 ROC 曲线和 AUC？如何解读 AUC=0.85？](#q110)
+- [Q111 · 什么是数据不平衡？有哪些处理方法？](#q111)
+- [Q112 · 什么是迁移学习（Transfer Learning）？Fine-tuning 和 Feature Extraction 有什么区别？](#q112)
+- [Q113 · 什么是 RLHF 中的奖励黑客（Reward Hacking）？有哪些现实案例？](#q113)
+- [Q114 · 什么是 Softmax 的温度缩放（Temperature Scaling）？如何用于模型校准？](#q114)
+
+</details>
+<!-- navigation:end -->
+
 > 定位：AI 开发者必知的 ML 基础，不要求推导公式，要求理解原理 + 知道工程含义
 > 🏢 标注常见出现公司
 
 ---
+
+<a id="q101"></a>
 
 ### Q101: 梯度下降的原理是什么？SGD / Adam / AdamW 有什么区别？
 
@@ -49,6 +77,8 @@ Adam 的 L2 正则化和权重衰减在 Adam 中不等价（因为自适应学�
 梯度下降沿 Loss 梯度的反方向更新参数。SGD 学习率固定，对不同参数一视同仁，需要手动调参且容易震荡。Adam 为每个参数维护独立的自适应学习率——梯度历史方差大（变化剧烈）的参数步长小，方差小（平稳）的参数步长大，收敛更快更稳。AdamW 是 LLM 训练的标配，核心改进是把权重衰减从梯度更新里分离出来单独施加，让正则化不受自适应学习率干扰，防过拟合效果更好。实际训练 LLM 时还要配合 learning rate warmup（前 N 步线性增大 lr）和 cosine decay（后期逐渐减小），是提升训练稳定性的工程标配。
 
 ---
+
+<a id="q102"></a>
 
 ### Q102: 什么是过拟合和欠拟合？常见的解决手段有哪些？
 
@@ -97,6 +127,8 @@ model = nn.Sequential(
 过拟合是模型太"死记硬背"，在训练集上很好但遇到新数据就差。最直观的判断是训练 Loss 继续降但验证 Loss 开始回升。解决手段分两类：一类是减少模型容量（减层/减参数）；另一类是施加约束（Dropout 随机丢弃神经元防止共适应，L2 正则化惩罚大权重，Early Stopping 在验证集还好时提前停）。数据增强是最高效的方法之一，本质是用已有数据生成更多训练样本提高覆盖率。LLM 训练时通常用 AdamW 的 weight_decay + Dropout（0.1-0.3），配合大量训练数据，过拟合不是主要问题，反而欠拟合（模型容量不足）更常见。
 
 ---
+
+<a id="q103"></a>
 
 ### Q103: 交叉熵损失函数是什么？为什么分类任务用它而不用 MSE？
 
@@ -152,6 +184,8 @@ PPL = exp(average cross-entropy loss)
 
 ---
 
+<a id="q104"></a>
+
 ### Q104: Batch Normalization 和 Layer Normalization 有什么区别？为什么 Transformer 用 LayerNorm？
 
 **🏢 高频公司**：MiniMax、字节 AI
@@ -195,6 +229,8 @@ x_norm = (x - mean) / sqrt(var + eps)
 BatchNorm 在 batch 维度归一化，适合图像 CNN（batch 够大，尺寸固定）；LayerNorm 在特征维度归一化，每个样本独立计算，不依赖 batch。Transformer 用 LN 的原因：NLP 的 batch 通常很小（8-32），BN 的均值/方差估计不准；序列长度可变让 BN 更难处理；推理时生成下一个 token 的 batch size 是 1，BN 在 batch=1 时完全失效，LN 则没有这个问题。现代 LLM 几乎全用 Pre-LN（归一化放在子层输入前），相比原始 Transformer 的 Post-LN，梯度流动更稳定，可以不用 warmup 就直接训练。
 
 ---
+
+<a id="q105"></a>
 
 ### Q105: 什么是 Precision、Recall 和 F1？什么时候分别侧重哪个？
 
@@ -248,6 +284,8 @@ Precision 是"找到的里有多少是对的"，Recall 是"该找到的找到了
 
 ---
 
+<a id="q106"></a>
+
 ### Q106: 什么是 Embedding？为什么 Word2Vec 之后还需要 Contextual Embedding？
 
 **🏢 高频公司**：字节、MiniMax、小红书
@@ -297,6 +335,8 @@ Embedding 是把离散符号转为连续向量的技术，让机器能做语义�
 
 ---
 
+<a id="q107"></a>
+
 ### Q107: 什么是反向传播（Backpropagation）？为什么深度网络会有梯度消失问题？
 
 **🏢 高频公司**：MiniMax、字节 AI
@@ -344,6 +384,8 @@ def sigmoid_grad(x): s = sigmoid(x); return s * (1 - s)  # 最大值 0.25！
 反向传播是链式法则的工程实现——从 Loss 出发，逐层计算梯度并反向传递，最终得到每个参数的更新方向。梯度消失发生在深层网络中：如果每层的梯度都要乘上激活函数的导数，Sigmoid 最大梯度只有 0.25，100 层后梯度接近 0，浅层参数完全停止学习。ReLU 把正区间梯度固定为 1 解决了这个问题，但负区间梯度为 0（Dead ReLU），GELU 是 LLM 常用的改进版，更平滑。残差连接是最优雅的解法：`output = x + f(x)` 让梯度可以跳过整个子层直接传回，就像修了高速公路绕过深山，这也是为什么 Transformer 即使有 96 层也能稳定训练。实际训练 LLM 还会用梯度裁剪（Gradient Clipping），限制梯度范数不超过 1.0，防止梯度爆炸导致训练崩溃。
 
 ---
+
+<a id="q108"></a>
 
 ### Q108: 什么是 K-Means 聚类？它在 RAG/推荐系统中有哪些应用？
 
@@ -408,6 +450,8 @@ K-Means 的核心循环：把每个点分配给最近的中心，然后把中心
 
 ---
 
+<a id="q109"></a>
+
 ### Q109: 决策树和随机森林的原理是什么？为什么 Bagging 能降低方差？
 
 **🏢 高频公司**：阿里（数据挖掘）、字节
@@ -469,6 +513,8 @@ Var(均值) = Var(单棵树) / N × (1 + (N-1)×ρ)
 
 ---
 
+<a id="q110"></a>
+
 ### Q110: 什么是 ROC 曲线和 AUC？如何解读 AUC=0.85？
 
 **🏢 高频公司**：阿里（广告/推荐）、字节
@@ -524,6 +570,8 @@ GAUC = Σ(user_weight_i × AUC_i) / Σ(user_weight_i)
 AUC 最直觉的解释是：随机抽一个正样本和一个负样本，模型打分正样本 > 负样本的概率。AUC=0.85 就是说有 85% 的概率模型能正确排序正负样本，比随机猜（50%）强很多。ROC 曲线越往左上角弯，AUC 越高。类别极不平衡时（千分之一正样本），ROC-AUC 会虚高——因为负样本太多，FPR 虽然很小但 FP 绝对数量巨大，PR-AUC 在这种场景更诚实。推荐系统里用 GAUC（按用户分组计算 AUC 再平均），因为用户 A 的 CTR=5% 和用户 B 的 CTR=0.5%，用全局 AUC 会被高 CTR 用户主导，GAUC 让每个用户在自己的历史数据里排序，更公平地评估模型质量。
 
 ---
+
+<a id="q111"></a>
 
 ### Q111: 什么是数据不平衡？有哪些处理方法？
 
@@ -591,6 +639,8 @@ y_pred = (y_scores > threshold).astype(int)
 
 ---
 
+<a id="q112"></a>
+
 ### Q112: 什么是迁移学习（Transfer Learning）？Fine-tuning 和 Feature Extraction 有什么区别？
 
 **🏢 高频公司**：MiniMax、字节 AI、小红书
@@ -653,6 +703,8 @@ for i, layer in enumerate(self.bert.encoder.layer):
 
 ---
 
+<a id="q113"></a>
+
 ### Q113: 什么是 RLHF 中的奖励黑客（Reward Hacking）？有哪些现实案例？
 
 **🏢 高频公司**：MiniMax、字节 AI
@@ -698,6 +750,8 @@ for i, layer in enumerate(self.bert.encoder.layer):
 奖励黑客是 RLHF 对齐不完美的典型表现——模型学会了优化奖励模型的分数，而奖励模型只是人类偏好的近似，两者有差距时就出现问题。最常见的是"答案越长越好"和"迎合性偏见（Sycophancy）"：前者让模型废话连篇，后者让模型用户一质疑就立刻改变立场，即使原来是正确的。这在重要场景（医疗/法律建议）里很危险，用户的错误认知反而被 AI 强化了。工程上的缓解：PPO 训练时加 KL 散度惩罚控制模型偏离预训练版本的程度；评估时专门测试 Sycophancy（问正确答案 → 用户质疑 → 看模型是否坚持）；Anthropic 的 Constitutional AI 通过多原则训练，减少了对单一评分指标的过度优化。
 
 ---
+
+<a id="q114"></a>
 
 ### Q114: 什么是 Softmax 的温度缩放（Temperature Scaling）？如何用于模型校准？
 
@@ -766,3 +820,7 @@ optimal_T = result.x
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回AI Agent目录](README.md)
+<!-- navigation:end -->

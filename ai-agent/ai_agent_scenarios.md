@@ -1,5 +1,27 @@
 # AI Agent 场景设计题
 
+<!-- navigation:start -->
+[← AI Agent目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（10 题，点击展开）</summary>
+
+- [Q83 · 设计一个企业级代码审查 Agent（Code Review Agent）](#q83)
+- [Q84 · 设计一个企业知识库问答 Agent（RAG-based Q&A Agent）](#q84)
+- [Q85 · 设计一个数据分析 Agent（Text-to-SQL + 可视化）](#q85)
+- [Q86 · 设计一个多轮对话商品推荐 Agent（小红书/淘宝场景）](#q86)
+- [Q87 · 设计一个自动化 Bug 排查 Agent（On-Call 值班助手）](#q87)
+- [Q88 · 设计一个自动化简历筛选 Agent](#q88)
+- [Q89 · 设计一个旅游规划 Agent](#q89)
+- [Q90 · 设计一个 AI 写作助手 Agent（面向小红书内容创作者）](#q90)
+- [Q91 · 设计一个智能财务报告分析 Agent](#q91)
+- [Q92 · 设计一个多语言实时翻译 Agent（会议翻译场景）](#q92)
+
+</details>
+<!-- navigation:end -->
+
 > 面试中最常见的开放式设计题：「如果让你设计一个 XXX 的 Agent，你会怎么做？」
 >
 > 每道题包含：需求拆解 / 架构设计 / 核心模块 / 难点权衡 / 示例答案
@@ -7,6 +29,8 @@
 > 🏢 标注高频出现公司
 
 ---
+
+<a id="q83"></a>
 
 ### Q83: 设计一个企业级代码审查 Agent（Code Review Agent）
 
@@ -133,7 +157,7 @@ LLM 审查后，再用一个 Validator 过滤：
 
 **3.5 评论格式化（Inline Comment）**
 
-```python
+````python
 def format_comment(issue: Issue) -> GitHubComment:
     severity_emoji = {"error": "🔴", "warning": "🟡", "info": "🔵"}
     return GitHubComment(
@@ -152,7 +176,7 @@ def format_comment(issue: Issue) -> GitHubComment:
 > 置信度: {issue.confidence:.0%} | 规则来源: {issue.rule_ref}
 """
     )
-```
+````
 
 ---
 
@@ -192,6 +216,8 @@ def format_comment(issue: Issue) -> GitHubComment:
 最后说一下监控：统计每周评论的"采纳率"（开发者按建议修改的比例），采纳率 < 30% 说明误报太多需要收紧阈值；> 80% 说明 Agent 可能在点踩方面有 bias，需要抽样人工复核。
 
 ---
+
+<a id="q84"></a>
 
 ### Q84: 设计一个企业知识库问答 Agent（RAG-based Q&A Agent）
 
@@ -385,6 +411,8 @@ def verify_citations(answer: str, docs: list[Doc]) -> float:
 
 ---
 
+<a id="q85"></a>
+
 ### Q85: 设计一个数据分析 Agent（Text-to-SQL + 可视化）
 
 **🏢 高频公司**：小红书（数据工具）、字节（DataFact 类产品）、阿里（Quick BI）
@@ -542,6 +570,8 @@ def build_context(history: list[Turn]) -> str:
 
 ---
 
+<a id="q86"></a>
+
 ### Q86: 设计一个多轮对话商品推荐 Agent（小红书/淘宝场景）
 
 **🏢 高频公司**：小红书（必问）、阿里、字节
@@ -697,6 +727,8 @@ def compare_products(prod_a: Product, prod_b: Product, user_focus: list[str]) ->
 
 ---
 
+<a id="q87"></a>
+
 ### Q87: 设计一个自动化 Bug 排查 Agent（On-Call 值班助手）
 
 **🏢 高频公司**：字节、腾讯（SRE 方向）
@@ -836,6 +868,8 @@ On-Call Agent 的设计原则是**快速+可信**——3 分钟内给出根因�
 输出报告结构化为"根因→证据→操作建议"三层，每条证据标注来源（日志行/指标截图/部署时间），置信度透明。高危操作（回滚/重启）通过 interrupt() 暂停等待工程师确认，Agent 负责分析，人负责决策，做到"AI 加速、人工把关"。
 
 ---
+
+<a id="q88"></a>
 
 ### Q88: 设计一个自动化简历筛选 Agent
 
@@ -977,6 +1011,8 @@ Agent 给建议，HR 做最终决定：
 
 ---
 
+<a id="q89"></a>
+
 ### Q89: 设计一个旅游规划 Agent
 
 **🏢 高频公司**：字节（旅游赛道）、小红书
@@ -1101,6 +1137,8 @@ class BudgetTracker:
 用户确认节点：先输出"每天一句话的框架"（Day1: 浅草+上野，重点拍照），用户确认后再展开详细时间表。超预算时不是报错，而是说"方案合计约 1.8 万，超出 3000 元，建议调整：(1)酒店降一档-2000 (2)减少一天行程-1500，您更倾向哪种方案？"
 
 ---
+
+<a id="q90"></a>
 
 ### Q90: 设计一个 AI 写作助手 Agent（面向小红书内容创作者）
 
@@ -1245,6 +1283,8 @@ def score_title(title: str, category: str) -> TitleScore:
 
 ---
 
+<a id="q91"></a>
+
 ### Q91: 设计一个智能财务报告分析 Agent
 
 **🏢 高频公司**：阿里、腾讯
@@ -1362,6 +1402,8 @@ DISCLAIMER = "以上分析基于提供的财务数据，仅供内部参考，不
 安全上，财务数据加严格权限控制，每次访问记录审计日志，所有输出加"仅供内部参考"免责声明。
 
 ---
+
+<a id="q92"></a>
 
 ### Q92: 设计一个多语言实时翻译 Agent（会议翻译场景）
 
@@ -1492,3 +1534,7 @@ async def handle_speaker_change(speaker_id: str, text: str):
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回AI Agent目录](README.md)
+<!-- navigation:end -->

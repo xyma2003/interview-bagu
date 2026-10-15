@@ -1,8 +1,32 @@
 # AI Agent 面试八股 · 第三篇
 
+<!-- navigation:start -->
+[← AI Agent目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（10 题，点击展开）</summary>
+
+- [Q63 · 什么是 Structured Output（结构化输出）？如何保证 LLM 输出严格符合 JSON Schema？](#q63)
+- [Q64 · 什么是 LLM 的 Tool Use 并行调用（Parallel Tool Use）？如何利用它提升 Agent 速度？](#q64)
+- [Q65 · 解释 LLM 的 Context Length vs Knowledge Cutoff 的区别，以及各自的工程应对](#q65)
+- [Q66 · 什么是 Hypothetical Document Embedding（HyDE）？它如何提升 RAG 的召回率？](#q66)
+- [Q67 · LangGraph 的 Interrupt 和 Command 机制详解，Human-in-the-Loop 的三种模式](#q67)
+- [Q68 · 什么是 AI Agent 的"幻觉检测"？有哪些主动检测和被动防御手段？](#q68)
+- [Q69 · Agent Memory 的 Write-Back 策略和记忆遗忘机制如何设计？](#q69)
+- [Q70 · 如何设计多 Agent 系统的错误恢复和任务重试机制？](#q70)
+- [Q71 · 如何设计 LLM 应用的多租户隔离（Multi-tenant）架构？](#q71)
+- [Q72 · 什么是 Agent 的"计划-执行"模式（Plan-and-Execute）？与 ReAct 有何区别？](#q72)
+
+</details>
+<!-- navigation:end -->
+
 > 覆盖：Agent 工程模式 / 多模态 / LLM 推理优化 / 工具生态 / 实战设计题
 
 ---
+
+<a id="q63"></a>
 
 ### Q63: 什么是 Structured Output（结构化输出）？如何保证 LLM 输出严格符合 JSON Schema？
 
@@ -70,6 +94,8 @@ user = client.messages.create(
 
 ---
 
+<a id="q64"></a>
+
 ### Q64: 什么是 LLM 的 Tool Use 并行调用（Parallel Tool Use）？如何利用它提升 Agent 速度？
 
 **🏢 高频公司**：字节、腾讯、MiniMax
@@ -122,6 +148,8 @@ Parallel Tool Use 是 Agent 性能优化的重要手段。Claude 可以一次回
 
 ---
 
+<a id="q65"></a>
+
 ### Q65: 解释 LLM 的 Context Length vs Knowledge Cutoff 的区别，以及各自的工程应对
 
 **🏢 高频公司**：字节、小红书、阿里
@@ -160,6 +188,8 @@ Parallel Tool Use 是 Agent 性能优化的重要手段。Claude 可以一次回
 Context Length 是推理时的技术限制（当前请求能看到多少 token），Knowledge Cutoff 是训练时的数据限制（模型知道截止什么时候的信息）。两者的解决方案不同：Context Length 问题用 RAG（只传相关片段）、摘要压缩（压缩历史对话）解决；Knowledge Cutoff 问题用 RAG + 实时搜索工具解决，让模型能查到最新信息。Agent 工程上要同时处理两个：用 tiktoken 实时估算 context 使用量，接近上限时触发摘要；同时给 Agent 配备搜索工具，遇到可能超出训练数据的问题（近期事件、实时数据）主动调用搜索。
 
 ---
+
+<a id="q66"></a>
 
 ### Q66: 什么是 Hypothetical Document Embedding（HyDE）？它如何提升 RAG 的召回率？
 
@@ -215,6 +245,8 @@ for q in queries: results |= set(vectorstore.search(q))
 HyDE 的洞察是：查询语言和文档语言有风格差距，直接用查询做向量检索会有系统性的 semantic gap。生成一个"假如我知道答案它大概长什么样"的假设性文档，再用这个文档去检索，因为和实际文档的风格、术语更一致，embedding 相似度更高。代价是多一次 LLM 调用，用 claude-haiku 可以控制在 50ms/次的额外延迟。实际测试，对于"如何解决 X 问题"这类查询，HyDE 召回率比直接检索高 15-20%；但对于已经是关键词风格的查询（"量子计算 叠加态 原理"），HyDE 的增益不明显。可以用查询分类器先判断查询类型，复杂询问式查询走 HyDE，关键词式查询直接检索。
 
 ---
+
+<a id="q67"></a>
 
 ### Q67: LangGraph 的 Interrupt 和 Command 机制详解，Human-in-the-Loop 的三种模式
 
@@ -275,6 +307,8 @@ LangGraph 的 interrupt() 是 HITL 的核心机制，它在节点内部暂停图
 
 ---
 
+<a id="q68"></a>
+
 ### Q68: 什么是 AI Agent 的"幻觉检测"？有哪些主动检测和被动防御手段？
 
 **🏢 高频公司**：MiniMax、字节、阿里
@@ -317,6 +351,8 @@ def check_faithfulness(claim: str, source: str) -> bool:
 幻觉检测分事前和事后。事前防御：RAG 系统里 system prompt 明确限制"只基于以下文档回答，无法回答时明确说不知道"，Temperature 设为 0 减少随机创造；要求回答时标注来源段落编号，方便后续验证。事后检测：将模型回答拆解为原子声明，用 NLI 模型或 LLM 逐条验证是否能从 context 推断（RAGAS Faithfulness）；也可以用 Self-Check——生成答案后让同一模型（或更强的模型）审查"哪些内容无法从提供的文档中确认"。生产监控上，抽样 5% 的请求做 faithfulness 检测，低分对话进入人工复查队列。发现幻觉集中在某类问题（如数字、日期类）后，可以针对性加强那类问题的 RAG 检索或在 prompt 里加特别提醒。
 
 ---
+
+<a id="q69"></a>
 
 ### Q69: Agent Memory 的 Write-Back 策略和记忆遗忘机制如何设计？
 
@@ -376,6 +412,8 @@ async def extract_and_save_memory(user_msg, reply, user_id):
 记忆写入最好异步，不阻塞主响应路径。实现上用 `asyncio.create_task` 启动后台任务，或者发 Kafka 消息让专门的记忆服务处理。提取什么记忆是关键：不是所有对话都值得记录，只提取"用户偏好"、"重要事实"、"决策结果"类信息，普通闲聊不存。记忆的生命周期管理：重要信息（用户的忌口、工作单位）设较长 TTL 或永久；普通偏好（"上次喜欢的餐厅"）设 30 天 TTL。记忆去重很关键，不能无限追加——用 embedding 相似度判断新记忆是否与已有记忆重复，重复则更新而非追加，避免记忆库无限膨胀。在 Critter 项目里我实现了这套机制：按类别（饮食/工作/爱好）分类存储，同类新信息覆盖旧信息，用 json 文件持久化，每次对话注入 system prompt。
 
 ---
+
+<a id="q70"></a>
 
 ### Q70: 如何设计多 Agent 系统的错误恢复和任务重试机制？
 
@@ -456,6 +494,8 @@ class CircuitBreaker:
 
 ---
 
+<a id="q71"></a>
+
 ### Q71: 如何设计 LLM 应用的多租户隔离（Multi-tenant）架构？
 
 **🏢 高频公司**：阿里、腾讯
@@ -525,6 +565,8 @@ await usage_db.insert({
 
 ---
 
+<a id="q72"></a>
+
 ### Q72: 什么是 Agent 的"计划-执行"模式（Plan-and-Execute）？与 ReAct 有何区别？
 
 **🏢 高频公司**：字节、MiniMax
@@ -588,3 +630,7 @@ ReAct 每步都做即时决策，灵活但效率有限（每步都要 LLM 推理
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回AI Agent目录](README.md)
+<!-- navigation:end -->

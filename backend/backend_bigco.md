@@ -1,11 +1,35 @@
 # 后端面试专项 · 大厂高频题
 
+<!-- navigation:start -->
+[← 后端目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（10 题，点击展开）</summary>
+
+- [Q32 · 设计一个高并发的短链接系统（TinyURL）](#q32)
+- [Q33 · 实现一个 LFU（Least Frequently Used）缓存](#q33)
+- [Q34 · MySQL 有一张 10 亿行的大表，如何查询最近 7 天的数据并保持性能？](#q34)
+- [Q35 · 如何设计一个消息推送系统（支持千万在线用户）？](#q35)
+- [Q36 · Redis 的 Pipeline 和 Lua Script 分别解决什么问题？](#q36)
+- [Q37 · Spring 的 IOC 和 AOP 原理是什么？Bean 的生命周期有哪些阶段？](#q37)
+- [Q38 · 解释 HashMap 在 Java 中的实现。JDK 8 为什么引入红黑树？](#q38)
+- [Q39 · 用 Python 实现一个线程安全的单例模式，以及双重检查锁的问题](#q39)
+- [Q40 · Kafka 消费者 Rebalance 是什么？如何减少 Rebalance 的影响？](#q40)
+- [Q41 · 什么是 CAS？Java 中 AtomicInteger 如何使用 CAS 实现无锁并发？](#q41)
+
+</details>
+<!-- navigation:end -->
+
 > 来源：字节跳动 / 腾讯 / 小红书 / 阿里 真实面经整理
 > 每题标注高频出现公司
 
 ---
 
 ## 字节跳动高频（算法 + 系统设计）
+
+<a id="q32"></a>
 
 ### Q32: 字节 面试：设计一个高并发的短链接系统（TinyURL）
 
@@ -79,6 +103,8 @@
 短链系统的核心是 ID 生成 + 缓存。ID 选用 Snowflake 生成全局唯一 64 位 ID，转 Base62 得到 7-8 位短码，不可枚举且趋势递增（对 DB 写入友好）。存储用 MySQL，short_code 作主键，long_url 加唯一索引防重复生成（同一长链多次请求返回同一短码）。缓存是关键：读写比 10:1，热点短链用 Redis LRU 缓存，命中率轻松 >95%，每天 10 亿次访问里 9.5 亿走缓存，数据库只承接 5000 万次。重定向用 302 而非 301，每次访问都到我们服务器，可以统计点击量（存 ClickHouse 做分析）、实现短链失效（设 expires_at 字段）。大规模场景下 MySQL 按 short_code 哈希分 64 片，每片 ~1.5 亿条，单表 B+ 树索引压力不大。访问统计用异步写（访问先响应重定向，后台异步 incr click_count），避免统计成为性能瓶颈。
 
 ---
+
+<a id="q33"></a>
 
 ### Q33: 字节 面试：实现一个 LFU（Least Frequently Used）缓存
 
@@ -158,6 +184,8 @@ LFU 的难点是同时维护"访问频次"和"相同频次下按 LRU 淘汰"两�
 
 ---
 
+<a id="q34"></a>
+
 ### Q34: 字节 面试：MySQL 有一张 10 亿行的大表，如何查询最近 7 天的数据并保持性能？
 
 **🏢 高频公司**：字节、阿里（数据库优化题）
@@ -230,6 +258,8 @@ CREATE TABLE events (
 
 ---
 
+<a id="q35"></a>
+
 ### Q35: 腾讯 面试：如何设计一个消息推送系统（支持千万在线用户）？
 
 **🏢 高频公司**：腾讯（微信/QQ 业务）、字节
@@ -285,6 +315,8 @@ CREATE TABLE events (
 千万在线 IM 系统的核心是两点：高效维持长连接 + 精准路由投递。Gateway 层用 epoll IO 多路复用，单机 10 万长连接没问题（Nginx 单机处理 5 万并发是基准），100 台 Gateway 足够。路由表存 Redis，`user_id:device_id → gateway_addr`，上线时写入（10s TTL 防崩溃残留，心跳续期），一个 user_id 可以对应多个设备地址（多端同步）。消息流：发送方 → 写 Kafka（削峰持久化）→ Push Service 消费 → 查 Route Table → 找到 Gateway → Gateway 推送到对应长连接。可靠性靠 ACK + 重试：Push Service 发完消息等接收方 ACK，超时重试最多 3 次；接收方用消息 ID 幂等去重。群消息是最大挑战：百人以下群直接 fan-out 推送，几千人的群用"推通知（有新消息）+ 拉内容"分离，避免单条消息触发几千次推送把系统打垮。
 
 ---
+
+<a id="q36"></a>
 
 ### Q36: 腾讯 面试：Redis 的 Pipeline 和 Lua Script 分别解决什么问题？
 
@@ -354,6 +386,8 @@ Pipeline 解决网络延迟问题：把 100 个独立命令打包一次发送，
 
 ---
 
+<a id="q37"></a>
+
 ### Q37: 阿里 面试：Spring 的 IOC 和 AOP 原理是什么？Bean 的生命周期有哪些阶段？
 
 **🏢 高频公司**：阿里（Java 必考）、腾讯、字节
@@ -404,6 +438,8 @@ Spring 是 Java 后端的核心框架，IOC/AOP/Bean 生命周期是阿里面试
 IOC 的核心是控制反转：对象不自己创建依赖，而是由 Spring 容器管理和注入。Spring 在启动时扫描注解、构建 BeanDefinition、按依赖关系实例化并注入，形成完整的对象图。AOP 底层是代理模式：有接口用 JDK 动态代理（实现接口的代理类），无接口用 CGLIB（字节码生成子类）。`@Transactional` 就是 Spring 最常用的 AOP 应用，在目标方法前开启事务，正常完成时提交，RuntimeException 时回滚。最常见的踩坑点是同类内部调用：A 调用 this.B()，this 是原始对象而非代理，事务注解不生效，必须通过注入 ApplicationContext 拿到代理对象再调用。Bean 生命周期的关键节点是 BeanPostProcessor 的后置处理，这里 Spring 会把 Bean 替换为 AOP 代理对象（如果有 AOP 切面匹配），所以 @PostConstruct 里的 this 是原始对象，外部注入的是代理对象。
 
 ---
+
+<a id="q38"></a>
 
 ### Q38: 阿里 面试：解释 HashMap 在 Java 中的实现。JDK 8 为什么引入红黑树？
 
@@ -456,6 +492,8 @@ JDK 8 引入红黑树是为了防止哈希攻击和提升最坏情况性能。JD
 ## 小红书高频（Python + 数据 + AI 工程）
 
 ---
+
+<a id="q39"></a>
 
 ### Q39: 小红书 面试：用 Python 实现一个线程安全的单例模式，以及双重检查锁的问题
 
@@ -546,6 +584,8 @@ Python 中最简单可靠的单例是模块级变量：Python 模块在第一次
 
 ---
 
+<a id="q40"></a>
+
 ### Q40: 阿里 面试：Kafka 消费者 Rebalance 是什么？如何减少 Rebalance 的影响？
 
 **🏢 高频公司**：阿里、字节（Kafka 深度题）
@@ -606,6 +646,8 @@ Kafka Rebalance 是生产中的常见性能问题，考察候选人对 Kafka 消
 Rebalance 是 Kafka 消费者的最大痛点，Stop-The-World 期间所有消费者停止消费，积压消息增加，线上可能出现告警。减少 Rebalance 要从触发条件入手：大多数非预期 Rebalance 是因为消费者处理消息太慢（超过 max.poll.interval）或心跳超时（网络抖动 + session.timeout 过短）。调优方向：`max.poll.records` 从 500 降到 100，减少每次 poll 的批次大小，加快消费速度，不超 max.poll.interval；`session.timeout.ms` 调大到 30s（心跳 10s），容忍 GC pause 等短暂延迟；使用 `group.instance.id` 开启静态成员，K8s 滚动更新时 Consumer 重启不触发 Rebalance，只是暂时"离线"后以原 ID 重连并恢复原来的 Partition 分配，对生产影响极小。Kafka 2.4 的增量协作重平衡是根本解决方案：只迁移需要变动的 Partition，其他继续消费，大幅降低停顿时间，强烈推荐升级。
 
 ---
+
+<a id="q41"></a>
 
 ### Q41: 字节/阿里 面试：什么是 CAS？Java 中 AtomicInteger 如何使用 CAS 实现无锁并发？
 
@@ -671,3 +713,7 @@ CAS 是无锁并发的基础，Java 通过 Unsafe 类封装 CPU 的 `CMPXCHG` �
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回后端目录](README.md)
+<!-- navigation:end -->

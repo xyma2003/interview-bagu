@@ -1,6 +1,45 @@
 # 算法面试题库 · 树 / 图 / BFS / DFS / 回溯
 
+<!-- navigation:start -->
+[← 算法目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（25 题，点击展开）</summary>
+
+- [Q26 · 二叉树的最大深度 · LeetCode 104](#q26)
+- [Q27 · 二叉树的层序遍历 · LeetCode 102](#q27)
+- [Q28 · 验证二叉搜索树 · LeetCode 98](#q28)
+- [Q29 · 二叉树中的最大路径和 · LeetCode 124](#q29)
+- [Q30 · 二叉树的最近公共祖先 · LeetCode 236](#q30)
+- [Q31 · 从前序与中序遍历序列构造二叉树 · LeetCode 105](#q31)
+- [Q32 · 岛屿数量 · LeetCode 200](#q32)
+- [Q33 · 腐烂的橘子 · LeetCode 994](#q33)
+- [Q34 · 课程表（拓扑排序）· LeetCode 207](#q34)
+- [Q35 · 单词接龙 · LeetCode 127](#q35)
+- [Q36 · 全排列 · LeetCode 46](#q36)
+- [Q37 · 子集 · LeetCode 78](#q37)
+- [Q38 · 组合总和 · LeetCode 39](#q38)
+- [Q39 · N 皇后 · LeetCode 51](#q39)
+- [Q40 · 单词搜索 · LeetCode 79](#q40)
+- [Q41 · 被围绕的区域 · LeetCode 130](#q41)
+- [Q42 · 实现 Trie（前缀树）· LeetCode 208](#q42)
+- [Q43 · 克隆图 · LeetCode 133](#q43)
+- [Q44 · 网络延迟时间（Dijkstra）· LeetCode 743](#q44)
+- [Q45 · 最长公共子序列 · LeetCode 1143](#q45)
+- [Q46 · 零钱兑换 · LeetCode 322](#q46)
+- [Q47 · 最长递增子序列 · LeetCode 300](#q47)
+- [Q48 · 编辑距离 · LeetCode 72](#q48)
+- [Q49 · 分割等和子集 · LeetCode 416](#q49)
+- [Q50 · 买卖股票的最佳时机 系列](#q50)
+
+</details>
+<!-- navigation:end -->
+
 ---
+
+<a id="q26"></a>
 
 ### Q26: 二叉树的最大深度 · LeetCode 104
 
@@ -31,6 +70,8 @@ def maxDepth_bfs(root) -> int:
 
 ---
 
+<a id="q27"></a>
+
 ### Q27: 二叉树的层序遍历 · LeetCode 102
 
 **🏢 高频公司**：字节、腾讯（高频）
@@ -58,6 +99,8 @@ def levelOrder(root) -> list[list[int]]:
 
 ---
 
+<a id="q28"></a>
+
 ### Q28: 验证二叉搜索树 · LeetCode 98
 
 **🏢 高频公司**：字节、腾讯、阿里
@@ -75,6 +118,8 @@ def isValidBST(root, lo=float('-inf'), hi=float('inf')) -> bool:
 **考察点**：传递上下界（不只是和父节点比），中序遍历结果必须严格递增
 
 ---
+
+<a id="q29"></a>
 
 ### Q29: 二叉树中的最大路径和 · LeetCode 124
 
@@ -102,6 +147,8 @@ def maxPathSum(root) -> int:
 
 ---
 
+<a id="q30"></a>
+
 ### Q30: 二叉树的最近公共祖先 · LeetCode 236
 
 **🏢 高频公司**：字节、腾讯（高频）
@@ -121,6 +168,8 @@ def lowestCommonAncestor(root, p, q):
 **考察点**：递归的语义——返回在该子树中找到的节点（None/p/q/LCA）
 
 ---
+
+<a id="q31"></a>
 
 ### Q31: 从前序与中序遍历序列构造二叉树 · LeetCode 105
 
@@ -144,6 +193,8 @@ def buildTree(preorder: list[int], inorder: list[int]):
 **考察点**：前序第一个 = 根，中序中根的位置划分左右子树
 
 ---
+
+<a id="q32"></a>
 
 ### Q32: 岛屿数量 · LeetCode 200
 
@@ -177,6 +228,8 @@ def numIslands(grid: list[list[str]]) -> int:
 **考察点**：DFS/BFS 都行；追问：BFS 写法？Union-Find 写法？
 
 ---
+
+<a id="q33"></a>
 
 ### Q33: 腐烂的橘子 · LeetCode 994
 
@@ -215,6 +268,8 @@ def orangesRotting(grid: list[list[int]]) -> int:
 
 ---
 
+<a id="q34"></a>
+
 ### Q34: 课程表（拓扑排序）· LeetCode 207
 
 **🏢 高频公司**：字节、腾讯
@@ -248,6 +303,8 @@ def canFinish(numCourses: int, prerequisites: list[list[int]]) -> bool:
 **考察点**：Kahn 算法（BFS 拓扑排序）；DFS 的三色标记法也可以
 
 ---
+
+<a id="q35"></a>
 
 ### Q35: 单词接龙 · LeetCode 127
 
@@ -287,6 +344,8 @@ def ladderLength(beginWord: str, endWord: str, wordList: list[str]) -> int:
 
 ---
 
+<a id="q36"></a>
+
 ### Q36: 全排列 · LeetCode 46
 
 **🏢 高频公司**：字节、腾讯（回溯经典）
@@ -315,6 +374,8 @@ def permute(nums: list[int]) -> list[list[int]]:
 
 ---
 
+<a id="q37"></a>
+
 ### Q37: 子集 · LeetCode 78
 
 **🏢 高频公司**：字节
@@ -337,6 +398,8 @@ def subsets(nums: list[int]) -> list[list[int]]:
 **考察点**：start 参数避免重复选择之前的元素；子集不需要"终止条件"，每个节点都记录
 
 ---
+
+<a id="q38"></a>
 
 ### Q38: 组合总和 · LeetCode 39
 
@@ -365,6 +428,8 @@ def combinationSum(candidates: list[int], target: int) -> list[list[int]]:
 **考察点**：可重复使用时传 `i`，不可重复时传 `i+1`；排序+剪枝提效
 
 ---
+
+<a id="q39"></a>
 
 ### Q39: N 皇后 · LeetCode 51
 
@@ -398,6 +463,8 @@ def solveNQueens(n: int) -> list[list[str]]:
 
 ---
 
+<a id="q40"></a>
+
 ### Q40: 单词搜索 · LeetCode 79
 
 **🏢 高频公司**：字节、腾讯
@@ -423,6 +490,8 @@ def exist(board: list[list[str]], word: str) -> bool:
 **考察点**：原地修改标记已访问（不用 visited 矩阵），回溯时恢复
 
 ---
+
+<a id="q41"></a>
 
 ### Q41: 被围绕的区域 · LeetCode 130
 
@@ -455,6 +524,8 @@ def solve(board: list[list[str]]) -> None:
 **考察点**：逆向 DFS（从答案反推），比正向判断更简洁
 
 ---
+
+<a id="q42"></a>
 
 ### Q42: 实现 Trie（前缀树）· LeetCode 208
 
@@ -495,6 +566,8 @@ class Trie:
 
 ---
 
+<a id="q43"></a>
+
 ### Q43: 克隆图 · LeetCode 133
 
 **🏢 高频公司**：字节
@@ -518,6 +591,8 @@ def cloneGraph(node):
 **考察点**：哈希表记录已克隆节点（处理环形图）
 
 ---
+
+<a id="q44"></a>
 
 ### Q44: 网络延迟时间（Dijkstra）· LeetCode 743
 
@@ -558,6 +633,8 @@ def networkDelayTime(times: list[list[int]], n: int, k: int) -> int:
 
 ---
 
+<a id="q45"></a>
+
 ### Q45: 最长公共子序列 · LeetCode 1143
 
 **🏢 高频公司**：字节、腾讯（DP 经典）
@@ -583,6 +660,8 @@ def longestCommonSubsequence(text1: str, text2: str) -> int:
 
 ---
 
+<a id="q46"></a>
+
 ### Q46: 零钱兑换 · LeetCode 322
 
 **🏢 高频公司**：字节、腾讯、阿里
@@ -606,6 +685,8 @@ def coinChange(coins: list[int], amount: int) -> int:
 **考察点**：完全背包（正序遍历 amount）vs 0/1 背包（逆序）
 
 ---
+
+<a id="q47"></a>
 
 ### Q47: 最长递增子序列 · LeetCode 300
 
@@ -639,6 +720,8 @@ def lengthOfLIS(nums: list[int]) -> int:
 
 ---
 
+<a id="q48"></a>
+
 ### Q48: 编辑距离 · LeetCode 72
 
 **🏢 高频公司**：字节（必考 DP）
@@ -668,6 +751,8 @@ def minDistance(word1: str, word2: str) -> int:
 
 ---
 
+<a id="q49"></a>
+
 ### Q49: 分割等和子集 · LeetCode 416
 
 **🏢 高频公司**：字节
@@ -692,6 +777,8 @@ def canPartition(nums: list[int]) -> bool:
 **考察点**：转化为 0/1 背包；逆序遍历防止同一物品被用多次
 
 ---
+
+<a id="q50"></a>
 
 ### Q50: 买卖股票的最佳时机 系列
 
@@ -735,3 +822,7 @@ def maxProfit(prices: list[int]) -> int:
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回算法目录](README.md)
+<!-- navigation:end -->

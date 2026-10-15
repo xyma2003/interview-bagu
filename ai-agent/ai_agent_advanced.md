@@ -1,10 +1,41 @@
 # AI Agent 面试八股 · 进阶篇
 
+<!-- navigation:start -->
+[← AI Agent目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（17 题，点击展开）</summary>
+
+- [Q31 · 什么是 LoRA？它如何在不更新全部参数的情况下微调大模型？](#q31)
+- [Q32 · 模型量化有哪几种方式？INT8、INT4 量化的原理和代价是什么？](#q32)
+- [Q33 · 什么是 Fine-tuning 数据集的构建原则？如何避免灾难性遗忘？](#q33)
+- [Q34 · LLM 的 Context Window 是如何扩展的？长上下文的技术挑战是什么？](#q34)
+- [Q35 · 如何评估一个 LLM 的能力？常用的 Benchmark 有哪些？](#q35)
+- [Q36 · Embedding 模型的选择标准是什么？如何针对中文优化？](#q36)
+- [Q37 · 什么是 Reranker？Cross-Encoder 和 Bi-Encoder 有什么区别？](#q37)
+- [Q38 · 什么是 GraphRAG？它解决了传统向量 RAG 的什么问题？](#q38)
+- [Q39 · 如何在生产环境部署 LLM Agent 服务？关键的工程考量有哪些？](#q39)
+- [Q40 · 什么是 Agent 的"工具选择问题"？如何设计 Tool Registry 让 Agent 准确选择工具？](#q40)
+- [Q41 · Pipecat / LiveKit Agents 等实时语音 Agent 框架的核心架构是什么？](#q41)
+- [Q42 · 什么是 LLM 红队测试（Red Teaming）？有哪些常见的攻击向量？](#q42)
+- [Q43 · 如何实现 LLM 应用的内容安全过滤（Content Moderation）？](#q43)
+- [Q44 · 多模态 LLM 是如何处理图片的？Vision-Language 模型的架构是什么？](#q44)
+- [Q45 · CrewAI 和 AutoGen 的核心设计理念是什么？它们与 LangGraph 有何不同？](#q45)
+- [Q46 · 什么是 Dify？它与 LangChain/LangGraph 的定位有什么不同？](#q46)
+- [Q47 · LlamaIndex 与 LangChain 的 RAG 能力有什么区别？](#q47)
+
+</details>
+<!-- navigation:end -->
+
 > 接续基础篇，涵盖：微调/LoRA、量化、向量搜索进阶、多模态、GraphRAG、Agent部署、具体框架细节、安全红队
 
 ---
 
 ## 十一、模型微调与 PEFT
+
+<a id="q31"></a>
 
 ### Q31: 什么是 LoRA？它如何在不更新全部参数的情况下微调大模型？
 
@@ -47,6 +78,8 @@ LoRA 通过将权重更新矩阵 ΔW 分解为两个低秩矩阵 B×A 的乘积�
 
 ---
 
+<a id="q32"></a>
+
 ### Q32: 模型量化有哪几种方式？INT8、INT4 量化的原理和代价是什么？
 
 **题目解析**：量化是 LLM 生产部署降本的关键技术，了解其原理体现候选人对推理工程的理解。
@@ -88,6 +121,8 @@ W_int8 = round(W / scale)
 
 ---
 
+<a id="q33"></a>
+
 ### Q33: 什么是 Fine-tuning 数据集的构建原则？如何避免灾难性遗忘？
 
 **题目解析**：微调数据质量直接决定效果，考察候选人对数据工程的认知。
@@ -126,6 +161,8 @@ W_int8 = round(W / scale)
 
 ---
 
+<a id="q34"></a>
+
 ### Q34: LLM 的 Context Window 是如何扩展的？长上下文的技术挑战是什么？
 
 **题目解析**：长上下文是 LLM 的核心发展方向，考察候选人对技术前沿的了解。
@@ -163,6 +200,8 @@ W_int8 = round(W / scale)
 上下文长度的核心限制来自位置编码和 KV Cache 显存。RoPE 通过旋转矩阵编码相对位置，相比绝对位置编码更容易泛化到更长序列；通过调整 RoPE 的旋转频率 base，可以将 4K context 的模型扩展到 32K 甚至更长，配合少量长文本微调效果很好。FlashAttention 解决的是计算效率：标准 Attention 会产生 N×N 的中间矩阵，128K 序列需要 64GB 就放不下，FlashAttention 用分块计算（tiling）把中间结果保留在更快的 SRAM 里，显存占用降到线性，速度快 2-4 倍。即使有了 200K 上下文，Lost in the Middle 仍然是实际问题——信息在文档中间时模型召回率显著低于开头和结尾，所以 RAG 做多文档上下文注入时，最重要的文档应该放在 context 开头或结尾。KV Cache 是另一个瓶颈，128K token 的 KV Cache 在 70B 模型上需要约 10GB 显存，限制了并发能力。
 
 ---
+
+<a id="q35"></a>
 
 ### Q35: 如何评估一个 LLM 的能力？常用的 Benchmark 有哪些？
 
@@ -212,6 +251,8 @@ W_int8 = round(W / scale)
 
 ---
 
+<a id="q36"></a>
+
 ### Q36: Embedding 模型的选择标准是什么？如何针对中文优化？
 
 **题目解析**：Embedding 模型选择直接影响 RAG 的检索质量，是工程实践中的核心决策。
@@ -245,6 +286,8 @@ W_int8 = round(W / scale)
 选 Embedding 模型要先明确场景：纯中文用 BGE-large-zh-v1.5（MTEB 中文检索榜单长期前列）；中英混合或多语言用 bge-m3（支持 100+ 语言，还能同时输出 BM25 风格的稀疏向量，一个模型实现混合检索）；成本敏感且无法本地部署用 OpenAI text-embedding-3-small（768 维，效果不错，价格低廉）。中文 Embedding 的一个坑是 512 token 限制，很多文档段落超过 512 个 token 时需要截断，可能丢失重要信息，选模型时要看 max_sequence_length。对于业务领域专词很多的场景（金融/医疗/法律），用业务语料微调 embedding 能显著提升检索召回率——构建查询-文档正样本对（人工或用 LLM 生成），加上难负例挖掘，在 sentence-transformers 框架上微调 1-3 个 epoch，检索 Recall@5 通常能提升 10-20%。
 
 ---
+
+<a id="q37"></a>
 
 ### Q37: 什么是 Reranker？Cross-Encoder 和 Bi-Encoder 有什么区别？
 
@@ -284,6 +327,8 @@ W_int8 = round(W / scale)
 Bi-Encoder 和 Cross-Encoder 是互补的：Bi-Encoder 将 query 和 document 独立编码，document 向量可以预计算，检索时只需一次 query 编码加向量搜索，毫秒级完成；缺点是 query 和 document 没有深度交互，对模糊语义的召回率有限。Cross-Encoder 把 query+document 拼接后一起过模型，每层都有全注意力交互，打分精度高很多，但每个 pair 都要单独推理，Top-50 候选就要跑 50 次推理，速度是瓶颈。两阶段管道把二者结合：Bi-Encoder 快速召回，Cross-Encoder 精排，是当前 RAG 系统的标准架构。Reranker 对多义词和语义相近但意图不同的查询效果提升最显著——比如"苹果公司" vs "苹果水果"，Bi-Encoder 可能混淆，但 Cross-Encoder 能结合完整上下文精准判断。
 
 ---
+
+<a id="q38"></a>
 
 ### Q38: 什么是 GraphRAG？它解决了传统向量 RAG 的什么问题？
 
@@ -325,6 +370,8 @@ Bi-Encoder 和 Cross-Encoder 是互补的：Bi-Encoder 将 query 和 document �
 ## 十三、Agent 部署与工程化
 
 ---
+
+<a id="q39"></a>
 
 ### Q39: 如何在生产环境部署 LLM Agent 服务？关键的工程考量有哪些？
 
@@ -370,6 +417,8 @@ Bi-Encoder 和 Cross-Encoder 是互补的：Bi-Encoder 将 query 和 document �
 
 ---
 
+<a id="q40"></a>
+
 ### Q40: 什么是 Agent 的"工具选择问题"？如何设计 Tool Registry 让 Agent 准确选择工具？
 
 **题目解析**：工具选择准确性是多工具 Agent 的核心工程挑战，面试官考察候选人的实际工程能力。
@@ -413,6 +462,8 @@ Bi-Encoder 和 Cross-Encoder 是互补的：Bi-Encoder 将 query 和 document �
 当 Agent 有十几个甚至几十个工具时，把所有工具描述塞进一个上下文是低效且不准确的。我的解决方案是两层架构：工具描述先做 Embedding，存入向量库；每次 Agent 请求时，先用用户意图（query）检索 Top-5 最相关的工具，只把这 5 个工具的 schema 放进 LLM context，大幅减少选择干扰。工具描述本身要精心设计：名称用动词+名词（`get_order_status`），描述里第一句说"用于查询特定订单的实时状态"，第二句说"不要用此工具搜索产品信息"，把工具的边界说清楚。参数描述要带示例和约束（`order_id: 订单号，格式为'ORD-XXXXXX'，如 'ORD-123456'`）。工具调用失败时实现 self-correction：把错误信息（如 Pydantic 校验失败）作为 tool_result 返回给 LLM，LLM 通常能自行修正参数重试。我在 Peppr 系统里实现了这套机制，工具选择准确率从 72% 提升到 93%。
 
 ---
+
+<a id="q41"></a>
 
 ### Q41: Pipecat / LiveKit Agents 等实时语音 Agent 框架的核心架构是什么？
 
@@ -467,6 +518,8 @@ Bi-Encoder 和 Cross-Encoder 是互补的：Bi-Encoder 将 query 和 document �
 
 ---
 
+<a id="q42"></a>
+
 ### Q42: 什么是 LLM 红队测试（Red Teaming）？有哪些常见的攻击向量？
 
 **题目解析**：AI 安全是生产级 AI 系统的必要关卡，考察候选人的安全意识。
@@ -512,6 +565,8 @@ Bi-Encoder 和 Cross-Encoder 是互补的：Bi-Encoder 将 query 和 document �
 LLM 红队测试是在 AI 应用上线前主动寻找安全漏洞的过程，类似于传统软件的渗透测试但针对 LLM 特性。攻击向量分几类：越狱尝试绕过模型的安全对齐（角色扮演、编码混淆、渐进引导），提示词注入利用用户输入覆盖系统指令（直接注入容易防，间接注入难——Agent 读取的网页/文件里包含指令），信息泄露尝试提取 system prompt 或其他用户数据。防御要分层：在模型层用支持 Instruction Hierarchy 的模型（system prompt 权限最高，用户无法覆盖）；在应用层把用户输入放在明确的 XML 标签里与系统指令区分；对读取的外部内容在 prompt 里明确声明"以下是不可信内容"；在输出层检测是否包含系统指令内容（防泄露）。没有完美防御，定期运行自动化红队测试（Garak/PromptBench 等框架），对新发现的越狱模式及时更新防御。
 
 ---
+
+<a id="q43"></a>
 
 ### Q43: 如何实现 LLM 应用的内容安全过滤（Content Moderation）？
 
@@ -561,6 +616,8 @@ LLM 红队测试是在 AI 应用上线前主动寻找安全漏洞的过程，类
 
 ---
 
+<a id="q44"></a>
+
 ### Q44: 多模态 LLM 是如何处理图片的？Vision-Language 模型的架构是什么？
 
 **题目解析**：多模态是 LLM 的重要扩展方向，考察候选人对技术边界的了解。
@@ -601,6 +658,8 @@ LLM 红队测试是在 AI 应用上线前主动寻找安全漏洞的过程，类
 ## 十六、常见框架详解
 
 ---
+
+<a id="q45"></a>
 
 ### Q45: CrewAI 和 AutoGen 的核心设计理念是什么？它们与 LangGraph 有何不同？
 
@@ -643,6 +702,8 @@ LLM 红队测试是在 AI 应用上线前主动寻找安全漏洞的过程，类
 
 ---
 
+<a id="q46"></a>
+
 ### Q46: 什么是 Dify？它与 LangChain/LangGraph 的定位有什么不同？
 
 **题目解析**：Dify 是国内流行的 LLMOps 平台，考察候选人对 LLM 应用生态的全面了解。
@@ -683,6 +744,8 @@ Dify 是 LLMOps 平台，而 LangChain 是开发框架——这是最根本的�
 
 ---
 
+<a id="q47"></a>
+
 ### Q47: LlamaIndex 与 LangChain 的 RAG 能力有什么区别？
 
 **题目解析**：LlamaIndex 是 RAG 领域的专门框架，与 LangChain 形成差异化竞争，考察候选人的框架选型能力。
@@ -717,3 +780,7 @@ LlamaIndex 是 RAG 专家，在数据摄取（支持 PDF/HTML/数据库/Notion �
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回AI Agent目录](README.md)
+<!-- navigation:end -->

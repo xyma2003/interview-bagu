@@ -1,9 +1,43 @@
 # 算法面试题库 · 综合练习专题
 
+<!-- navigation:start -->
+[← 算法目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（20 题，点击展开）</summary>
+
+- [Q71 · 找到数组中出现次数超过 n/3 的所有元素 · LeetCode 229](#q71)
+- [Q72 · 最长连续序列 · LeetCode 128](#q72)
+- [Q73 · 滑动窗口最大值 · LeetCode 239](#q73)
+- [Q74 · 最长有效括号 · LeetCode 32（DP 解法）](#q74)
+- [Q75 · 单词拆分 · LeetCode 139](#q75)
+- [Q76 · 最小路径和 · LeetCode 64](#q76)
+- [Q77 · 不同路径 II（含障碍物）· LeetCode 63](#q77)
+- [Q78 · 打家劫舍 III（树形 DP）· LeetCode 337](#q78)
+- [Q79 · 最长回文子串 · LeetCode 5](#q79)
+- [Q80 · 课程表 II（输出拓扑序列）· LeetCode 210](#q80)
+- [Q81 · 删除链表的倒数第 N 个节点 · LeetCode 19](#q81)
+- [Q82 · 最大正方形 · LeetCode 221](#q82)
+- [Q83 · 完全平方数 · LeetCode 279](#q83)
+- [Q84 · 岛屿的最大面积 · LeetCode 695](#q84)
+- [Q85 · 二叉树的右视图 · LeetCode 199](#q85)
+- [Q86 · 二叉树展开为链表 · LeetCode 114](#q86)
+- [Q87 · 实现一个计算器（基本运算 + 括号）· LeetCode 224](#q87)
+- [Q88 · 数组的相对排序 · LeetCode 1122（计数排序思想）](#q88)
+- [Q89 · 最优除法 · LeetCode 553（贪心）](#q89)
+- [Q90 · 前 K 个高频单词 · LeetCode 692](#q90)
+
+</details>
+<!-- navigation:end -->
+
 > 算法题型练习，含详细解析；未提供可追溯的公司面经原文。
 > 本页只核验 Q73。其他题中的旧公司／频率标签不作为事实；范围见[来源规范与核验记录](../SOURCE_AUDIT.md)。
 
 ---
+
+<a id="q71"></a>
 
 ### Q71: 字节 面试：找到数组中出现次数超过 n/3 的所有元素 · LeetCode 229
 
@@ -38,6 +72,8 @@ def majorityElement(nums: list[int]) -> list[int]:
 
 ---
 
+<a id="q72"></a>
+
 ### Q72: 字节 面试：最长连续序列 · LeetCode 128
 
 **🏢 高频公司**：字节（必考）、腾讯
@@ -64,6 +100,8 @@ def longestConsecutive(nums: list[int]) -> int:
 **考察点**：先判断是否是序列起点（n-1 不在 set），避免重复计算
 
 ---
+
+<a id="q73"></a>
 
 <a id="review-algorithm-q73"></a>
 
@@ -106,6 +144,8 @@ def maxSlidingWindow(nums: list[int], k: int) -> list[int]:
 
 ---
 
+<a id="q74"></a>
+
 ### Q74: 字节 面试：最长有效括号 · LeetCode 32（DP 解法）
 
 **🏢 高频公司**：字节
@@ -132,6 +172,8 @@ def longestValidParentheses(s: str) -> int:
 **考察点**：DP 状态转移的两种情况（前一个是 `(`；前面是有效子串，再往前是 `(`）
 
 ---
+
+<a id="q75"></a>
 
 ### Q75: 阿里 面试：单词拆分 · LeetCode 139
 
@@ -160,6 +202,8 @@ def wordBreak(s: str, wordDict: list[str]) -> bool:
 
 ---
 
+<a id="q76"></a>
+
 ### Q76: 字节 面试：最小路径和 · LeetCode 64
 
 **🏢 高频公司**：字节、腾讯
@@ -181,6 +225,8 @@ def minPathSum(grid: list[list[int]]) -> int:
 
 ---
 
+<a id="q77"></a>
+
 ### Q77: 腾讯 面试：不同路径 II（含障碍物）· LeetCode 63
 
 **题目讲解**：
@@ -199,6 +245,8 @@ def uniquePathsWithObstacles(grid: list[list[int]]) -> int:
 ```
 
 ---
+
+<a id="q78"></a>
 
 ### Q78: 字节 面试：打家劫舍 III（树形 DP）· LeetCode 337
 
@@ -223,6 +271,8 @@ def rob(root) -> int:
 **考察点**：每个节点返回"偷/不偷"两种状态，避免重复计算
 
 ---
+
+<a id="q79"></a>
 
 ### Q79: 腾讯 面试：最长回文子串 · LeetCode 5
 
@@ -250,6 +300,8 @@ def longestPalindrome(s: str) -> str:
 
 ---
 
+<a id="q80"></a>
+
 ### Q80: 阿里 面试：课程表 II（输出拓扑序列）· LeetCode 210
 
 **题目讲解**（Kahn + 记录顺序）：
@@ -274,6 +326,8 @@ def findOrder(numCourses: int, prerequisites: list[list[int]]) -> list[int]:
 
 ---
 
+<a id="q81"></a>
+
 ### Q81: 字节 面试：删除链表的倒数第 N 个节点 · LeetCode 19
 
 **题目讲解**（快慢指针一次遍历）：
@@ -290,6 +344,8 @@ def removeNthFromEnd(head, n: int):
 ```
 
 ---
+
+<a id="q82"></a>
 
 ### Q82: 腾讯 面试：最大正方形 · LeetCode 221
 
@@ -313,6 +369,8 @@ def maximalSquare(matrix: list[list[str]]) -> int:
 
 ---
 
+<a id="q83"></a>
+
 ### Q83: 字节 面试：完全平方数 · LeetCode 279
 
 **题目讲解**（完全背包 DP）：
@@ -330,6 +388,8 @@ def numSquares(n: int) -> int:
 
 ---
 
+<a id="q84"></a>
+
 ### Q84: 腾讯 面试：岛屿的最大面积 · LeetCode 695
 
 **题目讲解**：
@@ -344,6 +404,8 @@ def maxAreaOfIsland(grid: list[list[int]]) -> int:
 ```
 
 ---
+
+<a id="q85"></a>
 
 ### Q85: 字节 面试：二叉树的右视图 · LeetCode 199
 
@@ -366,6 +428,8 @@ def rightSideView(root) -> list[int]:
 
 ---
 
+<a id="q86"></a>
+
 ### Q86: 阿里 面试：二叉树展开为链表 · LeetCode 114
 
 **题目讲解**（Morris 前序遍历原地展开）：
@@ -387,6 +451,8 @@ def flatten(root) -> None:
 **复杂度**：O(N) 时间，O(1) 空间
 
 ---
+
+<a id="q87"></a>
 
 ### Q87: 字节 面试：实现一个计算器（基本运算 + 括号）· LeetCode 224
 
@@ -417,6 +483,8 @@ def calculate(s: str) -> int:
 
 ---
 
+<a id="q88"></a>
+
 ### Q88: 腾讯 面试：数组的相对排序 · LeetCode 1122（计数排序思想）
 
 **题目讲解**：
@@ -429,6 +497,8 @@ def relativeSortArray(arr1: list[int], arr2: list[int]) -> list[int]:
 **考察点**：自定义排序 key；不在 arr2 的元素按值升序排在最后
 
 ---
+
+<a id="q89"></a>
 
 ### Q89: 字节 面试：最优除法 · LeetCode 553（贪心）
 
@@ -444,6 +514,8 @@ def optimalDivision(nums: list[int]) -> str:
 ```
 
 ---
+
+<a id="q90"></a>
 
 ### Q90: 小红书 面试：前 K 个高频单词 · LeetCode 692
 
@@ -467,3 +539,7 @@ def topKFrequent(words: list[str], k: int) -> list[str]:
 *本文件共 20 题（Q71-Q90），算法综合练习专题。*
 
 ---
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回算法目录](README.md)
+<!-- navigation:end -->

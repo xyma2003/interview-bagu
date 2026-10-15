@@ -1,31 +1,51 @@
 # 算法题型通关手册
 
+[仓库首页](../README.md) · [算法目录](README.md) · [学习路线](../LEARNING_GUIDE.md)
+
+> 本轮仅整理导航，未新增算法内容核验。仓库已详细核验的 20 题及其范围见[来源核验记录](../SOURCE_AUDIT.md)。
+
 > 本文档按题型组织，每个题型包含核心思想、识别信号、模板骨架、经典题详解。每道题列出所有主流解法，逐一细致讲解。代码统一用 Python。
 
 ---
 
+<a id="handbook-toc"></a>
+
 ## 目录
 
-- [一、双指针](#一双指针)
-- [二、二分法](#二二分法)
-- [三、滑动窗口](#三滑动窗口)
-- [四、动态规划](#四动态规划)
-- [五、前缀和 + 差分](#五前缀和--差分)
-- [六、单调栈](#六单调栈)
-- [七、单调队列](#七单调队列)
-- [八、堆 / 优先队列](#八堆--优先队列)
-- [九、回溯](#九回溯)
-- [十、BFS / 拓扑排序](#十bfs--拓扑排序)
-- [十一、并查集](#十一并查集)
-- [十二、贪心](#十二贪心)
-- [十三、字符串算法（KMP / Rabin-Karp / Trie）](#十三字符串算法)
-- [十四、树](#十四树)
-- [十五、图论](#十五图论)
-- [学习路径建议](#学习路径建议)
+- [一、双指针](#handbook-two-pointers)
+- [二、二分法](#handbook-binary-search)
+- [三、滑动窗口](#handbook-sliding-window)
+- [四、动态规划](#handbook-dp)
+- [五、前缀和 + 差分](#handbook-prefix-sum)
+- [六、单调栈](#handbook-monotonic-stack)
+- [七、单调队列](#handbook-monotonic-queue)
+- [八、堆 / 优先队列](#handbook-heap)
+- [九、回溯](#handbook-backtracking)
+- [十、BFS / 拓扑排序](#handbook-bfs)
+- [十一、并查集](#handbook-union-find)
+- [十二、贪心](#handbook-greedy)
+- [十三、字符串算法（KMP / Rabin-Karp / Trie）](#handbook-strings)
+- [十四、树](#handbook-trees)
+- [十五、图论](#handbook-graphs)
+- [学习路径建议](#handbook-learning-path)
 
 ---
 
+<a id="handbook-two-pointers"></a>
+
 ## 一、双指针
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（4 个入口）</summary>
+
+- [LC 11 · 盛最多水的容器](#handbook-lc11)
+- [LC 283 · 移动零](#handbook-lc283)
+- [LC 287 · 寻找重复数](#handbook-lc287)
+- [LC 15 · 三数之和](#handbook-lc15)
+
+</details>
 
 ### 核心思想
 
@@ -79,6 +99,8 @@ return False
 
 ---
 
+<a id="handbook-lc11"></a>
+
 ### 经典题 1：盛最多水的容器（LeetCode 11）
 
 > 给定数组 `height`，找两条线与 x 轴构成的容器，使容器盛水最多。返回最大水量。
@@ -113,7 +135,11 @@ class Solution:
 
 **复杂度**：时间 `O(n)`，空间 `O(1)`。
 
+[返回本章例题目录](#handbook-two-pointers) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc283"></a>
 
 ### 经典题 2：移动零（LeetCode 283）
 
@@ -145,7 +171,11 @@ class Solution:
 
 **复杂度**：`O(n)` 一次扫描，`O(1)` 原地。
 
+[返回本章例题目录](#handbook-two-pointers) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc287"></a>
 
 ### 经典题 3：寻找重复数（LeetCode 287）
 
@@ -203,7 +233,11 @@ class Solution:
 
 **复杂度**：`O(n log n)`，`O(1)`。比解法一慢但思路非常值得学——「**鸽笼原理 + 二分答案**」是一类套路。
 
+[返回本章例题目录](#handbook-two-pointers) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc15"></a>
 
 ### 经典题 4：三数之和（LeetCode 15）
 
@@ -242,9 +276,26 @@ class Solution:
 
 **复杂度**：时间 `O(n²)`，空间 `O(1)`（不计排序栈）。
 
+[返回本章例题目录](#handbook-two-pointers) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-binary-search"></a>
+
 ## 二、二分法
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（5 个入口）</summary>
+
+- [LC 704 · 二分查找](#handbook-lc704)
+- [LC 33 · 搜索旋转排序数组](#handbook-lc33)
+- [LC 410 · 分割数组的最大值](#handbook-lc410)
+- [LC 4 · 寻找两个正序数组中位数](#handbook-lc4)
+- [LC 792 · 匹配子序列数](#handbook-lc792)
+
+</details>
 
 ### 核心思想
 
@@ -305,6 +356,8 @@ return lo
 
 ---
 
+<a id="handbook-lc704"></a>
+
 ### 经典题 1：二分查找（LeetCode 704）
 
 > 在有序数组中找 target，返回下标，找不到返回 -1。
@@ -330,7 +383,11 @@ class Solution:
 
 **复杂度**：`O(log n)`。
 
+[返回本章例题目录](#handbook-binary-search) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc33"></a>
 
 ### 经典题 2：搜索旋转排序数组（LeetCode 33）
 
@@ -368,7 +425,11 @@ class Solution:
 
 **复杂度**：`O(log n)`。
 
+[返回本章例题目录](#handbook-binary-search) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc410"></a>
 
 ### 经典题 3：分割数组的最大值（LeetCode 410）
 
@@ -413,7 +474,11 @@ class Solution:
 
 **复杂度**：`O(n log(sum-max))`，比 DP 的 `O(n²k)` 快得多。
 
+[返回本章例题目录](#handbook-binary-search) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc4"></a>
 
 ### 经典题 4：寻找两个正序数组中位数（LeetCode 4）
 
@@ -463,7 +528,11 @@ class Solution:
 
 **复杂度**：`O(log(min(m, n)))`。这是 Hard 的核心难度——思路不难但边界处理极烦。
 
+[返回本章例题目录](#handbook-binary-search) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc792"></a>
 
 ### 经典题 5：匹配子序列数（LeetCode 792）
 
@@ -628,9 +697,24 @@ class Solution:
 
 这两个 pattern 在中等题里反复出现，学透了能解一类题。
 
+[返回本章例题目录](#handbook-binary-search) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-sliding-window"></a>
+
 ## 三、滑动窗口
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（3 个入口）</summary>
+
+- [LC 3 · 无重复字符的最长子串](#handbook-lc3)
+- [LC 76 · 最小覆盖子串](#handbook-lc76)
+- [LC 239 · 滑动窗口最大值](#handbook-lc239-sliding-window)
+
+</details>
 
 ### 核心思想
 
@@ -676,6 +760,8 @@ for right in range(len(s)):
 **最长 vs 最短的差别**：最长是"不合法才收缩"，最短是"合法就收缩"。记住这个区别，模板就不会写反。
 
 ---
+
+<a id="handbook-lc3"></a>
 
 ### 经典题 1：无重复字符的最长子串（LeetCode 3）
 
@@ -731,7 +817,11 @@ class Solution:
 
 **对比**：解法一是「跳指针」——直接把 `left` 跳到 `last[c]+1`，需要记录每个字符的最后位置。解法二是「标准滑窗」——一格一格挪 `left` 直到窗口合法。两者都 `O(n)`，但解法一常数更小、解法二模板更通用。
 
+[返回本章例题目录](#handbook-sliding-window) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc76"></a>
 
 ### 经典题 2：最小覆盖子串（LeetCode 76）
 
@@ -784,7 +874,11 @@ class Solution:
 
 **复杂度**：`O(|s| + |t|)`。
 
+[返回本章例题目录](#handbook-sliding-window) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc239-sliding-window"></a>
 
 ### 经典题 3：滑动窗口最大值（LeetCode 239）
 
@@ -852,9 +946,28 @@ class Solution:
 
 **对比**：堆也能做，但每个元素都可能被多次 pop（堆顶过期时），均摊仍是 `O(n log n)`——比单调队列 `O(n)` 慢。但思路更直观：动态维护窗口内最大值。
 
+[返回本章例题目录](#handbook-sliding-window) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-dp"></a>
+
 ## 四、动态规划
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（7 个入口）</summary>
+
+- [LC 70 · 爬楼梯](#handbook-lc70)
+- [LC 198 · 打家劫舍](#handbook-lc198)
+- [LC 300 · 最长递增子序列](#handbook-lc300)
+- [LC 72 · 编辑距离](#handbook-lc72)
+- [LC 5 · 最长回文子串](#handbook-lc5)
+- [LC 322 · 零钱兑换](#handbook-lc322)
+- [LC 416 · 分割等和子集](#handbook-lc416)
+
+</details>
 
 ### 核心思想
 
@@ -891,6 +1004,8 @@ class Solution:
 
 ---
 
+<a id="handbook-lc70"></a>
+
 ### 经典题 1：爬楼梯（LeetCode 70）
 
 > n 阶楼梯，每次跨 1 或 2 阶，几种爬法？
@@ -914,7 +1029,11 @@ class Solution:
 
 **复杂度**：`O(n)`，空间 `O(1)`。
 
+[返回本章例题目录](#handbook-dp) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc198"></a>
 
 ### 经典题 2：打家劫舍（LeetCode 198）
 
@@ -950,7 +1069,11 @@ class Solution:
 
 **复杂度**：`O(n)`，空间 `O(1)`。
 
+[返回本章例题目录](#handbook-dp) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc300"></a>
 
 ### 经典题 3：最长递增子序列（LeetCode 300）
 
@@ -1015,7 +1138,11 @@ class Solution:
 
 **复杂度**：`O(n log n)`。这是 LIS 问题最经典的优化——「**DP + 二分**」是一类套路，类似的有「最长递增子序列的子序列问题」。
 
+[返回本章例题目录](#handbook-dp) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc72"></a>
 
 ### 经典题 4：编辑距离（LeetCode 72）
 
@@ -1069,7 +1196,11 @@ class Solution:
 
 **复杂度**：`O(mn)`。
 
+[返回本章例题目录](#handbook-dp) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc5"></a>
 
 ### 经典题 5：最长回文子串（LeetCode 5）
 
@@ -1129,7 +1260,11 @@ class Solution:
 
 工程上极少用到，了解即可。核心是把奇偶中心统一化（插入分隔符），用已计算的回文半径跳过重复计算。
 
+[返回本章例题目录](#handbook-dp) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc322"></a>
 
 ### 经典题 6：零钱兑换（LeetCode 322）
 
@@ -1162,7 +1297,11 @@ class Solution:
 
 **复杂度**：`O(|coins| × amount)`。
 
+[返回本章例题目录](#handbook-dp) · [返回总目录](#handbook-toc)
+
 ---
+
+<a id="handbook-lc416"></a>
 
 ### 经典题 7：分割等和子集（LeetCode 416）
 
@@ -1190,9 +1329,24 @@ class Solution:
 
 **复杂度**：`O(n × target)`。
 
+[返回本章例题目录](#handbook-dp) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-prefix-sum"></a>
+
 ## 五、前缀和 + 差分
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（3 个入口）</summary>
+
+- [LC 303 · 区域和检索](#handbook-lc303)
+- [LC 560 · 和为 K 的子数组](#handbook-lc560)
+- [LC 1109 · 航班预订统计—— 差分](#handbook-lc1109)
+
+</details>
 
 ### 核心思想
 
@@ -1202,6 +1356,8 @@ class Solution:
 
 - 多次区间和查询
 - 区间批量加减操作（差分）
+
+<a id="handbook-lc303"></a>
 
 ### 经典题 1：区域和检索（LeetCode 303）
 
@@ -1217,6 +1373,10 @@ class NumArray:
 ```
 
 `prefix[i] = nums[0..i-1]` 之和。`sum(l, r) = prefix[r+1] - prefix[l]`。
+
+[返回本章例题目录](#handbook-prefix-sum) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc560"></a>
 
 ### 经典题 2：和为 K 的子数组（LeetCode 560）
 
@@ -1240,6 +1400,10 @@ class Solution:
 
 **复杂度**：`O(n)`。比暴力 `O(n²)` 快了一个数量级。
 
+[返回本章例题目录](#handbook-prefix-sum) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc1109"></a>
+
 ### 经典题 3：航班预订统计（LeetCode 1109）—— 差分
 
 ```python
@@ -1260,9 +1424,24 @@ class Solution:
 
 **差分**：对区间 `[l, r]` 全体加 v，只需 `diff[l] += v` 和 `diff[r+1] -= v`，最后做一次前缀和恢复。多次区间操作从 `O(n)` 每次 → 总 `O(n + 操作数)`。
 
+[返回本章例题目录](#handbook-prefix-sum) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-monotonic-stack"></a>
+
 ## 六、单调栈
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（3 个入口）</summary>
+
+- [LC 739 · 每日温度](#handbook-lc739)
+- [LC 84 · 柱状图最大矩形](#handbook-lc84)
+- [LC 42 · 接雨水](#handbook-lc42)
+
+</details>
 
 ### 核心思想
 
@@ -1273,6 +1452,8 @@ class Solution:
 - 找下一个更大/更小
 - 环形数组找下界
 - 柱状图最大矩形
+
+<a id="handbook-lc739"></a>
 
 ### 经典题 1：每日温度（LeetCode 739）
 
@@ -1292,6 +1473,10 @@ class Solution:
 **机制**：栈里存的是"还没找到更大值"的索引，对应温度单调递减。遇到 `t` 大于栈顶温度时，栈顶就找到了它的"下一个更大值"，弹出并填答案。
 
 **复杂度**：`O(n)`——每个元素入栈出栈各一次。
+
+[返回本章例题目录](#handbook-monotonic-stack) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc84"></a>
 
 ### 经典题 2：柱状图最大矩形（LeetCode 84）
 
@@ -1315,6 +1500,10 @@ class Solution:
 **哨兵技巧**：末尾加一个 0，强制清空栈——避免循环结束后还剩元素需要单独处理。
 
 **复杂度**：`O(n)`。
+
+[返回本章例题目录](#handbook-monotonic-stack) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc42"></a>
 
 ### 经典题 3：接雨水（LeetCode 42）
 
@@ -1386,24 +1575,55 @@ class Solution:
 
 **对比**：三种解法都 `O(n)`，空间 `O(1)/O(n)/O(n)`。双指针最省空间，DP 最易懂，单调栈思路最通用（能扩展到柱状图等变种）。
 
+[返回本章例题目录](#handbook-monotonic-stack) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-monotonic-queue"></a>
+
 ## 七、单调队列
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（1 个入口）</summary>
+
+- [LC 239 · 滑动窗口最大值](#handbook-lc239-monotonic-queue)
+
+</details>
 
 ### 核心思想
 
 双端队列维护窗口内最值，队首始终是当前窗口最大（或最小）。是滑动窗口的"升级版"——窗口需要动态查询最值时就靠它。
 
+<a id="handbook-lc239-monotonic-queue"></a>
+
 ### 经典题：滑动窗口最大值（LeetCode 239）
+
+[查看 LC 239 完整解法：滑动窗口章节](#handbook-lc239-sliding-window)
 
 详见前文【三、滑动窗口】的经典题 3。这里强调单调队列和滑动窗口的耦合点：
 
 - 窗口滑窗需要查询「当前窗口最大值」——这超出哈希表计数的能力
 - 单调队列正好补位：入窗维护单调、出窗清过期，每步 `O(1)` 取最大
 
+[返回本章例题目录](#handbook-monotonic-queue) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-heap"></a>
+
 ## 八、堆 / 优先队列
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（2 个入口）</summary>
+
+- [LC 215 · 数组中第 K 大元素](#handbook-lc215)
+- [LC 295 · 数据流中位数](#handbook-lc295)
+
+</details>
 
 ### 核心思想
 
@@ -1414,6 +1634,8 @@ class Solution:
 - 前 K 个 / 第 K 大
 - 数据流的中位数
 - 合并 K 个有序链表
+
+<a id="handbook-lc215"></a>
 
 ### 经典题 1：数组中第 K 大元素（LeetCode 215）
 
@@ -1465,6 +1687,10 @@ class Solution:
 
 **核心思想**：快排的 partition 一次能把 pivot 放到最终位置。如果 pivot 落在 target 位置，就是答案；否则只递归一边。**期望 `O(n)`，最坏 `O(n²)`** 但随机化 pivot 几乎不会遇到最坏。
 
+[返回本章例题目录](#handbook-heap) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc295"></a>
+
 ### 经典题 2：数据流中位数（LeetCode 295）
 
 ```python
@@ -1492,9 +1718,25 @@ class MedianFinder:
 
 **复杂度**：插入 `O(log n)`，查询 `O(1)`。
 
+[返回本章例题目录](#handbook-heap) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-backtracking"></a>
+
 ## 九、回溯
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（4 个入口）</summary>
+
+- [LC 46 · 全排列](#handbook-lc46)
+- [LC 78 · 子集](#handbook-lc78)
+- [LC 39 · 组合总和](#handbook-lc39)
+- [LC 51 · N 皇后](#handbook-lc51)
+
+</details>
 
 ### 核心思想
 
@@ -1518,6 +1760,8 @@ def backtrack(路径, 选择列表):
         backtrack(路径, 选择列表)
         撤销选择     # 从路径移除
 ```
+
+<a id="handbook-lc46"></a>
 
 ### 经典题 1：全排列（LeetCode 46）
 
@@ -1544,6 +1788,10 @@ class Solution:
 
 **为什么必须拷贝 `path[:]`**：`path` 是同一个 list 引用，递归结束后会被清空，不拷贝结果会全空。
 
+[返回本章例题目录](#handbook-backtracking) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc78"></a>
+
 ### 经典题 2：子集（LeetCode 78）
 
 ```python
@@ -1562,6 +1810,10 @@ class Solution:
 ```
 
 **关键**：`start` 控制"只往后选"，自然去重。**与全排列的区别**：排列要讲究顺序，每次从头选；子集不讲究顺序，按起点向后选避免重复。
+
+[返回本章例题目录](#handbook-backtracking) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc39"></a>
 
 ### 经典题 3：组合总和（LeetCode 39）
 
@@ -1586,6 +1838,10 @@ class Solution:
 **剪枝**：`candidates[i] > remain` 直接跳过——比纯回溯快很多。
 
 **可重复用**：`bt(i, ...)` 不加 1，表示同一元素还能再选；如果要"每个只能选一次"（LeetCode 40），就改成 `bt(i+1, ...)` 并先排序处理重复。
+
+[返回本章例题目录](#handbook-backtracking) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc51"></a>
 
 ### 经典题 4：N 皇后（LeetCode 51）
 
@@ -1615,13 +1871,29 @@ class Solution:
 
 **核心**：用三个集合 `cols`、`diag1`、`diag2` `O(1)` 判断冲突。对角线索引技巧：主对角线 `r - c` 相同，副对角线 `r + c` 相同。
 
+[返回本章例题目录](#handbook-backtracking) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-bfs"></a>
+
 ## 十、BFS / 拓扑排序
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（2 个入口）</summary>
+
+- [LC 127 · 单词接龙](#handbook-lc127)
+- [LC 207 · 课程表—— 拓扑排序](#handbook-lc207)
+
+</details>
 
 ### 核心思想
 
 BFS 用队列逐层扩散，**天然求无权图最短路**。拓扑排序是 BFS 在 DAG 上的应用：每次取入度为 0 的节点。
+
+<a id="handbook-lc127"></a>
 
 ### 经典题 1：单词接龙（LeetCode 127）
 
@@ -1649,6 +1921,10 @@ class Solution:
 
 **优化（双向 BFS）**：从 beginWord 和 endWord 同时扩散，相遇即停——能把复杂度从 `O(L * 26 * N)` 降到 `O(L * 26 * √N)` 级别。
 
+[返回本章例题目录](#handbook-bfs) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc207"></a>
+
 ### 经典题 2：课程表（LeetCode 207）—— 拓扑排序
 
 ```python
@@ -1675,9 +1951,23 @@ class Solution:
 
 **核心思想**：拓扑排序——每次取入度为 0 的节点入队。如果所有节点都能被取出 → 无环 → 可以排课。否则有环，冲突。
 
+[返回本章例题目录](#handbook-bfs) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-union-find"></a>
+
 ## 十一、并查集
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（2 个入口）</summary>
+
+- [LC 547 · 省份数量](#handbook-lc547)
+- [LC 684 · 冗余连接](#handbook-lc684)
+
+</details>
 
 ### 核心思想
 
@@ -1708,6 +1998,8 @@ class UnionFind:
         return True
 ```
 
+<a id="handbook-lc547"></a>
+
 ### 经典题 1：省份数量（LeetCode 547）
 
 ```python
@@ -1721,6 +2013,10 @@ class Solution:
                     uf.union(i, j)
         return sum(1 for i in range(n) if uf.find(i) == i)
 ```
+
+[返回本章例题目录](#handbook-union-find) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc684"></a>
 
 ### 经典题 2：冗余连接（LeetCode 684）
 
@@ -1738,13 +2034,30 @@ class Solution:
 
 **核心**：边依次加入，如果某条边的两端已经在同一集合 → 这条边是冗余的。
 
+[返回本章例题目录](#handbook-union-find) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-greedy"></a>
+
 ## 十二、贪心
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（3 个入口）</summary>
+
+- [LC 55 · 跳跃游戏](#handbook-lc55)
+- [LC 45 · 跳跃游戏 II](#handbook-lc45)
+- [LC 134 · 加油站](#handbook-lc134)
+
+</details>
 
 ### 核心思想
 
 每步做局部最优选择，不回头。难点不在写，在**证明贪心选择成立**——通常用反证法：假设存在更优解不包含贪心选择，导出矛盾。
+
+<a id="handbook-lc55"></a>
 
 ### 经典题 1：跳跃游戏（LeetCode 55）
 
@@ -1759,6 +2072,10 @@ class Solution:
 ```
 
 **贪心**：维护"当前能到达的最远位置"，扫一遍看能否到终点。不需要回溯所有跳跃路径。
+
+[返回本章例题目录](#handbook-greedy) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc45"></a>
 
 ### 经典题 2：跳跃游戏 II（LeetCode 45）
 
@@ -1777,6 +2094,10 @@ class Solution:
 ```
 
 **贪心**：每跳一次都让"下一跳边界"尽可能远。`i` 走到当前边界 `end` 时强制跳一次，并把边界更新为最远可达。
+
+[返回本章例题目录](#handbook-greedy) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc134"></a>
 
 ### 经典题 3：加油站（LeetCode 134）
 
@@ -1798,13 +2119,29 @@ class Solution:
 
 **关键定理**：如果总油量 ≥ 总消耗，则一定有解；且如果从 `start` 出发到 `i` 时油量为负，则 `[start, i]` 间任何点出发都不行，直接跳到 `i+1` 重新尝试。
 
+[返回本章例题目录](#handbook-greedy) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-strings"></a>
+
 ## 十三、字符串算法
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（2 个入口）</summary>
+
+- [LC 28 · 实现 strStr()](#handbook-lc28)
+- [LC 208 · 实现 Trie](#handbook-lc208)
+
+</details>
 
 ### 核心思想
 
 字符串匹配从 `O(n·m)` 优化到 `O(n+m)` 的关键：**利用已匹配信息避免重复比较**。
+
+<a id="handbook-lc28"></a>
 
 ### 经典题 1：实现 strStr()（LeetCode 28）
 
@@ -1852,6 +2189,10 @@ class Solution:
 
 **理解 KMP 的难点**：next 数组的构造本身就是一个 KMP 在 needle 上自我匹配的过程。
 
+[返回本章例题目录](#handbook-strings) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc208"></a>
+
 ### 经典题 2：实现 Trie（LeetCode 208）
 
 ```python
@@ -1885,13 +2226,30 @@ class Trie:
 
 **核心**：前缀树。共享公共前缀的字符串在树上走同一条路径，节省空间且前缀查询 `O(L)`。
 
+[返回本章例题目录](#handbook-strings) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-trees"></a>
+
 ## 十四、树
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（3 个入口）</summary>
+
+- [LC 94 · 二叉树中序遍历](#handbook-lc94)
+- [LC 236 · 最近公共祖先](#handbook-lc236)
+- [LC 98 · 验证二叉搜索树](#handbook-lc98)
+
+</details>
 
 ### 核心思想
 
 树的题目大多是**遍历 + 递归**。三种遍历（前/中/后）+ 层序遍历覆盖 80% 的题目。难点常常是把递归改迭代（用栈模拟）。
+
+<a id="handbook-lc94"></a>
 
 ### 经典题 1：二叉树中序遍历（LeetCode 94）
 
@@ -1929,6 +2287,10 @@ class Solution:
 
 **核心**：中序 = 左→根→右。一路向左压栈，到底就弹出访问，然后转向右子树重复。
 
+[返回本章例题目录](#handbook-trees) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc236"></a>
+
 ### 经典题 2：最近公共祖先（LeetCode 236）
 
 ```python
@@ -1945,6 +2307,10 @@ class Solution:
 
 **核心**：递归判断 p 和 q 在哪。若一个在左、一个在右，当前节点就是 LCA；否则 LCA 在有结果的那一侧。
 
+[返回本章例题目录](#handbook-trees) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc98"></a>
+
 ### 经典题 3：验证二叉搜索树（LeetCode 98）
 
 ```python
@@ -1959,13 +2325,30 @@ class Solution:
 
 **核心**：BST 的中序遍历是升序。等价地，每个节点值要在 `(祖先的下界, 祖先的上界)` 之间。递归时把上下界传下去。
 
+[返回本章例题目录](#handbook-trees) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-graphs"></a>
+
 ## 十五、图论
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+<details>
+<summary>本章经典例题（3 个入口）</summary>
+
+- [LC 743 · 网络延迟时间—— Dijkstra](#handbook-lc743)
+- [LC 1462 · 课程表 IV—— Floyd](#handbook-lc1462)
+- [LC 200 · 岛屿数量](#handbook-lc200)
+
+</details>
 
 ### 核心思想
 
 图论题目核心是**遍历（BFS/DFS）+ 最短路 + 拓扑排序**。最短路算法分两类：单源（Dijkstra、Bellman-Ford）和全源（Floyd）。
+
+<a id="handbook-lc743"></a>
 
 ### 经典题 1：网络延迟时间（LeetCode 743）—— Dijkstra
 
@@ -1995,6 +2378,10 @@ class Solution:
 
 **复杂度**：`O((V + E) log V)`。
 
+[返回本章例题目录](#handbook-graphs) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc1462"></a>
+
 ### 经典题 2：课程表 IV（LeetCode 1462）—— Floyd
 
 ```python
@@ -2012,6 +2399,10 @@ class Solution:
 ```
 
 **核心**：Floyd 三重循环——节点 k 作为中转，更新 `i → j` 是否可达。`O(n³)` 但代码极简。
+
+[返回本章例题目录](#handbook-graphs) · [返回总目录](#handbook-toc)
+
+<a id="handbook-lc200"></a>
 
 ### 经典题 3：岛屿数量（LeetCode 200）
 
@@ -2036,9 +2427,19 @@ class Solution:
 
 **核心**：每发现一个 '1'，岛屿数 +1，然后 DFS 把整个岛染色成 '0'。也可以 BFS、并查集，思路一致——本质是连通分量计数。
 
+[返回本章例题目录](#handbook-graphs) · [返回总目录](#handbook-toc)
+
 ---
 
+<a id="handbook-learning-path"></a>
+
 ## 学习路径建议
+
+[返回总目录](#handbook-toc) · [查看学习路线](../LEARNING_GUIDE.md)
+
+本节导航：[题型优先级（ROI 从高到低）](#handbook-learning-priorities) · [最快学明白的路径](#handbook-learning-steps) · [题型组合](#handbook-learning-combinations)
+
+<a id="handbook-learning-priorities"></a>
 
 ### 题型优先级（ROI 从高到低）
 
@@ -2047,9 +2448,13 @@ class Solution:
 3. **单调栈/队列 + 堆 + 并查集**：单点数据结构，记一个模板解一类题。
 4. **图论 + 字符串算法 + 状压 DP**：低频但面试会考，时间够再补。
 
+<a id="handbook-learning-steps"></a>
+
 ### 最快学明白的路径
 
 每个题型挑 1-2 道模板题死磕，搞懂「为什么这么做」而不是「背代码」。然后做 5-10 道变体，体会题型识别信号。**题型识别比模板本身重要**——看出这是「二分答案」还是「滑动窗口」，比记住代码长什么样更值钱。
+
+<a id="handbook-learning-combinations"></a>
 
 ### 题型组合
 
@@ -2066,3 +2471,4 @@ class Solution:
 > 文档完。每个题型的核心思想 + 模板 + 经典题都在这里了。练题时如果卡住，回来翻一遍对应题型，体会「为什么这么识别、为什么这么写」。算法不是背的，是看出 pattern 的。
 
 
+[返回总目录](#handbook-toc) · [返回算法目录](README.md) · [返回学习路线](../LEARNING_GUIDE.md)

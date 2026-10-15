@@ -1,8 +1,32 @@
 # 算法面试题库 · 第五批（冲刺 100 题）
 
+<!-- navigation:start -->
+[← 算法目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（10 题，点击展开）</summary>
+
+- [Q91 · 并查集（Union-Find）实现 · 省份数量 LC 547](#q91)
+- [Q92 · 零矩阵 · LeetCode 73](#q92)
+- [Q93 · 最长公共前缀（分治法）· LeetCode 14 进阶](#q93)
+- [Q94 · 回文链表判断 · LeetCode 234](#q94)
+- [Q95 · 字符串转整数（atoi）· LeetCode 8](#q95)
+- [Q96 · 在排序矩阵中查找目标值 · LeetCode 240](#q96)
+- [Q97 · 找到所有数字消失的数字 · LeetCode 448](#q97)
+- [Q98 · 最短路径（Bellman-Ford）· LeetCode 787](#q98)
+- [Q99 · 打乱数组（Fisher-Yates 洗牌算法）· LeetCode 384](#q99)
+- [Q100 · 数字 1 的个数 · LeetCode 233](#q100)
+
+</details>
+<!-- navigation:end -->
+
 > 来源状态：本页只核验 Q91。其他题中的旧公司／频率标签未有可追溯面经支持，不作为事实；范围见[来源规范与核验记录](../SOURCE_AUDIT.md)。
 
 ---
+
+<a id="q91"></a>
 
 <a id="review-algorithm-q91"></a>
 
@@ -63,6 +87,8 @@ def findCircleNum(isConnected: list[list[int]]) -> int:
 
 ---
 
+<a id="q92"></a>
+
 ### Q92: 零矩阵 · LeetCode 73
 
 **🏢 高频公司**：字节
@@ -97,6 +123,8 @@ def setZeroes(matrix: list[list[int]]) -> None:
 
 ---
 
+<a id="q93"></a>
+
 ### Q93: 最长公共前缀（分治法）· LeetCode 14 进阶
 
 **题目讲解**（分治法）：
@@ -123,6 +151,8 @@ def longestCommonPrefix(strs: list[str]) -> str:
 **考察点**：分治将字符串数组拆为两半，分别求最长公共前缀（LCP），再合并两侧结果；这里没有构建 Trie。当前代码顺序执行左右递归；子问题相互独立，但并未实现并行。
 
 ---
+
+<a id="q94"></a>
 
 ### Q94: 回文链表判断 · LeetCode 234
 
@@ -153,6 +183,8 @@ def isPalindrome(head) -> bool:
 **考察点**：找中点 + 翻转后半 + 比较；做完可以还原链表（面试加分）
 
 ---
+
+<a id="q95"></a>
 
 ### Q95: 字符串转整数（atoi）· LeetCode 8
 
@@ -187,6 +219,8 @@ def myAtoi(s: str) -> int:
 
 ---
 
+<a id="q96"></a>
+
 ### Q96: 在排序矩阵中查找目标值 · LeetCode 240
 
 **🏢 高频公司**：字节
@@ -210,6 +244,8 @@ def searchMatrix(matrix: list[list[int]], target: int) -> bool:
 
 ---
 
+<a id="q97"></a>
+
 ### Q97: 找到所有数字消失的数字 · LeetCode 448
 
 **🏢 高频公司**：腾讯
@@ -228,6 +264,8 @@ def findDisappearedNumbers(nums: list[int]) -> list[int]:
 **考察点**：用负号标记"出现过"，不需要额外数组；最后正数位置对应消失的数字
 
 ---
+
+<a id="q98"></a>
 
 ### Q98: 最短路径（Bellman-Ford）· LeetCode 787
 
@@ -255,6 +293,8 @@ def findCheapestPrice(n: int, flights: list[list[int]], src: int, dst: int, k: i
 **考察点**：`tmp = prices[:]` 防止同一轮松弛中连续更新（同一轮只能用上一轮的结果）
 
 ---
+
+<a id="q99"></a>
 
 ### Q99: 打乱数组（Fisher-Yates 洗牌算法）· LeetCode 384
 
@@ -287,6 +327,8 @@ class Solution:
 **考察点**：Fisher-Yates 每个排列出现概率相等（均匀随机）；Knuth 洗牌的数学证明
 
 ---
+
+<a id="q100"></a>
 
 ### Q100: 数字 1 的个数 · LeetCode 233
 
@@ -324,3 +366,7 @@ def countDigitOne(n: int) -> int:
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回算法目录](README.md)
+<!-- navigation:end -->

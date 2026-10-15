@@ -1,10 +1,36 @@
 # 前端面试八股 · 进阶篇
 
+<!-- navigation:start -->
+[← 前端目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（12 题，点击展开）</summary>
+
+- [Q25 · Generator 函数和 Iterator 协议是什么？它们在实际中有哪些应用？](#q25)
+- [Q26 · WeakMap 和 WeakSet 的应用场景是什么？为什么它们的键只能是对象？](#q26)
+- [Q27 · Proxy 和 Reflect 的关系是什么？有哪些实际应用场景？](#q27)
+- [Q28 · XSS 和 CSRF 攻击的原理是什么？如何防御？](#q28)
+- [Q29 · 什么是 Content Security Policy（CSP）？如何配置？](#q29)
+- [Q30 · React 18 有哪些新特性？Concurrent Mode 的核心改变是什么？](#q30)
+- [Q31 · 如何实现 React 的虚拟列表（Virtual List）？Intersection Observer 和固定高度方案的区别是什么？](#q31)
+- [Q32 · 什么是 React 的 Reconciliation 和 Diffing 算法？key 的作用是什么？](#q32)
+- [Q33 · 微前端是什么？qiankun/single-spa/Module Federation 的差异是什么？](#q33)
+- [Q34 · 前端测试分哪几层？Jest、Vitest、React Testing Library 的定位是什么？](#q34)
+- [Q35 · 如何实现前端错误监控？需要捕获哪些类型的错误？](#q35)
+- [Q36 · 什么是 Service Worker？它能实现哪些功能？](#q36)
+
+</details>
+<!-- navigation:end -->
+
 > 接续基础篇，涵盖：JavaScript高级特性 / 浏览器安全 / React进阶 / 微前端 / PWA / WebGL / 测试 / 移动端
 
 ---
 
 ## 十、JavaScript 高级特性
+
+<a id="q25"></a>
 
 ### Q25: Generator 函数和 Iterator 协议是什么？它们在实际中有哪些应用？
 
@@ -49,6 +75,8 @@ Generator 是 JavaScript 协程的实现：`function*` 内部可以 `yield` 出�
 
 ---
 
+<a id="q26"></a>
+
 ### Q26: WeakMap 和 WeakSet 的应用场景是什么？为什么它们的键只能是对象？
 
 **题目解析**：WeakMap/WeakSet 是 JavaScript 内存管理的利器，考察候选人对 GC 机制的理解。
@@ -90,6 +118,8 @@ WeakMap 的"弱"体现在对键的弱引用，GC 通过引用计数来判断是�
 WeakMap 解决了"给对象附加额外数据，但不阻止 GC 回收该对象"的需求。普通 Map 作为键的对象即使不再被业务代码引用，只要还在 Map 里就不会被 GC 回收，会造成内存泄漏。WeakMap 的键是弱引用，一旦键对象的引用计数归零（无其他引用），GC 可以直接回收它，WeakMap 里对应的条目也随之消失，完全自动。典型场景是 DOM 节点的附加状态：把 DOM 节点作为键，附加处理结果作为值存入 WeakMap，DOM 节点从页面移除后（引用断开），WeakMap 里的缓存自动清理，不用手动维护。WeakSet 用来标记"已处理的对象"，比如深拷贝时用 WeakSet 记录已遍历的对象防止循环引用无限递归，拷贝完成后 WeakSet 里的引用不阻止任何 GC。键只能是对象是因为原始值没有引用语义，无法建立弱引用关系。
 
 ---
+
+<a id="q27"></a>
 
 ### Q27: Proxy 和 Reflect 的关系是什么？有哪些实际应用场景？
 
@@ -138,6 +168,8 @@ Proxy 和 Reflect 是配套设计的：Proxy 让你拦截对象操作，Reflect 
 
 ---
 
+<a id="q28"></a>
+
 ### Q28: XSS 和 CSRF 攻击的原理是什么？如何防御？
 
 **题目解析**：Web 安全是前端工程师必须掌握的知识，也是面试的高频考察点。
@@ -175,6 +207,8 @@ Proxy 和 Reflect 是配套设计的：Proxy 让你拦截对象操作，Reflect 
 XSS 的本质是"把数据当代码执行"——攻击者在用户输入里藏 `<script>`，如果服务端不转义直接渲染，就会在所有访问者浏览器上执行恶意脚本。防御核心是输出时转义：把用户数据展示到 HTML 时，将 `<>&'"` 转义为 HTML 实体；React/Vue 的模板/JSX 默认做这个转义，所以现代框架大幅减少了 XSS 风险，但 `dangerouslySetInnerHTML` 和 `v-html` 会绕过，要谨慎。CSP 是纵深防御，即使有注入点，脚本因为 CSP 策略而被浏览器拒绝执行。CSRF 利用的是浏览器的自动 Cookie 携带行为：你登录了银行网站，恶意页面里的表单提交就会自动带上你的 Cookie。SameSite=Strict/Lax 是最简单的现代防御：浏览器不在跨站请求里携带这类 Cookie。CSRF Token 是传统方案，后端生成唯一 token 嵌入表单，攻击者的页面无法读取这个 token（同源策略），所以伪造的请求缺少这个 token 会被拒绝。
 
 ---
+
+<a id="q29"></a>
 
 ### Q29: 什么是 Content Security Policy（CSP）？如何配置？
 
@@ -218,6 +252,8 @@ CSP 通过白名单声明页面的资源加载策略，浏览器只允许来自�
 ## 十二、React 进阶
 
 ---
+
+<a id="q30"></a>
 
 ### Q30: React 18 有哪些新特性？Concurrent Mode 的核心改变是什么？
 
@@ -265,6 +301,8 @@ React 18 最重要的变化是把 Concurrent Mode 从可选变成默认——只
 
 ---
 
+<a id="q31"></a>
+
 ### Q31: 如何实现 React 的虚拟列表（Virtual List）？Intersection Observer 和固定高度方案的区别是什么？
 
 **题目解析**：虚拟列表是大数据量渲染的核心性能优化，考察候选人的前端性能工程能力。
@@ -307,6 +345,8 @@ paddingBottom = (totalCount - endIndex) * itemHeight  // 撑开下方空间
 
 ---
 
+<a id="q32"></a>
+
 ### Q32: 什么是 React 的 Reconciliation 和 Diffing 算法？key 的作用是什么？
 
 **题目解析**：Diff 算法是 React 虚拟 DOM 的核心，理解它有助于写出高性能 React 代码。
@@ -345,6 +385,8 @@ React 的 Diff 算法做了三个假设来把 O(N³) 降到 O(N)：同类型才�
 ## 十三、微前端
 
 ---
+
+<a id="q33"></a>
 
 ### Q33: 微前端是什么？qiankun/single-spa/Module Federation 的差异是什么？
 
@@ -403,6 +445,8 @@ const proxyWindow = new Proxy(window, {
 
 ---
 
+<a id="q34"></a>
+
 ### Q34: 前端测试分哪几层？Jest、Vitest、React Testing Library 的定位是什么？
 
 **题目解析**：测试是工程质量的保证，考察候选人的工程化成熟度。
@@ -446,6 +490,8 @@ const proxyWindow = new Proxy(window, {
 ## 十五、性能监控与 Web API
 
 ---
+
+<a id="q35"></a>
 
 ### Q35: 如何实现前端错误监控？需要捕获哪些类型的错误？
 
@@ -501,6 +547,8 @@ window.addEventListener('error', (event) => {
 
 ---
 
+<a id="q36"></a>
+
 ### Q36: 什么是 Service Worker？它能实现哪些功能？
 
 **题目解析**：Service Worker 是 PWA 的核心，也是离线缓存和推送通知的基础。
@@ -545,3 +593,7 @@ Service Worker 是在浏览器后台运行的脚本，可以拦截所有网络�
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回前端目录](README.md)
+<!-- navigation:end -->

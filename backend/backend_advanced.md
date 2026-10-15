@@ -1,10 +1,37 @@
 # 后端开发面试八股 · 进阶篇
 
+<!-- navigation:start -->
+[← 后端目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（13 题，点击展开）</summary>
+
+- [Q19 · MySQL 的锁机制有哪些？间隙锁（Gap Lock）是什么？](#q19)
+- [Q20 · 如何设计 MySQL 分库分表？有哪些拆分策略和中间件？](#q20)
+- [Q21 · MySQL 的读写分离是如何实现的？主从延迟怎么处理？](#q21)
+- [Q22 · Redis 的持久化方式有哪些？RDB 和 AOF 如何选择？](#q22)
+- [Q23 · Redis Cluster 的架构是什么？Slot 分片是如何工作的？](#q23)
+- [Q24 · Python 的 asyncio 是如何工作的？async/await 和多线程有什么区别？](#q24)
+- [Q25 · Python 的上下文管理器（Context Manager）是如何工作的？`__enter__` 和 `__exit__` 的作用是什么？](#q25)
+- [Q26 · JVM 的内存模型是什么？各区域的作用和常见 OOM 是什么？](#q26)
+- [Q27 · Java 的线程池（ThreadPoolExecutor）参数有哪些？如何合理配置？](#q27)
+- [Q28 · Elasticsearch 的倒排索引是什么？与 MySQL 全文索引的区别？](#q28)
+- [Q29 · gRPC 和 REST API 的区别是什么？什么场景下应该用 gRPC？](#q29)
+- [Q30 · 分析时间复杂度：如何判断一个算法是 O(N log N)？](#q30)
+- [Q31 · 动态规划的核心思路是什么？如何设计状态转移方程？](#q31)
+
+</details>
+<!-- navigation:end -->
+
 > 接续基础篇，涵盖：MySQL进阶 / Redis进阶 / Elasticsearch / gRPC / Docker/K8s / Python高级 / Java JVM / 分布式进阶 / 算法
 
 ---
 
 ## 八、MySQL 进阶
+
+<a id="q19"></a>
 
 ### Q19: MySQL 的锁机制有哪些？间隙锁（Gap Lock）是什么？
 
@@ -45,6 +72,8 @@ InnoDB 有死锁检测机制，发现等待环路后回滚代价最小的事务�
 InnoDB 行锁有三种：Record Lock 锁单行，Gap Lock 锁间隙（范围内没有记录的空间），Next-Key Lock = Record + Gap，是 RR 级别的默认锁形式。Gap Lock 是防幻读的关键——`SELECT * FROM orders WHERE amount BETWEEN 100 AND 200 FOR UPDATE` 不只锁定这个范围内已存在的行，还锁定了这个范围的"间隙"，其他事务想在 100-200 里 INSERT 会被阻塞，直到当前事务提交，这样两次范围查询的结果集不会变，实现了 RR 的幻读防护。代价是间隙锁可能导致并发下降，因为插入操作可能被莫名阻塞（实际没有记录冲突）。RC 级别不需要 Gap Lock（它本来就允许幻读），并发更好，很多公司生产环境把隔离级别降到 RC。死锁常见于两个事务以相反顺序加锁，InnoDB 自动检测并回滚代价小的那个，代码里要捕获 `ER_LOCK_DEADLOCK` 错误并重试。
 
 ---
+
+<a id="q20"></a>
 
 ### Q20: 如何设计 MySQL 分库分表？有哪些拆分策略和中间件？
 
@@ -88,6 +117,8 @@ InnoDB 行锁有三种：Record Lock 锁单行，Gap Lock 锁间隙（范围内�
 
 ---
 
+<a id="q21"></a>
+
 ### Q21: MySQL 的读写分离是如何实现的？主从延迟怎么处理？
 
 **题目解析**：读写分离是 MySQL 最常见的扩展方案，考察候选人的数据库高可用实践经验。
@@ -127,6 +158,8 @@ InnoDB 行锁有三种：Record Lock 锁单行，Gap Lock 锁间隙（范围内�
 
 ---
 
+<a id="q22"></a>
+
 ### Q22: Redis 的持久化方式有哪些？RDB 和 AOF 如何选择？
 
 **题目解析**：Redis 持久化是生产环境数据安全的基础，考察候选人对 Redis 运维的理解。
@@ -163,6 +196,8 @@ InnoDB 行锁有三种：Record Lock 锁单行，Gap Lock 锁间隙（范围内�
 RDB 定时 snapshot，紧凑高效，恢复快，代价是两次 snapshot 间的数据可能丢失（配置 `save 900 1` 等触发条件）。AOF 记录每条写命令，`everysec` 模式下最多丢 1 秒数据，比 RDB 安全，但文件大、恢复慢。Redis 4.0 的混合持久化是最佳选择：AOF 重写时把 RDB 快照作为前缀（恢复时直接加载快照，非常快），后面追加增量 AOF（近实时），兼顾恢复速度和数据安全，生产推荐这个模式。持久化要注意 fork 的影响：BGSAVE/BGREWRITEAOF 时 fork 子进程，如果内存大（数十 GB），fork 本身可能需要数百毫秒（因为要复制页表），期间主进程可能被阻塞；COW 保证子进程看到 fork 时的内存快照，父进程继续接受写请求（写到 COW 复制的新页面），理论上对主进程影响极小，但实际大内存时要留意。另外持久化文件要定期备份到对象存储，本地磁盘故障时能从 S3/OSS 恢复。
 
 ---
+
+<a id="q23"></a>
 
 ### Q23: Redis Cluster 的架构是什么？Slot 分片是如何工作的？
 
@@ -206,6 +241,8 @@ Redis Cluster 用 16384 个虚拟 slot 做数据分片，每个 key 通过 CRC16
 ## 十、Python 进阶
 
 ---
+
+<a id="q24"></a>
 
 ### Q24: Python 的 asyncio 是如何工作的？async/await 和多线程有什么区别？
 
@@ -251,6 +288,8 @@ Event Loop 取出就绪协程
 asyncio 是单线程的协作式并发：Event Loop 维护一个就绪协程队列，遇到 await（I/O等待点）时协程主动让出控制权，Event Loop 切换到下一个就绪的协程，I/O 完成时（epoll 回调）唤醒等待该 I/O 的协程。相比多线程，asyncio 在 I/O 密集场景下能同时维护数千个并发"连接"，内存占用极小（协程很轻量），且没有线程切换开销和锁竞争。不需要加锁，因为单线程内协程调度是可控的（不会在任意点被打断）。主要限制是 CPU 密集操作会阻塞整个 Event Loop，解决办法是 `await loop.run_in_executor(None, cpu_bound_func)` 把 CPU 操作丢到线程池。实际项目里，aiohttp/httpx（异步 HTTP 客户端）、asyncpg（异步 PostgreSQL）、aiomysql 等库都是 asyncio 生态的，要发挥 asyncio 的优势需要整条链路都是 async。FastAPI 天然支持 asyncio，路由函数加 async def 即可享受并发。
 
 ---
+
+<a id="q25"></a>
 
 ### Q25: Python 的上下文管理器（Context Manager）是如何工作的？`__enter__` 和 `__exit__` 的作用是什么？
 
@@ -318,6 +357,8 @@ finally:
 
 ---
 
+<a id="q26"></a>
+
 ### Q26: JVM 的内存模型是什么？各区域的作用和常见 OOM 是什么？
 
 **题目解析**：JVM 是 Java 开发者必须掌握的底层知识，考察候选人对 JVM 内存管理的理解。
@@ -355,6 +396,8 @@ finally:
 JVM 内存分几块：堆是最大的，存对象实例，分年轻代（Eden+Survivor）和老年代，GC 在这里发生；方法区（Metaspace）存类的元信息，Java 8 之前是 PermGen（固定大小经常 OOM），8 以后改为 Metaspace 用本地内存（更灵活但也可能耗尽）；虚拟机栈每个线程一个，存栈帧（局部变量、返回地址），递归太深会 StackOverflow。常见 OOM 排查：`Java heap space` 先看是真的对象太多（加 heap）还是内存泄漏（用 jmap dump + MAT 分析对象引用链）；`Metaspace` 通常是动态代理/反射用太多，加 `-XX:MaxMetaspaceSize` 或找出动态生成类的地方；线程 OOM 是线程池配置不当或线程泄漏，`jstack` 看线程状态。GC 日志 `-XX:+PrintGCDetails -XX:+PrintGCDateStamps` 是诊断性能问题的第一步，看 GC 频率和 STW 时间是否异常。
 
 ---
+
+<a id="q27"></a>
 
 ### Q27: Java 的线程池（ThreadPoolExecutor）参数有哪些？如何合理配置？
 
@@ -410,6 +453,8 @@ ThreadPoolExecutor 的执行顺序要背熟：先用核心线程（corePoolSize 
 
 ---
 
+<a id="q28"></a>
+
 ### Q28: Elasticsearch 的倒排索引是什么？与 MySQL 全文索引的区别？
 
 **题目解析**：Elasticsearch 是后端常用的搜索引擎，理解其索引原理体现候选人的技术广度。
@@ -461,6 +506,8 @@ ThreadPoolExecutor 的执行顺序要背熟：先用核心线程（corePoolSize 
 
 ---
 
+<a id="q29"></a>
+
 ### Q29: gRPC 和 REST API 的区别是什么？什么场景下应该用 gRPC？
 
 **题目解析**：gRPC 是微服务内部通信的主流方案，考察候选人对 RPC 框架的理解。
@@ -510,6 +557,8 @@ gRPC 的核心优势是性能和类型安全。Protocol Buffers 序列化比 JSO
 
 ---
 
+<a id="q30"></a>
+
 ### Q30: 分析时间复杂度：如何判断一个算法是 O(N log N)？
 
 **题目解析**：时间复杂度分析是算法面试的基础，考察候选人的算法思维。
@@ -543,6 +592,8 @@ O(1) < O(log N) < O(N) < O(N log N) < O(N²) < O(2^N) < O(N!)
 判断 O(N log N) 的直觉是"N 个元素，每个元素做了 O(log N) 的工作"。归并排序最典型：把数组分两半（log N 层），每层合并操作是 O(N)，总共 O(N log N)。堆排序同理：建堆 O(N)，N 次 pop 每次 O(log N)，总 O(N log N)。二分查找 + 遍历的组合也常见：有序数组里找所有满足条件的元素，先二分找起点 O(log N) 再线性扫描 O(K)，如果 K 是 O(N) 的就是 O(N + log N) = O(N)。均摊复杂度要理解：`list.append()` 偶尔触发扩容是 O(N)，但 N 次 append 的总代价是 O(N)（每次翻倍扩容，总扩容次数是 N+N/2+N/4+... = 2N），均摊每次是 O(1)。面试时分析时间复杂度要说清楚：是最坏/平均/均摊，快排的最坏是 O(N²)（已排序数组 + 总选第一个 pivot），平均是 O(N log N)。
 
 ---
+
+<a id="q31"></a>
 
 ### Q31: 动态规划的核心思路是什么？如何设计状态转移方程？
 
@@ -594,3 +645,7 @@ DP 的本质是"用已知子问题的答案推导当前问题"，避免重复计
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回后端目录](README.md)
+<!-- navigation:end -->

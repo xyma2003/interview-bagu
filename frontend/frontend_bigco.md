@@ -1,5 +1,29 @@
 # 前端开发专项 · 实现与原理
 
+<!-- navigation:start -->
+[← 前端目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（12 题，点击展开）</summary>
+
+- [Q37 · 如何实现 `Promise.all`，并区分 allSettled、race 和 any？](#q37)
+- [Q38 · 实现 `instanceof`，并解释为什么 `typeof null === 'object'`](#q38)
+- [Q39 · 实现一个带取消功能的 fetch，以及请求重试机制](#q39)
+- [Q40 · 实现一个 `LRU Cache`](#q40)
+- [Q41 · EventEmitter 的实现，以及如何防止内存泄漏](#q41)
+- [Q42 · 实现 `deepClone`，处理循环引用和特殊类型](#q42)
+- [Q43 · 浏览器的渲染进程有哪些线程？它们是如何协作的？](#q43)
+- [Q44 · WebSocket 和 HTTP Long Polling 的区别？如何实现断线重连？](#q44)
+- [Q45 · CSS 实现一个瀑布流（Masonry）布局，有哪些方案？](#q45)
+- [Q46 · 如何实现图片的渐进加载和懒加载？Blurhash 是什么？](#q46)
+- [Q47 · 移动端 1px 问题是什么？有哪些解决方案？](#q47)
+- [Q48 · Next.js 的 SSR、SSG、ISR 有什么区别？各自适用什么场景？](#q48)
+
+</details>
+<!-- navigation:end -->
+
 > 本页未提供可追溯的面经记录，不能作为某公司出题或题目出现频率的证据。
 >
 > 未核验题保留的旧公司标签不作为事实；选定题以本轮逐题核验记录为准，见[来源核验清单](../SOURCE_AUDIT.md)。
@@ -7,6 +31,8 @@
 ---
 
 ## JavaScript 实现与异步控制
+
+<a id="q37"></a>
 
 <a id="review-frontend-q37"></a>
 
@@ -173,6 +199,8 @@ any 测试直接提取本节代码，与原生 `Promise.any` 对照边界、成�
 
 ---
 
+<a id="q38"></a>
+
 ### Q38: 字节 面试：实现 `instanceof`，并解释为什么 `typeof null === 'object'`
 
 **🏢 高频公司**：字节、腾讯
@@ -234,6 +262,8 @@ Object.prototype.toString.call(/regex/)  // "[object RegExp]"
 手写 instanceof：沿左侧对象的 `__proto__` 链向上找，看是否等于右侧构造函数的 `prototype`，到 null 时返回 false。注意处理边界：null 没有原型链，基本类型（数字/字符串等）也要返回 false。`typeof null === 'object'` 是 JavaScript 最著名的历史 bug——1995 年布兰登·艾克设计时，用二进制标签位标记类型，对象是 `000`，而 null 指针的完整二进制表示恰好是 32 个 0，被误识别为对象。这个 bug 在 ES6 提案中被提出修复但被否决，因为全球已有太多代码依赖这个行为。正确检测 null 用全等 `=== null`，精确检测各种对象类型用 `Object.prototype.toString.call()`，它能区分 Array/RegExp/Date/Null 等，是最可靠的运行时类型检测方式。
 
 ---
+
+<a id="q39"></a>
 
 ### Q39: 字节 面试：实现一个带取消功能的 fetch，以及请求重试机制
 
@@ -319,6 +349,8 @@ async function fetchWithRetryAndCancel(url, options = {}, retryOptions = {}) {
 fetch 取消用 AbortController：创建 controller，把 controller.signal 传给 fetch 的 options，调用 controller.abort() 时 fetch 会 reject 一个 AbortError。注意取消后要判断是 AbortError 才静默处理，其他错误正常抛出。重试实现用 for 循环 + try/catch，每次失败等待 `delay * backoff^attempt` 毫秒（指数退避），防止同时大量请求重试打垮后端。shouldRetry 回调让调用者控制重试条件：4xx 客户端错误说明请求本身有问题，重试也没用，不应该重试；5xx 和网络断开才值得重试。生产中还要加 jitter（随机偏移），避免同一时刻大量用户都在重试造成惊群效应。
 
 ---
+
+<a id="q40"></a>
 
 ### Q40: 字节 面试：实现一个 `LRU Cache`
 
@@ -421,6 +453,8 @@ LRU Cache 需要同时支持 O(1) 的 get 和 put，纯数组不行（查找 O(N
 
 ---
 
+<a id="q41"></a>
+
 ### Q41: 字节 面试：EventEmitter 的实现，以及如何防止内存泄漏
 
 **🏢 高频公司**：字节、腾讯
@@ -502,6 +536,8 @@ EventEmitter 的核心是用 `_events` 对象存储事件名到监听器数组�
 
 ---
 
+<a id="q42"></a>
+
 ### Q42: 字节 面试：实现 `deepClone`，处理循环引用和特殊类型
 
 **🏢 高频公司**：字节（必考）、腾讯
@@ -570,6 +606,8 @@ function deepClone(target, map = new WeakMap()) {
 
 ---
 
+<a id="q43"></a>
+
 ### Q43: 腾讯 面试：浏览器的渲染进程有哪些线程？它们是如何协作的？
 
 **🏢 高频公司**：腾讯（高频）、字节
@@ -616,6 +654,8 @@ JS 在主线程上执行，主线程同时负责解析 HTML 和渲染。JS 执�
 浏览器渲染进程里有几个关键线程协作完成渲染。主线程负责最繁重的工作：解析 HTML 建 DOM、解析 CSS 建 CSSOM、执行 JS、Layout 计算几何、Paint 生成绘制命令。合成线程（Compositor）负责最终的帧输出：拿到各图层的位图后合成，发给 GPU 显示，关键是它独立于主线程，可以直接处理 `transform` 和 `opacity` 变化（这两个属性的动画完全在合成线程，不经过主线程）。Raster 线程池把 Paint 的绘制命令转成实际像素，通常是多核并行。这个架构解释了很多性能现象：为什么 CSS transform 动画不被 JS 阻塞（合成线程独立运行）；为什么 `will-change: transform` 可以提前创建独立合成层（提升后主线程的变化只影响这一层，不引起大面积重绘）；为什么滚动性能好（合成线程处理，不过主线程）。
 
 ---
+
+<a id="q44"></a>
 
 ### Q44: 腾讯 面试：WebSocket 和 HTTP Long Polling 的区别？如何实现断线重连？
 
@@ -725,6 +765,8 @@ WebSocket 用一次 HTTP Upgrade 握手把 HTTP 连接升级为持久双工 TCP 
 
 ---
 
+<a id="q45"></a>
+
 ### Q45: 小红书 面试：CSS 实现一个瀑布流（Masonry）布局，有哪些方案？
 
 **🏢 高频公司**：小红书（产品特色）、Instagram 类应用
@@ -803,6 +845,8 @@ function masonry(items, columns = 2, gap = 12) {
 
 ---
 
+<a id="q46"></a>
+
 ### Q46: 小红书 面试：如何实现图片的渐进加载和懒加载？Blurhash 是什么？
 
 **🏢 高频公司**：小红书、Instagram 类图片应用
@@ -872,6 +916,8 @@ const observer = new IntersectionObserver((entries) => {
 图片懒加载 + 占位的完整方案：先在图片位置用占位元素（颜色块或 Blurhash 解码的模糊图）保持布局稳定，IntersectionObserver 检测到图片进入视口提前 200px 时开始加载，加载完成后用 CSS transition opacity 0→1 淡入，避免图片突然出现的突兀感。Blurhash 是现在最优雅的占位方案：服务端在上传图片时计算 Blurhash 字符串（通常 30 字节左右），存在数据库里，接口返回图片信息时一并返回；前端拿到 hash 后解码渲染到 Canvas，得到对应的模糊版本，与原图尺寸一致，加载体验极好。相比 LQIP（发一张额外的低质量缩略图请求），Blurhash 不需要额外 HTTP 请求，直接从数据库的字段里得到，性能更好。格式选择上，AVIF 体积最小但解码稍慢，WebP 兼顾质量和兼容性，用 `<picture>` 标签做降级：AVIF → WebP → JPEG，浏览器自动选择支持的最优格式。
 
 ---
+
+<a id="q47"></a>
 
 ### Q47: 小红书 面试：移动端 1px 问题是什么？有哪些解决方案？
 
@@ -969,6 +1015,8 @@ Sass/Less mixin 封装 transform 方案，按 DPR 自动适配：
 
 ---
 
+<a id="q48"></a>
+
 ### Q48: 阿里 面试：Next.js 的 SSR、SSG、ISR 有什么区别？各自适用什么场景？
 
 **🏢 高频公司**：阿里、字节（有大量 Next.js 项目）
@@ -1038,3 +1086,7 @@ SSR、SSG、ISR 的本质是"数据获取在什么时候执行"。SSR 每次请�
 *本页包含 12 题（Q37-Q48）。题号与主题不代表面经来源；逐题核验范围以[来源核验清单](../SOURCE_AUDIT.md)为准。*
 
 ---
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回前端目录](README.md)
+<!-- navigation:end -->

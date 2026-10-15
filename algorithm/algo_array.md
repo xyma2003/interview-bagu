@@ -1,9 +1,48 @@
 # 算法面试题库 · 数组 / 双指针 / 滑动窗口 / 二分查找
 
+<!-- navigation:start -->
+[← 算法目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（25 题，点击展开）</summary>
+
+- [Q1 · 两数之和 (Two Sum) · LeetCode 1](#q1)
+- [Q2 · 三数之和 (3Sum) · LeetCode 15](#q2)
+- [Q3 · 盛最多水的容器 · LeetCode 11](#q3)
+- [Q4 · 接雨水 · LeetCode 42](#q4)
+- [Q5 · 最长无重复子串 · LeetCode 3](#q5)
+- [Q6 · 最小覆盖子串 · LeetCode 76](#q6)
+- [Q7 · 找到字符串中所有字母异位词 · LeetCode 438](#q7)
+- [Q8 · 寻找两个有序数组的中位数 · LeetCode 4](#q8)
+- [Q9 · 搜索旋转排序数组 · LeetCode 33](#q9)
+- [Q10 · 寻找旋转排序数组中的最小值 · LeetCode 153](#q10)
+- [Q11 · 合并区间 · LeetCode 56](#q11)
+- [Q12 · 除自身以外数组的乘积 · LeetCode 238](#q12)
+- [Q13 · 子数组最大和 (Kadane 算法) · LeetCode 53](#q13)
+- [Q14 · 跳跃游戏 · LeetCode 55](#q14)
+- [Q15 · 颜色分类（荷兰国旗）· LeetCode 75](#q15)
+- [Q16 · 下一个排列 · LeetCode 31](#q16)
+- [Q17 · 旋转图像 · LeetCode 48](#q17)
+- [Q18 · 螺旋矩阵 · LeetCode 54](#q18)
+- [Q19 · 二分查找（标准模板）· LeetCode 704](#q19)
+- [Q20 · 搜索插入位置 · LeetCode 35](#q20)
+- [Q21 · 在排序数组中查找元素的第一个和最后一个位置 · LeetCode 34](#q21)
+- [Q22 · 有效的括号 · LeetCode 20](#q22)
+- [Q23 · 最大矩形 · LeetCode 84（柱状图中最大的矩形）](#q23)
+- [Q24 · 前 K 个高频元素 · LeetCode 347](#q24)
+- [Q25 · 数组中的第 K 个最大元素 · LeetCode 215](#q25)
+
+</details>
+<!-- navigation:end -->
+
 > LeetCode 题型练习，含思路分析、Python 代码、复杂度与追问。
 > 来源状态：本页只核验 Q1、Q4、Q8。其他题中的旧公司／频率标签未有可追溯面经支持，不作为事实；范围见[来源规范与核验记录](../SOURCE_AUDIT.md)。
 
 ---
+
+<a id="q1"></a>
 
 <a id="review-algorithm-q1"></a>
 
@@ -54,6 +93,8 @@ def twoSum(nums: list[int], target: int) -> list[int]:
 
 ---
 
+<a id="q2"></a>
+
 ### Q2: 三数之和 (3Sum) · LeetCode 15
 
 **🏢 高频公司**：字节、腾讯、阿里（高频）
@@ -97,6 +138,8 @@ def threeSum(nums: list[int]) -> list[list[int]]:
 
 ---
 
+<a id="q3"></a>
+
 ### Q3: 盛最多水的容器 · LeetCode 11
 
 **🏢 高频公司**：字节、腾讯
@@ -129,6 +172,8 @@ def maxArea(height: list[int]) -> int:
 双指针从首尾向中间靠拢。每次计算当前容积，然后移动较矮的那根柱子——因为移动较高侧，宽度必然减小而高度上限不变（还是受较矮侧限制），面积不可能更大；移动较矮侧，宽度减小但高度有可能增大，值得一试。
 
 ---
+
+<a id="q4"></a>
 
 <a id="review-algorithm-q4"></a>
 
@@ -193,6 +238,8 @@ def trap(height: list[int]) -> int:
 
 ---
 
+<a id="q5"></a>
+
 ### Q5: 最长无重复子串 · LeetCode 3
 
 **🏢 高频公司**：字节、腾讯、小红书、阿里（超高频）
@@ -224,6 +271,8 @@ def lengthOfLongestSubstring(s: str) -> int:
 滑动窗口：右指针向右扩展，遇到已在窗口内的字符时，左指针跳到该字符上次出现位置的右边。用哈希表记录每个字符最后出现的下标，注意要判断其是否在当前窗口内（`>= left`），否则窗口外的旧记录会错误收缩左指针。
 
 ---
+
+<a id="q6"></a>
 
 ### Q6: 最小覆盖子串 · LeetCode 76
 
@@ -273,6 +322,8 @@ def minWindow(s: str, t: str) -> str:
 
 ---
 
+<a id="q7"></a>
+
 ### Q7: 找到字符串中所有字母异位词 · LeetCode 438
 
 **🏢 高频公司**：字节、腾讯
@@ -308,6 +359,8 @@ def findAnagrams(s: str, p: str) -> list[int]:
 **考察点**：固定大小滑动窗口，Counter 比较
 
 ---
+
+<a id="q8"></a>
 
 <a id="review-algorithm-q8"></a>
 
@@ -367,6 +420,8 @@ def findMedianSortedArrays(nums1: list[int], nums2: list[int]) -> float:
 
 ---
 
+<a id="q9"></a>
+
 ### Q9: 搜索旋转排序数组 · LeetCode 33
 
 **🏢 高频公司**：字节、腾讯、阿里
@@ -404,6 +459,8 @@ def search(nums: list[int], target: int) -> int:
 
 ---
 
+<a id="q10"></a>
+
 ### Q10: 寻找旋转排序数组中的最小值 · LeetCode 153
 
 **🏢 高频公司**：字节、腾讯
@@ -427,6 +484,8 @@ def findMin(nums: list[int]) -> int:
 **考察点**：与 nums[r] 比较（不是 nums[l]），因为旋转点总在右侧
 
 ---
+
+<a id="q11"></a>
 
 ### Q11: 合并区间 · LeetCode 56
 
@@ -453,6 +512,8 @@ def merge(intervals: list[list[int]]) -> list[list[int]]:
 **考察点**：排序后贪心合并，注意 `max(res[-1][1], end)` 处理完全包含的情况
 
 ---
+
+<a id="q12"></a>
 
 ### Q12: 除自身以外数组的乘积 · LeetCode 238
 
@@ -485,6 +546,8 @@ def productExceptSelf(nums: list[int]) -> list[int]:
 
 ---
 
+<a id="q13"></a>
+
 ### Q13: 子数组最大和 (Kadane 算法) · LeetCode 53
 
 **🏢 高频公司**：字节、腾讯、阿里
@@ -506,6 +569,8 @@ def maxSubArray(nums: list[int]) -> int:
 
 ---
 
+<a id="q14"></a>
+
 ### Q14: 跳跃游戏 · LeetCode 55
 
 **🏢 高频公司**：字节、阿里
@@ -526,6 +591,8 @@ def canJump(nums: list[int]) -> bool:
 **复杂度**：O(N)，贪心维护最远可达位置
 
 ---
+
+<a id="q15"></a>
 
 ### Q15: 颜色分类（荷兰国旗）· LeetCode 75
 
@@ -555,6 +622,8 @@ def sortColors(nums):
 **考察点**：荷兰国旗三指针；mid 遇到 2 时不前移（换来的数未知）
 
 ---
+
+<a id="q16"></a>
 
 ### Q16: 下一个排列 · LeetCode 31
 
@@ -587,6 +656,8 @@ def nextPermutation(nums: list[int]) -> None:
 
 ---
 
+<a id="q17"></a>
+
 ### Q17: 旋转图像 · LeetCode 48
 
 **🏢 高频公司**：字节、腾讯
@@ -611,6 +682,8 @@ def rotate(matrix: list[list[int]]) -> None:
 **考察点**：转置 + 翻转 = 顺时针 90°；逆时针 = 转置 + 竖向翻转
 
 ---
+
+<a id="q18"></a>
 
 ### Q18: 螺旋矩阵 · LeetCode 54
 
@@ -640,6 +713,8 @@ def spiralOrder(matrix: list[list[int]]) -> list[int]:
 
 ---
 
+<a id="q19"></a>
+
 ### Q19: 二分查找（标准模板）· LeetCode 704
 
 **🏢 高频公司**：所有大厂
@@ -662,6 +737,8 @@ def search(nums: list[int], target: int) -> int:
 
 ---
 
+<a id="q20"></a>
+
 ### Q20: 搜索插入位置 · LeetCode 35
 
 **🏢 高频公司**：字节、腾讯
@@ -683,6 +760,8 @@ def searchInsert(nums: list[int], target: int) -> int:
 **考察点**：二分的"左边界"模板（`l < r`，`r=mid`）；这两种模板要熟练切换
 
 ---
+
+<a id="q21"></a>
 
 ### Q21: 在排序数组中查找元素的第一个和最后一个位置 · LeetCode 34
 
@@ -712,6 +791,8 @@ def searchRange(nums: list[int], target: int) -> list[int]:
 
 ---
 
+<a id="q22"></a>
+
 ### Q22: 有效的括号 · LeetCode 20
 
 **🏢 高频公司**：所有大厂（超高频）
@@ -734,6 +815,8 @@ def isValid(s: str) -> bool:
 **考察点**：栈的经典应用；追问：最长有效括号 LC32（DP 或栈）
 
 ---
+
+<a id="q23"></a>
 
 ### Q23: 最大矩形 · LeetCode 84（柱状图中最大的矩形）
 
@@ -761,6 +844,8 @@ def largestRectangleArea(heights: list[int]) -> int:
 **考察点**：单调栈经典应用；宽度计算 `w = i - stack[-1] - 1`（两个"边界"的距离）
 
 ---
+
+<a id="q24"></a>
 
 ### Q24: 前 K 个高频元素 · LeetCode 347
 
@@ -790,6 +875,8 @@ def topKFrequent(nums: list[int], k: int) -> list[int]:
 2. 桶排序方案 O(N)：下标 = 频率，O(N) 空间
 
 ---
+
+<a id="q25"></a>
 
 ### Q25: 数组中的第 K 个最大元素 · LeetCode 215
 
@@ -838,3 +925,7 @@ def findKthLargest(nums: list[int], k: int) -> int:
 *本文件共 25 题，覆盖数组 / 滑动窗口 / 双指针 / 二分查找 / 单调栈。*
 
 ---
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回算法目录](README.md)
+<!-- navigation:end -->

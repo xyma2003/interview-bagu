@@ -1,6 +1,40 @@
 # 算法面试题库 · 链表 / 栈 / 设计题 / 字符串 / 数学
 
+<!-- navigation:start -->
+[← 算法目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（20 题，点击展开）</summary>
+
+- [Q51 · 反转链表 · LeetCode 206](#q51)
+- [Q52 · 链表中环的检测 · LeetCode 141/142](#q52)
+- [Q53 · 合并两个有序链表 · LeetCode 21](#q53)
+- [Q54 · 合并 K 个升序链表 · LeetCode 23](#q54)
+- [Q55 · K 个一组翻转链表 · LeetCode 25](#q55)
+- [Q56 · 排序链表 · LeetCode 148](#q56)
+- [Q57 · 相交链表 · LeetCode 160](#q57)
+- [Q58 · LRU 缓存 · LeetCode 146](#q58)
+- [Q59 · 最小栈 · LeetCode 155](#q59)
+- [Q60 · 设计循环队列 · LeetCode 622](#q60)
+- [Q61 · 用两个栈实现队列 · LeetCode 232](#q61)
+- [Q62 · 字符串解码 · LeetCode 394](#q62)
+- [Q63 · 每日温度 · LeetCode 739](#q63)
+- [Q64 · 接雨水 Ⅱ（单调栈解法）· 对比 LC 42](#q64)
+- [Q65 · 最长有效括号 · LeetCode 32](#q65)
+- [Q66 · 罗马数字转整数 · LeetCode 13](#q66)
+- [Q67 · 字母异位词分组 · LeetCode 49](#q67)
+- [Q68 · 最长公共前缀 · LeetCode 14](#q68)
+- [Q69 · 实现 strStr（KMP）· LeetCode 28](#q69)
+- [Q70 · Pow(x, n) · LeetCode 50](#q70)
+
+</details>
+<!-- navigation:end -->
+
 ---
+
+<a id="q51"></a>
 
 ### Q51: 反转链表 · LeetCode 206
 
@@ -30,6 +64,8 @@ def reverseList(head):
 **考察点**：迭代三指针；递归的语义（返回反转后的新头节点）
 
 ---
+
+<a id="q52"></a>
 
 ### Q52: 链表中环的检测 · LeetCode 141/142
 
@@ -66,6 +102,8 @@ def detectCycle(head):
 
 ---
 
+<a id="q53"></a>
+
 ### Q53: 合并两个有序链表 · LeetCode 21
 
 **🏢 高频公司**：所有大厂
@@ -88,6 +126,8 @@ def mergeTwoLists(l1, l2):
 **考察点**：哑节点（dummy）简化链表头操作；追问：合并 K 个有序链表（堆，O(N log K)）
 
 ---
+
+<a id="q54"></a>
 
 ### Q54: 合并 K 个升序链表 · LeetCode 23
 
@@ -117,6 +157,8 @@ def mergeKLists(lists):
 **考察点**：最小堆（用 `i` 作为二级排序避免 ListNode 比较报错）；分治合并也是 O(N log K)
 
 ---
+
+<a id="q55"></a>
 
 ### Q55: K 个一组翻转链表 · LeetCode 25
 
@@ -156,6 +198,8 @@ def reverseKGroup(head, k: int):
 
 ---
 
+<a id="q56"></a>
+
 ### Q56: 排序链表 · LeetCode 148
 
 **🏢 高频公司**：字节
@@ -194,6 +238,8 @@ def merge(l1, l2):
 
 ---
 
+<a id="q57"></a>
+
 ### Q57: 相交链表 · LeetCode 160
 
 **🏢 高频公司**：字节、腾讯
@@ -212,6 +258,8 @@ def getIntersectionNode(headA, headB):
 **考察点**：两指针走相同距离后必然相遇；`a+b = b+a`，消除长度差
 
 ---
+
+<a id="q58"></a>
 
 ### Q58: LRU 缓存 · LeetCode 146
 
@@ -261,6 +309,8 @@ class LRUCache:
 
 ---
 
+<a id="q59"></a>
+
 ### Q59: 最小栈 · LeetCode 155
 
 **🏢 高频公司**：所有大厂
@@ -292,6 +342,8 @@ class MinStack:
 
 ---
 
+<a id="q60"></a>
+
 ### Q60: 设计循环队列 · LeetCode 622
 
 **🏢 高频公司**：腾讯
@@ -322,6 +374,8 @@ class MyCircularQueue:
 ```
 
 ---
+
+<a id="q61"></a>
 
 ### Q61: 用两个栈实现队列 · LeetCode 232
 
@@ -356,6 +410,8 @@ class MyQueue:
 
 ---
 
+<a id="q62"></a>
+
 ### Q62: 字符串解码 · LeetCode 394
 
 **🏢 高频公司**：字节、小红书
@@ -387,6 +443,8 @@ def decodeString(s: str) -> str:
 
 ---
 
+<a id="q63"></a>
+
 ### Q63: 每日温度 · LeetCode 739
 
 **🏢 高频公司**：字节、腾讯
@@ -412,6 +470,8 @@ def dailyTemperatures(temperatures: list[int]) -> list[int]:
 
 ---
 
+<a id="q64"></a>
+
 ### Q64: 接雨水 Ⅱ（单调栈解法）· 对比 LC 42
 
 **题目讲解（单调栈）**：
@@ -432,6 +492,8 @@ def trap_stack(height: list[int]) -> int:
 **考察点**：单调栈按"层"计算雨水；与双指针按"列"计算的区别
 
 ---
+
+<a id="q65"></a>
 
 ### Q65: 最长有效括号 · LeetCode 32
 
@@ -459,6 +521,8 @@ def longestValidParentheses(s: str) -> int:
 
 ---
 
+<a id="q66"></a>
+
 ### Q66: 罗马数字转整数 · LeetCode 13
 
 **🏢 高频公司**：字节、腾讯
@@ -478,6 +542,8 @@ def romanToInt(s: str) -> int:
 ```
 
 ---
+
+<a id="q67"></a>
 
 ### Q67: 字母异位词分组 · LeetCode 49
 
@@ -500,6 +566,8 @@ def groupAnagrams(strs: list[str]) -> list[list[str]]:
 
 ---
 
+<a id="q68"></a>
+
 ### Q68: 最长公共前缀 · LeetCode 14
 
 **🏢 高频公司**：字节、腾讯
@@ -519,6 +587,8 @@ def longestCommonPrefix(strs: list[str]) -> str:
 **考察点**：横向扫描；追问：Trie 插入所有字符串，公共前缀是公共路径
 
 ---
+
+<a id="q69"></a>
 
 ### Q69: 实现 strStr（KMP）· LeetCode 28
 
@@ -551,6 +621,8 @@ def strStr(haystack: str, needle: str) -> int:
 
 ---
 
+<a id="q70"></a>
+
 ### Q70: Pow(x, n) · LeetCode 50
 
 **🏢 高频公司**：字节、腾讯
@@ -578,3 +650,7 @@ def myPow(x: float, n: int) -> float:
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回算法目录](README.md)
+<!-- navigation:end -->

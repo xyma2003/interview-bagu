@@ -1,10 +1,48 @@
 # 前端开发面试八股题库
 
+<!-- navigation:start -->
+[← 前端目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（24 题，点击展开）</summary>
+
+- [Q1 · 什么是 BFC（块级格式化上下文）？如何创建 BFC？有哪些应用场景？](#q1)
+- [Q2 · CSS `position` 的几种取值有什么区别？`sticky` 的工作原理是什么？](#q2)
+- [Q3 · Flex 和 Grid 布局各自的适用场景是什么？](#q3)
+- [Q4 · JavaScript 的事件循环（Event Loop）是如何工作的？宏任务和微任务有什么区别？](#q4)
+- [Q5 · 请解释 JavaScript 的原型链，以及 `__proto__`、`prototype`、`Object.getPrototypeOf` 的关系](#q5)
+- [Q6 · 什么是闭包？闭包有哪些实际应用场景和潜在问题？](#q6)
+- [Q7 · `this` 的指向规则有哪些？箭头函数的 `this` 与普通函数有何不同？](#q7)
+- [Q8 · Promise、async/await 的错误处理有哪些最佳实践？](#q8)
+- [Q9 · 浏览器从输入 URL 到页面渲染的完整过程是什么？](#q9)
+- [Q10 · 什么是重绘（Repaint）和回流（Reflow）？如何减少它们？](#q10)
+- [Q11 · HTTP/1.1、HTTP/2、HTTP/3 的主要区别是什么？](#q11)
+- [Q12 · 浏览器缓存机制是怎样的？强缓存和协商缓存有什么区别？](#q12)
+- [Q13 · 什么是跨域？有哪些解决方案？CORS 的预检请求是什么？](#q13)
+- [Q14 · React Fiber 架构是什么？它解决了什么问题？](#q14)
+- [Q15 · React Hooks 的设计原理是什么？为什么 Hooks 不能在条件语句中使用？](#q15)
+- [Q16 · 如何优化 React 应用的渲染性能？](#q16)
+- [Q17 · Vue 2 和 Vue 3 的响应式原理有什么区别？](#q17)
+- [Q18 · Vue 3 的 `setup()` 和 Composition API 的优势是什么？](#q18)
+- [Q19 · 什么是 Web Vitals？LCP、INP、CLS 分别是什么？FID 有何变化？](#q19)
+- [Q20 · 如何实现前端懒加载？路由懒加载和图片懒加载各是什么原理？](#q20)
+- [Q21 · Webpack 和 Vite 的核心区别是什么？Vite 为什么在开发环境下更快？](#q21)
+- [Q22 · TypeScript 的泛型是什么？请举出实际使用场景](#q22)
+- [Q23 · TypeScript 中的 `type` 和 `interface` 有什么区别？何时该用哪个？](#q23)
+- [Q24 · 如何解释 TypeScript 的类型守卫（Type Guard）？](#q24)
+
+</details>
+<!-- navigation:end -->
+
 > 覆盖：HTML/CSS / JavaScript核心 / ES6+ / 浏览器原理 / 网络 / React / Vue / 性能优化 / 工程化 / TypeScript
 
 ---
 
 ## 一、HTML / CSS
+
+<a id="q1"></a>
 
 <a id="review-frontend-q1"></a>
 
@@ -40,6 +78,8 @@ BFC 是按块与行内布局规则排版的格式化上下文。它隔离内外�
 
 ---
 
+<a id="q2"></a>
+
 ### Q2: CSS `position` 的几种取值有什么区别？`sticky` 的工作原理是什么？
 
 **题目解析**：定位是 CSS 布局的基础，sticky 是相对新的特性，很多候选人对其工作原理理解不深。
@@ -66,6 +106,8 @@ BFC 是按块与行内布局规则排版的格式化上下文。它隔离内外�
 position 五个值中，static 是默认流；relative 相对自身偏移但不脱流，常用于给 absolute 子元素提供定位参照；absolute 完全脱流，找最近有 position 属性（非 static）的祖先作为包含块；fixed 相对视口定位，不随滚动移动。sticky 是最有趣的：它是 relative + 条件性 fixed 的结合——元素平时在文档流中，当滚动距离使其即将离开可视区时，它"粘"在设定的阈值上（`top: 0` 即粘在视口顶部）。关键约束是它的粘性范围受父容器限制，父容器滚出视口时它也跟着走。sticky 最常见的失效原因是父元素设了 `overflow: hidden/auto/scroll`，这会创建独立的滚动上下文，导致 sticky 无法感知外层滚动。
 
 ---
+
+<a id="q3"></a>
 
 ### Q3: Flex 和 Grid 布局各自的适用场景是什么？
 
@@ -103,6 +145,8 @@ Flex 是一维布局，沿一个轴（行或列）分配空间，适合组件内
 
 ---
 
+<a id="q4"></a>
+
 <a id="review-frontend-q4"></a>
 
 ### Q4: JavaScript 的事件循环（Event Loop）是如何工作的？宏任务和微任务有什么区别？
@@ -136,6 +180,8 @@ console.log('4');                    // 同步
 上例的 Promise 已经 fulfilled，因此 reaction 在当前脚本结束后的检查点执行，输出为 `1, 4, 3, 2`。这不意味着任意 `Promise.then` 都早于任意 `setTimeout`：如果 Promise 尚未解决，它的回调可能尚未入队。`await` 会暂停当前 async 函数，后续恢复通过 Promise 的异步机制安排；仍需结合被等待值的完成时机分析。计时器延迟表示调度条件，不保证精确执行时间。
 
 ---
+
+<a id="q5"></a>
 
 ### Q5: 请解释 JavaScript 的原型链，以及 `__proto__`、`prototype`、`Object.getPrototypeOf` 的关系
 
@@ -174,6 +220,8 @@ JavaScript 里每个对象都有一个内部属性指向它的原型对象（可
 
 ---
 
+<a id="q6"></a>
+
 ### Q6: 什么是闭包？闭包有哪些实际应用场景和潜在问题？
 
 **题目解析**：闭包是 JavaScript 最核心的概念，几乎所有前端面试都会考到。
@@ -206,6 +254,8 @@ JavaScript 里每个对象都有一个内部属性指向它的原型对象（可
 闭包是函数和它所在词法环境的绑定——内层函数"记住"了外层作用域的变量，即使外层函数已经执行完毕。经典例子是计数器：通过闭包让 count 变量只能通过返回的 increment/decrement 函数修改，实现私有状态。防抖和节流都依赖闭包保存 timer 引用。闭包的问题是内存：只要闭包函数存活，它引用的外部变量就不会被 GC 回收，如果闭包被存储在全局或长生命周期对象中，可能造成内存泄漏。经典的 `for (var i = 0; i < 5; i++) setTimeout(() => console.log(i))` 输出 5 个 5，因为 var 声明的 i 被所有闭包共享；用 `let` 改成块级作用域，或用 IIFE 为每次循环创建独立作用域，可以正确输出 0-4。
 
 ---
+
+<a id="q7"></a>
 
 ### Q7: `this` 的指向规则有哪些？箭头函数的 `this` 与普通函数有何不同？
 
@@ -244,6 +294,8 @@ this 的值在调用时决定，不在定义时。规则优先级：new > call/a
 
 ---
 
+<a id="q8"></a>
+
 ### Q8: Promise、async/await 的错误处理有哪些最佳实践？
 
 **题目解析**：异步错误处理是生产代码质量的重要体现，考察候选人的工程规范意识。
@@ -279,6 +331,8 @@ this 的值在调用时决定，不在定义时。规则优先级：new > call/a
 
 ---
 
+<a id="q9"></a>
+
 ### Q9: 浏览器从输入 URL 到页面渲染的完整过程是什么？
 
 **题目解析**：这道经典题目考察候选人知识面的广度，从网络到渲染一网打尽。
@@ -308,6 +362,8 @@ this 的值在调用时决定，不在定义时。规则优先级：new > call/a
 输入 URL 到渲染分几个阶段：首先 DNS 查询把域名解析为 IP（有多级缓存），然后 TCP 三次握手建连，HTTPS 还要 TLS 握手。HTTP 请求发出，服务器返回 HTML。浏览器开始渲染关键路径：解析 HTML 构建 DOM，解析 CSS 构建 CSSOM（CSS 会阻塞渲染，因为渲染需要完整 CSSOM），遇到 script 标签停止解析等待 JS 执行（除非 async/defer）。DOM 和 CSSOM 合并为 Render Tree，只包含实际渲染的节点（display:none 的不包含）。接着 Layout 计算元素位置大小，Paint 生成绘制指令，最后 Compositor 合并各图层输出画面。性能优化要关注缩短关键渲染路径：减少阻塞资源、CSS 放 head、script 放底部或用 defer、预加载关键资源。
 
 ---
+
+<a id="q10"></a>
 
 ### Q10: 什么是重绘（Repaint）和回流（Reflow）？如何减少它们？
 
@@ -345,6 +401,8 @@ this 的值在调用时决定，不在定义时。规则优先级：new > call/a
 
 ---
 
+<a id="q11"></a>
+
 ### Q11: HTTP/1.1、HTTP/2、HTTP/3 的主要区别是什么？
 
 **题目解析**：HTTP 协议演进是前端网络知识的重要考察点，理解它有助于性能优化决策。
@@ -378,6 +436,8 @@ HTTP/1.1 的核心问题是队头阻塞：虽然支持 keep-alive 复用连接�
 
 ---
 
+<a id="q12"></a>
+
 ### Q12: 浏览器缓存机制是怎样的？强缓存和协商缓存有什么区别？
 
 **题目解析**：HTTP 缓存是前端性能优化的基础，也是面试常考知识。
@@ -409,6 +469,8 @@ HTTP/1.1 的核心问题是队头阻塞：虽然支持 keep-alive 复用连接�
 浏览器缓存分两层：强缓存不发任何网络请求，直接用本地缓存，由 `Cache-Control: max-age` 控制有效期，命中时状态码是 200 from cache；协商缓存每次都发请求到服务端，但携带缓存标识（ETag 或 Last-Modified），服务端判断资源是否变化，未变化返回 304，变化了返回 200 + 新资源。工程实践中，HTML 文件设 `no-cache`（每次协商，保证及时更新），JS/CSS 文件名带内容哈希（如 `main.abc123.js`）设 `max-age=31536000, immutable`（永久缓存），更新时改文件名即可让旧缓存自动失效。ETag 比 Last-Modified 更精确（文件内容哈希 vs 修改时间秒级），对于频繁更新但内容可能相同的场景，ETag 能更准确判断是否真正变化。
 
 ---
+
+<a id="q13"></a>
 
 ### Q13: 什么是跨域？有哪些解决方案？CORS 的预检请求是什么？
 
@@ -443,6 +505,8 @@ HTTP/1.1 的核心问题是队头阻塞：虽然支持 keep-alive 复用连接�
 
 ---
 
+<a id="q14"></a>
+
 ### Q14: React Fiber 架构是什么？它解决了什么问题？
 
 **题目解析**：Fiber 是 React 16 的核心重构，理解它体现候选人对 React 架构的深度认知。
@@ -476,6 +540,8 @@ React 15 的 Stack Reconciler 用递归遍历组件树，一旦开始就无法�
 
 ---
 
+<a id="q15"></a>
+
 ### Q15: React Hooks 的设计原理是什么？为什么 Hooks 不能在条件语句中使用？
 
 **题目解析**：Hooks 原理是 React 面试的必考点，理解它才能真正用好 Hooks。
@@ -506,6 +572,8 @@ React 15 的 Stack Reconciler 用递归遍历组件树，一旦开始就无法�
 Hooks 的魔法在于 React 用一个链表在每个组件的 Fiber 节点上存储 Hook 的状态，链表节点按 Hook 的调用顺序排列。每次渲染时，React 按照固定顺序读取链表节点来恢复各个 Hook 的状态。这就是为什么 Hooks 必须在顶层无条件调用——如果某次渲染因为条件跳过了一个 Hook，后续所有 Hook 读取的链表节点都会错位，状态就对不上了。useState 在链表节点存储当前值和更新函数，useEffect 存储副作用函数和依赖数组，每次渲染时对比依赖数组是否变化决定是否重新调度 effect。useEffect 是异步的，在浏览器绘制完成后执行，不阻塞渲染；useLayoutEffect 是同步的，在 DOM 更新后、浏览器绘制前执行，适合需要同步读取 DOM 的场景。
 
 ---
+
+<a id="q16"></a>
 
 ### Q16: 如何优化 React 应用的渲染性能？
 
@@ -543,6 +611,8 @@ React 性能优化的核心是"减少不必要的重渲染"。首先用 React De
 
 ---
 
+<a id="q17"></a>
+
 ### Q17: Vue 2 和 Vue 3 的响应式原理有什么区别？
 
 **题目解析**：Vue 响应式原理是 Vue 框架的核心，也是面试必考知识。
@@ -578,6 +648,8 @@ Vue 2 用 Object.defineProperty 把对象每个属性转为 getter/setter，gett
 
 ---
 
+<a id="q18"></a>
+
 ### Q18: Vue 3 的 `setup()` 和 Composition API 的优势是什么？
 
 **题目解析**：Composition API 是 Vue 3 最大的变化，考察候选人对其设计理念的理解。
@@ -611,6 +683,8 @@ Composition API 解决了 Options API 的两个核心问题：逻辑分散和复
 ## 七、性能优化
 
 ---
+
+<a id="q19"></a>
 
 <a id="review-frontend-q19"></a>
 
@@ -649,6 +723,8 @@ Web Vitals 是用户体验度量倡议，Core Web Vitals 是其中的核心指�
 我会先确认是实验数据还是现场数据，再分别定位 LCP 的关键资源、INP 的慢交互和 CLS 的位移窗口。优化后比较相同设备分组与统计口径，不能仅凭一次 Lighthouse 分数就宣布所有真实用户体验已经改善。
 
 ---
+
+<a id="q20"></a>
 
 ### Q20: 如何实现前端懒加载？路由懒加载和图片懒加载各是什么原理？
 
@@ -692,6 +768,8 @@ Web Vitals 是用户体验度量倡议，Core Web Vitals 是其中的核心指�
 
 ---
 
+<a id="q21"></a>
+
 ### Q21: Webpack 和 Vite 的核心区别是什么？Vite 为什么在开发环境下更快？
 
 **题目解析**：构建工具是前端工程化的基础，了解其原理有助于做正确的技术选型。
@@ -725,6 +803,8 @@ Webpack 的开发模式在启动时把所有文件打包成 bundle，项目大�
 ## 九、TypeScript
 
 ---
+
+<a id="q22"></a>
 
 ### Q22: TypeScript 的泛型是什么？请举出实际使用场景
 
@@ -769,6 +849,8 @@ identity(42);  // T = number（类型推断）
 
 ---
 
+<a id="q23"></a>
+
 <a id="review-frontend-q23"></a>
 
 ### Q23: TypeScript 中的 `type` 和 `interface` 有什么区别？何时该用哪个？
@@ -802,6 +884,8 @@ identity(42);  // T = number（类型推断）
 我先看类型是否需要被重新打开扩展，还是需要组合成联合或计算类型，再选择 interface 或 type。两者都属于编译期工具，接受 JSON 或接口响应时仍需独立的运行时校验，不能仅靠类型名保证实际数据正确。
 
 ---
+
+<a id="q24"></a>
 
 ### Q24: 如何解释 TypeScript 的类型守卫（Type Guard）？
 
@@ -842,3 +926,7 @@ type Shape = { kind: 'circle'; radius: number } | { kind: 'rect'; width: number;
 *本题库持续更新，当前版本涵盖 24 道核心前端面试题，覆盖 HTML/CSS / JS / 浏览器 / 网络 / React / Vue / 性能 / 工程化 / TypeScript。*
 
 ---
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回前端目录](README.md)
+<!-- navigation:end -->

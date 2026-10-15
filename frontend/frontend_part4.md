@@ -1,6 +1,28 @@
 # 前端面试八股 · 第四篇
 
+<!-- navigation:start -->
+[← 前端目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（8 题，点击展开）</summary>
+
+- [Q61 · CSS Container Queries 是什么？它和 Media Queries 有什么区别？](#q61)
+- [Q62 · 前端国际化（i18n）的实现原理是什么？如何处理复数和日期格式？](#q62)
+- [Q63 · 如何实现前端无感刷新 Token（Silent Refresh）？](#q63)
+- [Q64 · Web 无障碍（Accessibility）的核心标准是什么？ARIA 属性怎么用？](#q64)
+- [Q65 · 浏览器的 Performance API 有哪些常用方法？如何精确测量页面性能？](#q65)
+- [Q66 · 什么是渐进式增强（Progressive Enhancement）和优雅降级（Graceful Degradation）？](#q66)
+- [Q67 · TypeScript 的条件类型和映射类型是什么？如何实现 DeepPartial？](#q67)
+- [Q68 · 浏览器的 Preload、Prefetch、Preconnect 有什么区别？](#q68)
+
+</details>
+<!-- navigation:end -->
+
 ---
+
+<a id="q61"></a>
 
 ### Q61: CSS Container Queries 是什么？它和 Media Queries 有什么区别？
 
@@ -59,6 +81,8 @@
 Container Queries 解决了 Media Queries 最大的痛点——组件不应该依赖视口大小来响应，而应该根据自身所在容器响应。一个卡片组件放在宽容器里横向展示，放在窄侧边栏里纵向展示，用 Media Queries 根本做不到（不知道父容器多宽），但 Container Queries 完美解决。实现上给父容器加 `container-type: inline-size`，子组件用 `@container` 响应，语法和 Media Queries 几乎一致。这是设计系统的革命性特性，组件可以完全自给自足，不再依赖外部页面宽度。
 
 ---
+
+<a id="q62"></a>
 
 ### Q62: 前端国际化（i18n）的实现原理是什么？如何处理复数和日期格式？
 
@@ -137,6 +161,8 @@ i18n 的核心是文本外化（把硬编码字符串替换为 key）+ 动态加
 
 ---
 
+<a id="q63"></a>
+
 ### Q63: 如何实现前端无感刷新 Token（Silent Refresh）？
 
 **🏢 高频公司**：腾讯、阿里
@@ -206,6 +232,8 @@ async ensureValidToken() {
 
 ---
 
+<a id="q64"></a>
+
 ### Q64: Web 无障碍（Accessibility）的核心标准是什么？ARIA 属性怎么用？
 
 **🏢 高频公司**：阿里（大厂有无障碍要求）
@@ -253,6 +281,8 @@ async ensureValidToken() {
 无障碍的第一原则是"先用正确的 HTML 语义标签"——`<button>` 自带键盘访问和屏幕阅读器支持，不需要任何 ARIA；`<img alt="描述">` 让屏幕阅读器能理解图片。ARIA 是补丁，用于原生 HTML 无法表达的交互（如自定义下拉、Tab 切换）。实践上最重要的是：所有交互元素必须能键盘操作（Tab 可达，Enter/Space 可激活）；动态内容变化用 `aria-live="polite"` 通知屏幕阅读器；Modal 打开时把焦点陷入其中（防止 Tab 跑到背后的内容）。axe-core 可以在 CI 中自动扫描无障碍问题，能发现约 57% 的自动可检测的无障碍缺陷。
 
 ---
+
+<a id="q65"></a>
 
 ### Q65: 浏览器的 Performance API 有哪些常用方法？如何精确测量页面性能？
 
@@ -311,6 +341,8 @@ new PerformanceObserver(list => {
 
 ---
 
+<a id="q66"></a>
+
 ### Q66: 什么是渐进式增强（Progressive Enhancement）和优雅降级（Graceful Degradation）？
 
 **🏢 高频公司**：阿里、腾讯
@@ -366,6 +398,8 @@ if (!window.ResizeObserver) {
 3. Babel 和 PostCSS 的自动降级
 
 ---
+
+<a id="q67"></a>
 
 ### Q67: TypeScript 的条件类型和映射类型是什么？如何实现 DeepPartial？
 
@@ -434,6 +468,8 @@ type Handler = `on${Capitalize<EventName>}`
 
 ---
 
+<a id="q68"></a>
+
 ### Q68: 浏览器的 Preload、Prefetch、Preconnect 有什么区别？
 
 **🏢 高频公司**：字节、腾讯、小红书
@@ -484,3 +520,7 @@ type Handler = `on${Capitalize<EventName>}`
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回前端目录](README.md)
+<!-- navigation:end -->

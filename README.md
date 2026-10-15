@@ -4,15 +4,31 @@
 >
 > 个人整理的技术学习材料，主要包含：题目解析 · 知识讲解 · 考察点 · 表达建议 · 示例答案
 
+## 从哪里开始
+
+选一个方向进入目录，再按主题打开材料；每篇长文都能展开题目目录，直接跳到具体题目。
+
+| 方向 | 学习目录 | 先读一题 |
+|---|---|---|
+| 前端 · 68 题 | [基础、框架与工程](frontend/README.md) | [事件循环 Q4](frontend/frontend.md#q4) |
+| 后端 · 64 题 | [系统、存储与服务](backend/README.md) | [进程、线程与协程 Q1](backend/backend.md#q1) |
+| AI Agent · 106 题 | [LLM、检索与 Agent](ai-agent/README.md) | [RAG 与微调 Q52](ai-agent/ai_agent_bigco.md#q52) |
+| 算法 · 100 题 | [按题型学／按题目练](algorithm/README.md) | [两数之和 Q1](algorithm/algo_array.md#q1) |
+
+**按计划学习**：[12 周路线](LEARNING_GUIDE.md) · **查方法和模板**：[算法手册](algorithm/algorithm-handbook.md) · **查出处**：[20 题核验记录](SOURCE_AUDIT.md) · **运行示例**：[验证入口](#example-checks)
+
 ## 来源与核验状态
 
 截至 **2026-10-15**，已逐题核验 **20 / 338 题**，四个方向各 5 题；其余 **318 题待核验**。本轮补充一手技术参考、适用版本或输入前提、核验日期，并修正发现的技术表述问题。[逐题记录与来源规范](SOURCE_AUDIT.md)列出了准确范围、改动和执行边界。
 
-仓库尚未提供可追溯的逐题公司面经及频率统计，本轮范围内的公司／“高频”“必考”标签已撤下；其他题目和学习路线中的旧标签仍待处理，不能作为公司出题或出现概率的依据。技术参考证明知识点来源，不证明某公司曾经考过。本轮核验也不代表全库正确、所有代码已运行或所有版本适用。
+仓库尚未提供可追溯的逐题公司面经及频率统计，本轮范围内的公司／“高频”“必考”标签已撤下；其他题目中的旧标签仍待处理，不能作为公司出题或出现概率的依据。技术参考证明知识点来源，不证明某公司曾经考过。本轮核验也不代表全库正确、所有代码已运行或所有版本适用。
 
 ---
 
 ## 目录结构
+
+<details>
+<summary>展开完整文件列表（可点击入口见上方四个方向目录）</summary>
 
 ```
 interview-bagu/
@@ -20,8 +36,8 @@ interview-bagu/
 │   ├── ai_agent.md              基础篇（LLM/RAG/Agent框架/多智能体，30题）
 │   ├── ai_agent_advanced.md     进阶篇（LoRA/量化/GraphRAG/生产部署，17题）
 │   ├── ai_agent_bigco.md        专题练习（LLM底层/RAG/评测，15题）
-│   ├── ai_agent_part3.md        结构化输出/并行工具/流式/记忆管理（10题）
-│   ├── ai_agent_part4.md        Prompt压缩/模型路由/幻觉检测/Guardrails（10题）
+│   ├── ai_agent_part3.md        结构化输出/并行工具/幻觉检测/记忆恢复（10题）
+│   ├── ai_agent_part4.md        Prompt压缩/模型路由/流式/Guardrails（10题）
 │   ├── ai_agent_scenarios.md  ★ 场景设计题（代码审查/知识库/推荐等，10题）
 │   └── ai_ml_basics.md        ★ AI/ML算法基础（梯度下降/损失函数/评估指标等，14题）
 │
@@ -35,7 +51,7 @@ interview-bagu/
 ├── backend/           # 后端开发 · 64 题
 │   ├── backend.md               基础篇（OS/网络/MySQL/Redis/Kafka/系统设计，18题）
 │   ├── backend_advanced.md      进阶篇（间隙锁/分库分表/JVM/ES/gRPC，13题）
-│   ├── backend_bigco.md         专题练习（短链/秒杀/IM系统/Spring/CAS，10题）
+│   ├── backend_bigco.md         专题练习（短链/消息推送/Spring/CAS，10题）
 │   ├── backend_part3.md         JWT/SQL注入/幂等性/ServiceMesh/K8s（9题）
 │   ├── backend_part4.md         Go/链路追踪/连接池/Pydantic/CQRS（7题）
 │   └── backend_concurrency_distributed.md  ★ 并发与分布式深度（竞态/无锁/内存模型/Raft/数据复制/向量时钟，7题）
@@ -43,14 +59,19 @@ interview-bagu/
 ├── algorithm/         # 算法（LeetCode 题型练习）· 100 题
 │   ├── algo_array.md            数组/双指针/滑动窗口/二分/单调栈（25题）
 │   ├── algo_tree_graph.md       树/图/BFS/DFS/回溯/DP经典（25题）
-│   ├── algo_linked_design.md    链表/栈/设计题/字符串/数学（20题）
-│   ├── algo_more.md             并查集/矩阵/KMP/洗牌/数学（10题）
-│   └── algo_bigco.md            综合练习（投票/单调队列/DP等，20题）
+│   ├── algo_linked_design.md    链表/栈/设计题/字符串/KMP（20题）
+│   ├── algo_more.md             并查集/矩阵/洗牌/数学（10题）
+│   ├── algo_bigco.md            综合练习（投票/单调队列/DP等，20题）
+│   └── algorithm-handbook.md   15 类题型的讲解、模板与例题（补充材料）
 │
 ├── SOURCE_AUDIT.md    # 来源规范 + 本轮20题逐题核验记录
-├── LEARNING_GUIDE.md  # 学习路线（12周计划 + 算法顺序；公司侧重待核验）
+├── LEARNING_GUIDE.md  # 12周计划 + 算法顺序 + 各方向题目链接
 └── README.md
 ```
+
+四个方向下的 `README.md` 是可点击的学习目录；手册与题库有重复题，未重复计入 338 题。
+
+</details>
 
 ---
 
@@ -71,6 +92,8 @@ cat LEARNING_GUIDE.md
 ```
 
 ---
+
+<a id="example-checks"></a>
 
 ## 示例验证
 
@@ -118,7 +141,7 @@ Precision/Recall/AUC · Embedding/Word2Vec · 反向传播/梯度消失 · K-Mea
 
 ## 场景设计练习
 
-`ai-agent/ai_agent_scenarios.md` 包含 10 道开放式场景设计题：
+[AI Agent 场景设计练习](ai-agent/ai_agent_scenarios.md#question-index)包含 10 道开放式场景设计题：
 
 > 「如果让你设计一个 XXX 的 Agent，你会怎么做？」
 
@@ -141,11 +164,10 @@ Precision/Recall/AUC · Embedding/Word2Vec · 反向传播/梯度消失 · K-Mea
 
 [`LEARNING_GUIDE.md`](LEARNING_GUIDE.md) 提供完整的备战路线：
 
-- 📅 **12 周备战时间表**（每周具体任务）
-- 🔢 **算法刷题顺序**（Phase 1-4，含 LeetCode 题号）
-- 📚 **八股文学习路线**（通用 / 前端 / AI Agent 三条线）
-- 🏗️ **系统设计答题框架** + 经典题目列表
-- 🏢 旧版公司侧重建议仍待来源核验，不作为公司出题规律
+- **12 周备战时间表**：每周任务和具体学习入口。
+- **算法刷题顺序**：按主题链接题库与手册，区分本库题号与 LeetCode 题号。
+- **方向选择**：第 6–8 周按后端、前端或 AI Agent 选择一条路线。
+- **系统设计与模拟练习**：从现有题目出发，练习需求澄清、方案取舍和复盘。
 
 ---
 

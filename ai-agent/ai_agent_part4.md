@@ -1,6 +1,30 @@
 # AI Agent 面试八股 · 第四篇
 
+<!-- navigation:start -->
+[← AI Agent目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（10 题，点击展开）</summary>
+
+- [Q73 · 什么是 Prompt 压缩（Prompt Compression）？LLMLingua 的原理是什么？](#q73)
+- [Q74 · 什么是 LLM 模型路由（Model Routing）？如何设计动态路由系统？](#q74)
+- [Q75 · 如何实现 Agent 的流式输出（Streaming）并转发给前端？完整实现链路是什么？](#q75)
+- [Q76 · 什么是对话历史管理策略？如何防止 Context Window 溢出？](#q76)
+- [Q77 · 什么是 Constitutional AI（CAI）？Claude 的安全机制与 ChatGPT 有何不同？](#q77)
+- [Q78 · Agent 如何处理长时间运行的任务（Long-Running Tasks）？](#q78)
+- [Q79 · 如何设计 LLM 应用的 Prompt 版本管理系统？](#q79)
+- [Q80 · 如何评估一个 AI Agent 的自主性（Autonomy Level）？该如何根据风险选择自主程度？](#q80)
+- [Q81 · 什么是 Agentic Search？AI Agent 如何结合搜索引擎工作？](#q81)
+- [Q82 · 如何设计 LLM Agent 的 Guardrails（护栏）系统？](#q82)
+
+</details>
+<!-- navigation:end -->
+
 ---
+
+<a id="q73"></a>
 
 ### Q73: 什么是 Prompt 压缩（Prompt Compression）？LLMLingua 的原理是什么？
 
@@ -45,6 +69,8 @@ print(f"压缩率: {result['ratio']:.1f}x，压缩后 token: {result['compressed
 LLMLingua 的核心洞察是：语言模型能预测的内容是信息冗余的，预测不到的才是关键信息。用一个轻量模型逐 token 计算 PPL，低 PPL 的 token（助词、连词、重复描述）删除，高 PPL 的（数字、专有名词、关键动词）保留，达到 2-5x 的压缩率且下游任务准确率几乎不变。在 RAG 系统里，将检索到的长文档先压缩再注入，既保留了关键信息，又大幅降低了输入 token 数，同时缩短模型的 prefill 阶段时间。与 LLM 摘要压缩（重写）相比，LLMLingua 更快（轻量模型 vs 大模型），且不引入幻觉（只删除，不改写）。
 
 ---
+
+<a id="q74"></a>
 
 ### Q74: 什么是 LLM 模型路由（Model Routing）？如何设计动态路由系统？
 
@@ -104,6 +130,8 @@ return model_map[complexity.strip()]
 模型路由是 LLM 成本优化的最大杠杆。核心思路是"用合适的模型做合适的事"——简单分类、关键词提取用 claude-haiku（$0.25/M），复杂推理、代码生成用 claude-opus（$15/M），差 60 倍成本。路由实现从简单到复杂：规则路由（按任务类型硬编码）速度快但覆盖率低；小模型分类器（用 haiku 本身做 2-3 token 的复杂度判断，成本极低）更通用；RouteLLM 等专门训练的路由器准确率最高。关键设计是确保路由决策成本远低于路由收益（分类一次花 $0.001，节省 $0.01 就是 10x ROI）。我们生产中用了 haiku 做一次分类（输出 simple/complex 两个 token），复杂任务走 opus，整体成本降低了 75%，质量没有明显下降。
 
 ---
+
+<a id="q75"></a>
 
 ### Q75: 如何实现 Agent 的流式输出（Streaming）并转发给前端？完整实现链路是什么？
 
@@ -199,6 +227,8 @@ async for event in graph.astream_events(input, version="v2"):
 
 ---
 
+<a id="q76"></a>
+
 ### Q76: 什么是对话历史管理策略？如何防止 Context Window 溢出？
 
 **🏢 高频公司**：字节、阿里
@@ -268,6 +298,8 @@ Context Window 管理是多轮 Agent 的必要工程。滑动窗口最简单但�
 
 ---
 
+<a id="q77"></a>
+
 ### Q77: 什么是 Constitutional AI（CAI）？Claude 的安全机制与 ChatGPT 有何不同？
 
 **🏢 高频公司**：MiniMax、字节
@@ -309,6 +341,8 @@ Context Window 管理是多轮 Agent 的必要工程。滑动窗口最简单但�
 Constitutional AI 是 Anthropic 减少人工标注依赖的关键创新。传统 RLHF 需要大量人工偏好标注（A 比 B 好）来训练奖励模型，成本高且受标注者偏见影响。CAI 改为用一套明确的"宪法"原则让 AI 自我审查和修改：先生成一个回答，再让 AI 用宪法条款批判它（"这个回答是否有害？如何修改？"），修改后的版本质量更高，这对 (原版, 修改版) 就是偏好数据，训练奖励模型时无需人工逐对标注。RLAIF 用强大的 AI 模型代替人工判断偏好，能覆盖更多边界情况，且宪法原则是明确可解释的，Claude 的安全行为有迹可循，而不是黑盒的人工偏好学习结果。
 
 ---
+
+<a id="q78"></a>
 
 ### Q78: Agent 如何处理长时间运行的任务（Long-Running Tasks）？
 
@@ -370,6 +404,8 @@ async def on_node_complete(node_name: str, step: int, total: int):
 
 ---
 
+<a id="q79"></a>
+
 ### Q79: 如何设计 LLM 应用的 Prompt 版本管理系统？
 
 **🏢 高频公司**：小红书、阿里
@@ -430,6 +466,8 @@ Prompt 版本管理和代码版本管理同等重要——一个错误的 prompt
 
 ---
 
+<a id="q80"></a>
+
 ### Q80: 如何评估一个 AI Agent 的自主性（Autonomy Level）？该如何根据风险选择自主程度？
 
 **🏢 高频公司**：字节、MiniMax
@@ -478,6 +516,8 @@ def assess_autonomy_level(action: str) -> int:
 Agent 自主性不是越高越好，要根据操作风险动态调整。核心判断维度是：操作是否可逆（发邮件不可逆 vs 生成草稿可逆）、影响范围（单用户 vs 全系统）、资金成本（$1 查询 vs $1000 采购）。我用"风险矩阵"决定自主级别：只读操作（查询/分析）完全自主；低成本可逆写操作（创建草稿/发送内部消息）L2-L3 级自主；高风险不可逆操作（发布内容/资金操作/删除数据）强制 HITL 确认。在 LangGraph 里用 interrupt() 实现动态 HITL：Agent 在执行前调用风险评估函数，高于阈值则暂停等待用户确认，低于阈值则自动继续。用户可以通过配置自己的风险偏好调整阈值，实现个性化的自主性管理。
 
 ---
+
+<a id="q81"></a>
 
 ### Q81: 什么是 Agentic Search？AI Agent 如何结合搜索引擎工作？
 
@@ -540,6 +580,8 @@ Agentic Search 让 AI 从"给我答案"升级为"自主获取答案"。关键是
 
 ---
 
+<a id="q82"></a>
+
 ### Q82: 如何设计 LLM Agent 的 Guardrails（护栏）系统？
 
 **🏢 高频公司**：阿里、MiniMax
@@ -597,3 +639,7 @@ Guardrails 是 Agent 的安全层，独立于模型之外，方便更新而不�
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回AI Agent目录](README.md)
+<!-- navigation:end -->

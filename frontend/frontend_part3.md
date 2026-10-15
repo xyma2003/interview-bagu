@@ -1,8 +1,34 @@
 # 前端面试八股 · 第三篇
 
+<!-- navigation:start -->
+[← 前端目录](README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [首页](../README.md)
+
+<a id="question-index"></a>
+
+<details>
+<summary>本页题目（12 题，点击展开）</summary>
+
+- [Q49 · CSS 动画性能优化：transform 为什么比 top/left 更流畅？](#q49)
+- [Q50 · 前端状态管理：Redux vs Zustand vs Jotai，如何选型？](#q50)
+- [Q51 · IndexedDB vs LocalStorage vs SessionStorage vs Cookie 的区别和适用场景](#q51)
+- [Q52 · Web Workers 的用途是什么？SharedArrayBuffer 和 Atomics 解决什么问题？](#q52)
+- [Q53 · 前端如何实现大文件分片上传？断点续传的原理是什么？](#q53)
+- [Q54 · requestAnimationFrame vs setTimeout 实现动画的区别？](#q54)
+- [Q55 · 前端监控 SDK 如何设计？如何采集 Core Web Vitals？](#q55)
+- [Q56 · 如何实现虚拟滚动中的动态高度（Variable Height Virtual List）？](#q56)
+- [Q57 · React Query 的核心原理是什么？它如何管理缓存和后台更新？](#q57)
+- [Q58 · 前端如何实现 OAuth 2.0 登录流程？PKCE 解决了什么问题？](#q58)
+- [Q59 · 如何检测页面的内存泄漏？常见的内存泄漏场景有哪些？](#q59)
+- [Q60 · Webpack 的 Tree Shaking 为什么只对 ES Module 有效？](#q60)
+
+</details>
+<!-- navigation:end -->
+
 > 覆盖：CSS 动画 / 状态管理 / 前端安全进阶 / 浏览器存储 / Web Workers / 性能进阶
 
 ---
+
+<a id="q49"></a>
 
 ### Q49: CSS 动画性能优化：transform 为什么比 top/left 更流畅？
 
@@ -51,6 +77,8 @@
 浏览器渲染管线是 Layout → Paint → Composite。top/left 改变几何属性，触发整条管线，还可能影响相邻元素，代价最高。transform 被提升到 Compositor 线程，完全跳过 Layout 和 Paint，GPU 直接做矩阵运算，即使主线程被 JS 阻塞，transform 动画也不受影响，这是为什么 CSS transform 动画比 JS 的 setInterval 动画流畅的根本原因。will-change 告诉浏览器提前提升元素为合成层，可以消除首帧的"提升开销"，但每个合成层消耗显存，不能滥用（只对真正需要动画的元素加）。
 
 ---
+
+<a id="q50"></a>
 
 ### Q50: 前端状态管理：Redux vs Zustand vs Jotai，如何选型？
 
@@ -112,6 +140,8 @@ function Counter() {
 
 ---
 
+<a id="q51"></a>
+
 ### Q51: IndexedDB vs LocalStorage vs SessionStorage vs Cookie 的区别和适用场景
 
 **🏢 高频公司**：腾讯、字节
@@ -143,6 +173,8 @@ function Counter() {
 选存储先看三个维度：数据大小、是否需要服务端访问、生命周期。Session token 用 Cookie（HttpOnly 防 XSS 读取，SameSite=Strict 防 CSRF）；用户主题/偏好用 LocalStorage（简单、永久）；单次会话临时状态用 SessionStorage（Tab 关闭自动清除）；大量结构化数据（离线缓存的商品列表、聊天记录）用 IndexedDB（支持索引和查询，不受 5MB 限制）。PWA 的离线能力完全依赖 IndexedDB + Cache API，而不是 LocalStorage（太小且无查询）。
 
 ---
+
+<a id="q52"></a>
 
 ### Q52: Web Workers 的用途是什么？SharedArrayBuffer 和 Atomics 解决什么问题？
 
@@ -199,6 +231,8 @@ Atomics.add(arr, 0, 1)  // 原子加法，线程安全
 Web Worker 把 CPU 密集型任务移到独立线程，主线程专注 UI 交互。postMessage 默认做结构化克隆（深拷贝），大数据时开销大，用 Transferable 转让 ArrayBuffer 所有权实现零拷贝。SharedArrayBuffer 让多个 Worker 和主线程共享同一块内存，用 Atomics API 做原子操作保证线程安全，适合需要高频通信的并行计算（图像处理、WebAssembly 计算密集任务）。注意 SharedArrayBuffer 需要页面设置 COOP/COEP 安全头（Spectre 漏洞导致被浏览器限制，加响应头后解除）。
 
 ---
+
+<a id="q53"></a>
 
 ### Q53: 前端如何实现大文件分片上传？断点续传的原理是什么？
 
@@ -275,6 +309,8 @@ async function mergeChunks(fileHash, totalChunks) {
 
 ---
 
+<a id="q54"></a>
+
 ### Q54: requestAnimationFrame vs setTimeout 实现动画的区别？
 
 **🏢 高频公司**：腾讯、字节
@@ -314,6 +350,8 @@ requestAnimationFrame(animate)
 3. 高精度时间戳（DOMHighResTimeStamp，微秒级精度）
 
 ---
+
+<a id="q55"></a>
 
 ### Q55: 前端监控 SDK 如何设计？如何采集 Core Web Vitals？
 
@@ -392,6 +430,8 @@ document.addEventListener('click', e => {
 
 ---
 
+<a id="q56"></a>
+
 ### Q56: 如何实现虚拟滚动中的动态高度（Variable Height Virtual List）？
 
 **🏢 高频公司**：字节、小红书
@@ -457,6 +497,8 @@ class VirtualList {
 
 ---
 
+<a id="q57"></a>
+
 ### Q57: React Query 的核心原理是什么？它如何管理缓存和后台更新？
 
 **🏢 高频公司**：阿里、字节、小红书
@@ -496,6 +538,8 @@ const { data, isLoading, isFetching } = useQuery({
 React Query 的核心是"服务端状态的本地缓存管理"。每个请求用唯一 queryKey 标识，结果缓存到内存，staleTime 控制数据新鲜度（0 = 每次都认为过期，需要后台刷新）。关键机制是 SWR：先返回缓存数据让页面立刻可用，同时后台静默发起更新请求，新数据来了再刷新。比手动写 loading/error/data state + useEffect 请求干净很多，还自动处理重试、竞态条件、重复请求合并。数据失效通过 `invalidateQueries` 触发，mutation 成功后调一下，相关页面自动重新拉取，不需要手动管理缓存一致性。
 
 ---
+
+<a id="q58"></a>
 
 ### Q58: 前端如何实现 OAuth 2.0 登录流程？PKCE 解决了什么问题？
 
@@ -541,6 +585,8 @@ const tokenResponse = await fetch(`${authServer}/token`, {
 3. Token 存储（不建议 LocalStorage，推荐 HttpOnly Cookie 或 refresh token rotation）
 
 ---
+
+<a id="q59"></a>
 
 ### Q59: 如何检测页面的内存泄漏？常见的内存泄漏场景有哪些？
 
@@ -593,6 +639,8 @@ useEffect(() => {
 
 ---
 
+<a id="q60"></a>
+
 ### Q60: Webpack 的 Tree Shaking 为什么只对 ES Module 有效？
 
 **🏢 高频公司**：字节、阿里
@@ -628,3 +676,7 @@ Tree Shaking 依赖静态分析——编译时就能确定哪些代码用到了�
 
 ---
 
+
+<!-- navigation:start -->
+[↑ 回到本页题目目录](#question-index) · [返回前端目录](README.md)
+<!-- navigation:end -->
