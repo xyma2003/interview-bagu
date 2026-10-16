@@ -177,4 +177,10 @@ Precision/Recall/AUC · Embedding/Word2Vec · 反向传播/梯度消失 · K-Mea
 
 ---
 
-持续更新，欢迎 PR 补充。
+## 维护与参与
+
+当前维护重点是纠正已有内容、补齐来源与输入边界，以及让文档里的代码可以直接验证。来源核验为 **20 / 338 题**，可执行示例检查为 **16 / 338 题**；两者有重叠，不能相加。其余内容、旧版公司与频率标签仍需逐项核对，教学代码也不等于完整生产实现。
+
+**下一小步（计划中，尚未实现）：** 为 [Q37 的 `myAllSettled`](frontend/frontend_bigco.md#q37) 补独立回归，保持普通稠密数组的现有范围。直接提取题目代码，与原生 `Promise.allSettled` 对照空数组、普通值、成功与拒绝混合，以及完成顺序不同但结果保持输入顺序的情况。可参考[现有 Promise 测试](tests/promise-race.test.cjs)；验收命令与提交要求见[贡献说明](CONTRIBUTING.md)。Q37 已计入覆盖题数，完成这项任务不会增加已验证题数，也不会扩大来源核验范围。
+
+发现错误可[提交具体纠错](https://github.com/xyma2003/interview-bagu/issues/new?template=content-correction.yml)。欢迎从一段错误解释、一个失效链接或一个缺失边界用例开始；请注明准确位置、依据及实际验证结果。
