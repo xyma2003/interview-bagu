@@ -2,7 +2,7 @@
 
 [← 首页](../README.md) · [12 周学习路线](../LEARNING_GUIDE.md) · [来源与核验记录](../SOURCE_AUDIT.md)
 
-共 **106 题，7 篇**。从 LLM、检索与工具调用建立基础，再沿自己的项目补工程专题；机器学习基础可以穿插阅读。每篇页首可展开逐题目录。
+共 **109 题，8 篇**。从 LLM、检索与工具调用建立基础，再沿自己的项目补工程专题；机器学习基础可以穿插阅读。每篇页首可展开逐题目录。
 
 **从一道题开始**：[Attention 与 Softmax Q48](ai_agent_bigco.md#q48) → [RAG 与微调 Q52](ai_agent_bigco.md#q52) → [Self-Consistency Q54](ai_agent_bigco.md#q54)。这些题已纳入首批来源核验，文献结论与工程建议分别标注。
 
@@ -15,5 +15,6 @@
 | [生产工程补充](ai_agent_part4.md#question-index) | Q73–Q82 · 10 题 | Prompt 压缩、模型路由、流式、历史与 Guardrails |
 | [场景设计练习](ai_agent_scenarios.md#question-index) | Q83–Q92 · 10 题 | 代码审查、知识库、推荐、写作等开放式设计 |
 | [AI/ML 基础](ai_ml_basics.md#question-index) | Q101–Q114 · 14 题 | 优化、损失、评估、表示学习、数据与校准 |
+| [训练与多模态工程](ai_training_multimodal.md#question-index) | Q115–Q117 · 3 题 | 分布式并行、SFT Packing、VLM 长视频 |
 
-题号沿用历史编号，**Q93–Q100 当前未收录**；106 是实际题数，不是最大题号。导航整理没有扩大来源核验范围，也不代表已执行模型训练或性能实验。
+题号沿用历史编号，**Q93–Q100 当前未收录**；109 是实际题数，不是最大题号。新增 Q115–Q117 已完成文献与官方文档核验，但未执行模型训练或 GPU 性能实验。

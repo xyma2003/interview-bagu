@@ -1,6 +1,6 @@
 # 面试八股题库
 
-> 覆盖 **AI Agent / 前端 / 后端 / 算法** 四个方向，共 **338 道**学习与面试练习题
+> 覆盖 **AI Agent / 前端 / 后端 / 算法** 四个方向，共 **341 道**学习与面试练习题
 >
 > 个人整理的技术学习材料，主要包含：题目解析 · 知识讲解 · 考察点 · 表达建议 · 示例答案
 
@@ -12,14 +12,14 @@
 |---|---|---|
 | 前端 · 68 题 | [基础、框架与工程](frontend/README.md) | [事件循环 Q4](frontend/frontend.md#q4) |
 | 后端 · 64 题 | [系统、存储与服务](backend/README.md) | [进程、线程与协程 Q1](backend/backend.md#q1) |
-| AI Agent · 106 题 | [LLM、检索与 Agent](ai-agent/README.md) | [RAG 与微调 Q52](ai-agent/ai_agent_bigco.md#q52) |
+| AI Agent · 109 题 | [LLM、检索与 Agent](ai-agent/README.md) | [RAG 与微调 Q52](ai-agent/ai_agent_bigco.md#q52) |
 | 算法 · 100 题 | [按题型学／按题目练](algorithm/README.md) | [两数之和 Q1](algorithm/algo_array.md#q1) |
 
-**按计划学习**：[12 周路线](LEARNING_GUIDE.md) · **查方法和模板**：[算法手册](algorithm/algorithm-handbook.md) · **查出处**：[20 题核验记录](SOURCE_AUDIT.md) · **运行示例**：[验证入口](#example-checks)
+**按计划学习**：[12 周路线](LEARNING_GUIDE.md) · **查方法和模板**：[算法手册](algorithm/algorithm-handbook.md) · **查出处**：[23 题核验记录](SOURCE_AUDIT.md) · **运行示例**：[验证入口](#example-checks)
 
 ## 来源与核验状态
 
-截至 **2026-10-15**，已逐题核验 **20 / 338 题**，四个方向各 5 题；其余 **318 题待核验**。本轮补充一手技术参考、适用版本或输入前提、核验日期，并修正发现的技术表述问题。[逐题记录与来源规范](SOURCE_AUDIT.md)列出了准确范围、改动和执行边界。
+截至 **2026-10-27**，已逐题核验 **23 / 341 题**；其余 **318 题待核验**。2026-10-15 首批核验四个方向各 5 题，本次新增 3 道写入即核验的 AI 训练与多模态题。[逐题记录与来源规范](SOURCE_AUDIT.md)列出了准确范围、改动和执行边界。
 
 仓库尚未提供可追溯的逐题公司面经及频率统计，本轮范围内的公司／“高频”“必考”标签已撤下；其他题目中的旧标签仍待处理，不能作为公司出题或出现概率的依据。技术参考证明知识点来源，不证明某公司曾经考过。本轮核验也不代表全库正确、所有代码已运行或所有版本适用。
 
@@ -32,14 +32,15 @@
 
 ```
 interview-bagu/
-├── ai-agent/          # AI Agent 开发 + AI/ML基础 · 106 题
+├── ai-agent/          # AI Agent 开发 + AI/ML基础 · 109 题
 │   ├── ai_agent.md              基础篇（LLM/RAG/Agent框架/多智能体，30题）
 │   ├── ai_agent_advanced.md     进阶篇（LoRA/量化/GraphRAG/生产部署，17题）
 │   ├── ai_agent_bigco.md        专题练习（LLM底层/RAG/评测，15题）
 │   ├── ai_agent_part3.md        结构化输出/并行工具/幻觉检测/记忆恢复（10题）
 │   ├── ai_agent_part4.md        Prompt压缩/模型路由/流式/Guardrails（10题）
 │   ├── ai_agent_scenarios.md  ★ 场景设计题（代码审查/知识库/推荐等，10题）
-│   └── ai_ml_basics.md        ★ AI/ML算法基础（梯度下降/损失函数/评估指标等，14题）
+│   ├── ai_ml_basics.md        ★ AI/ML算法基础（梯度下降/损失函数/评估指标等，14题）
+│   └── ai_training_multimodal.md  训练并行/SFT Packing/VLM视频（3题）
 │
 ├── frontend/          # 前端开发 · 68 题
 │   ├── frontend.md              基础篇（HTML/CSS/JS/React/Vue/性能/网络，24题）
@@ -64,12 +65,12 @@ interview-bagu/
 │   ├── algo_bigco.md            综合练习（投票/单调队列/DP等，20题）
 │   └── algorithm-handbook.md   15 类题型的讲解、模板与例题（补充材料）
 │
-├── SOURCE_AUDIT.md    # 来源规范 + 本轮20题逐题核验记录
+├── SOURCE_AUDIT.md    # 来源规范 + 23题逐题核验记录
 ├── LEARNING_GUIDE.md  # 12周计划 + 算法顺序 + 各方向题目链接
 └── README.md
 ```
 
-四个方向下的 `README.md` 是可点击的学习目录；手册与题库有重复题，未重复计入 338 题。
+四个方向下的 `README.md` 是可点击的学习目录；手册与题库有重复题，未重复计入 341 题。
 
 </details>
 
@@ -97,7 +98,7 @@ cat LEARNING_GUIDE.md
 
 ## 示例验证
 
-目前自动检查 **16 / 338 道题**：15 道算法题，以及前端 Q37 的 `myAll` / `myAny` / 简化 `myRace`。测试直接提取文档代码运行，具体题目、输入范围与限制见[示例验证清单](EXAMPLE_CHECKS.md)。
+目前自动检查 **16 / 341 道题**：15 道算法题，以及前端 Q37 的 `myAll` / `myAny` / 简化 `myRace`。测试直接提取文档代码运行，具体题目、输入范围与限制见[示例验证清单](EXAMPLE_CHECKS.md)。
 
 在仓库根目录执行，无额外依赖：
 
@@ -109,7 +110,7 @@ python3 -m unittest discover -s tests -p 'test_algorithm*.py' -v
 node --test tests/promise-*.test.cjs
 ```
 
-算法检查覆盖数组、字符串、树图、动态规划、链表和 LRU 的选定边界；Promise 与原生实现对照。CI 覆盖 Node.js 22 / 24、Python 3.12 / 3.13。简化 `myRace` 只检查普通稠密数组，`myAllSettled` 尚无独立回归；这些教学示例不是完整 polyfill。其余 322 题及算法手册中的相似实现未自动获得测试覆盖，来源核验仍单独按 20/338 统计。
+算法检查覆盖数组、字符串、树图、动态规划、链表和 LRU 的选定边界；Promise 与原生实现对照。CI 覆盖 Node.js 22 / 24、Python 3.12 / 3.13。简化 `myRace` 只检查普通稠密数组，`myAllSettled` 尚无独立回归；这些教学示例不是完整 polyfill。其余 325 题及算法手册中的相似实现未自动获得测试覆盖，来源核验仍单独按 23/341 统计。
 
 发现内容问题，可以提交[具体纠错](https://github.com/xyma2003/interview-bagu/issues/new?template=content-correction.yml)；修改方式见[贡献说明](CONTRIBUTING.md)。
 
@@ -179,7 +180,7 @@ Precision/Recall/AUC · Embedding/Word2Vec · 反向传播/梯度消失 · K-Mea
 
 ## 维护与参与
 
-当前维护重点是纠正已有内容、补齐来源与输入边界，以及让文档里的代码可以直接验证。来源核验为 **20 / 338 题**，可执行示例检查为 **16 / 338 题**；两者有重叠，不能相加。其余内容、旧版公司与频率标签仍需逐项核对，教学代码也不等于完整生产实现。
+当前维护重点是纠正已有内容、补齐来源与输入边界，以及让文档里的代码可以直接验证。来源核验为 **23 / 341 题**，可执行示例检查为 **16 / 341 题**；两者有重叠，不能相加。其余内容、旧版公司与频率标签仍需逐项核对，教学代码也不等于完整生产实现。
 
 **下一小步（计划中，尚未实现）：** 为 [Q37 的 `myAllSettled`](frontend/frontend_bigco.md#q37) 补独立回归，保持普通稠密数组的现有范围。直接提取题目代码，与原生 `Promise.allSettled` 对照空数组、普通值、成功与拒绝混合，以及完成顺序不同但结果保持输入顺序的情况。可参考[现有 Promise 测试](tests/promise-race.test.cjs)；验收命令与提交要求见[贡献说明](CONTRIBUTING.md)。Q37 已计入覆盖题数，完成这项任务不会增加已验证题数，也不会扩大来源核验范围。
 
