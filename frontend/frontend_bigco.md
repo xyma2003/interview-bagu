@@ -38,7 +38,7 @@
 
 ### Q37: 如何实现 `Promise.all`，并区分 allSettled、race 和 any？
 
-> **核验日期**：2026-10-15
+> **核验日期**：2026-10-15；`allSettled` 回归补充：2026-10-28
 >
 > **适用范围**：原生 Promise、未改写内建方法；`any` / `AggregateError` 需要 ES2021 或更新运行时。现有自动回归要求 Node.js 22+；以下是教学实现，不是完整 polyfill。
 >
@@ -105,9 +105,12 @@ node --test tests/promise-all.test.cjs
 
 规范依据：[Promise.all](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.all)、[PerformPromiseAll](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseall)（核验日期：2026-10-10）。
 
-> 以下 `allSettled` / `race` 仅展示普通稠密 Array 的组合思路，不是原生 API 的完整替代。`map` / `forEach` 会跳过稀疏空位，也不支持 Set、生成器等通用 iterable。`allSettled` 的映射阶段异常还可能同步抛出，与原生方法返回拒绝的行为不同，且没有独立自动回归；`race` 仅对下述稠密输入的拒绝顺序与异步回调设有自动回归。`any` 的 iterable 实现与独立验证见后文。
+> 以下 `allSettled` / `race` 仅展示普通稠密 Array 的组合思路，不是原生 API 的完整替代。`map` / `forEach` 会跳过稀疏空位，也不支持 Set、生成器等通用 iterable。两者均有上述限定范围的自动回归；不覆盖遍历期间通过数组访问器、代理等副作用改写输入的情况，也不保证与原生实现具有完全相同的微任务时序。`any` 的 iterable 实现与独立验证见后文。
 
 **Promise.allSettled 实现**：
+
+先运行前面的 `Promise.myAll` 定义，再运行本段；本实现调用的是该教学版 `myAll`。
+
 ```javascript
 Promise.myAllSettled = function(promises) {
   return Promise.myAll(
@@ -119,6 +122,23 @@ Promise.myAllSettled = function(promises) {
   );
 };
 ```
+
+**allSettled 的边界与验证**：
+
+- 普通值、Promise 和 thenable 经 `Promise.resolve` 统一处理；结果按输入顺序排列。成功项为 `{ status: 'fulfilled', value }`，失败项为 `{ status: 'rejected', reason }`，即使值或原因为 `undefined` 也保留对应字段。
+- 单个输入拒绝不会提前结束，必须等所有输入 settled；如果仍有输入 pending，组合结果继续等待。空数组得到 `[]`，后续回调仍异步执行。
+- 稀疏数组不在范围内：`map` 跳过空位后，`myAll` 会把它读成 `undefined`，结果缺少应有的状态对象；这与原生 `allSettled` 不同。非数组参数、数组索引 getter 或映射阶段异常还可能从调用处同步抛出；thenable 的 `then` getter 抛错则由 `Promise.resolve` 转成拒绝，可以得到失败状态对象。
+- 此实现增加了 Promise 链，只验证回调异步执行，不承诺与原生实现逐个微任务的相对顺序一致；也不覆盖 Promise 子类或改写内建方法的行为。
+
+在仓库根目录运行（Node.js 22+，无额外依赖）：
+
+```bash
+node --test tests/promise-allsettled.test.cjs
+```
+
+测试直接提取本题的 `myAll` 与 `myAllSettled`，在隔离 VM 中与未改写的原生 `Promise.allSettled` 对照空输入、普通值、混合成功/拒绝、thenable、结果字段与对象身份、逆序完成、等待未完成项、异步回调及调用后数组变化。[完整验证范围](../EXAMPLE_CHECKS.md#promise-checks)不包含通用 iterable 或完整 polyfill 行为。
+
+规范依据：[Promise.allSettled](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.allsettled)、[PerformPromiseAllSettled](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseallsettled)（复核日期：2026-10-28）。
 
 **Promise.race 实现**：
 ```javascript
@@ -180,11 +200,11 @@ Promise.myAny = function(iterable) {
 
 ```bash
 node --test tests/promise-any.test.cjs
-# 同时运行 all、any 与稠密数组 race 的现有回归
+# 同时运行 all、any 与稠密数组 allSettled / race 的回归
 node --test tests/promise-*.test.cjs
 ```
 
-any 测试直接提取本节代码，与原生 `Promise.any` 对照边界、成功及拒绝语义；race 另有上述限定范围的回归，`allSettled` 仍无独立自动回归。这些测试不代表整份题库已验证。
+any 测试直接提取本节代码，与原生 `Promise.any` 对照边界、成功及拒绝语义；`allSettled` / `race` 另有上述限定范围的回归。这些测试不代表整份题库已验证。
 
 规范依据：[Promise.any](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise.any)、[PerformPromiseAny](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseany)（核验日期：2026-10-13）。
 

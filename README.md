@@ -98,7 +98,7 @@ cat LEARNING_GUIDE.md
 
 ## 示例验证
 
-目前自动检查 **16 / 341 道题**：15 道算法题，以及前端 Q37 的 `myAll` / `myAny` / 简化 `myRace`。测试直接提取文档代码运行，具体题目、输入范围与限制见[示例验证清单](EXAMPLE_CHECKS.md)。
+目前自动检查 **16 / 341 道题**：15 道算法题，以及前端 Q37 的 `myAll` / `myAny` / 简化 `myAllSettled` / 简化 `myRace`。测试直接提取文档代码运行，具体题目、输入范围与限制见[示例验证清单](EXAMPLE_CHECKS.md)。同一题的多个实现不重复计数。
 
 在仓库根目录执行，无额外依赖：
 
@@ -110,7 +110,7 @@ python3 -m unittest discover -s tests -p 'test_algorithm*.py' -v
 node --test tests/promise-*.test.cjs
 ```
 
-算法检查覆盖数组、字符串、树图、动态规划、链表和 LRU 的选定边界；Promise 与原生实现对照。CI 覆盖 Node.js 22 / 24、Python 3.12 / 3.13。简化 `myRace` 只检查普通稠密数组，`myAllSettled` 尚无独立回归；这些教学示例不是完整 polyfill。其余 325 题及算法手册中的相似实现未自动获得测试覆盖，来源核验仍单独按 23/341 统计。
+算法检查覆盖数组、字符串、树图、动态规划、链表和 LRU 的选定边界；Promise 与原生实现对照。CI 覆盖 Node.js 22 / 24、Python 3.12 / 3.13。简化 `myAllSettled` / `myRace` 只检查普通稠密数组，保留教学实现的输入与时序限制，不是完整 polyfill。其余 325 题及算法手册中的相似实现未自动获得测试覆盖，来源核验仍单独按 23/341 统计。
 
 发现内容问题，可以提交[具体纠错](https://github.com/xyma2003/interview-bagu/issues/new?template=content-correction.yml)；修改方式见[贡献说明](CONTRIBUTING.md)。
 
@@ -182,6 +182,8 @@ Precision/Recall/AUC · Embedding/Word2Vec · 反向传播/梯度消失 · K-Mea
 
 当前维护重点是纠正已有内容、补齐来源与输入边界，以及让文档里的代码可以直接验证。来源核验为 **23 / 341 题**，可执行示例检查为 **16 / 341 题**；两者有重叠，不能相加。其余内容、旧版公司与频率标签仍需逐项核对，教学代码也不等于完整生产实现。
 
-**下一小步（计划中，尚未实现）：** 为 [Q37 的 `myAllSettled`](frontend/frontend_bigco.md#q37) 补独立回归，保持普通稠密数组的现有范围。直接提取题目代码，与原生 `Promise.allSettled` 对照空数组、普通值、成功与拒绝混合，以及完成顺序不同但结果保持输入顺序的情况。可参考[现有 Promise 测试](tests/promise-race.test.cjs)；验收命令与提交要求见[贡献说明](CONTRIBUTING.md)。Q37 已计入覆盖题数，完成这项任务不会增加已验证题数，也不会扩大来源核验范围。
+**最近补齐：** [Q37 的 `myAllSettled`](frontend/frontend_bigco.md#q37) 已有[独立回归](tests/promise-allsettled.test.cjs)，直接运行题目中的实现及其 `myAll` 依赖，与原生方法对照普通稠密数组的结果、顺序、等待与异步回调。实现与原有范围保留，验证入口和边界说明已同步；Q37 仍只计为一道题。
+
+继续贡献时，可从未覆盖的题目中选一段实现，按[贡献说明](CONTRIBUTING.md)提供题号、有效输入范围、独立参照和可重复运行的检查。不要直接复制答案到测试中，也不要把未检查的实现算入覆盖范围。
 
 发现错误可[提交具体纠错](https://github.com/xyma2003/interview-bagu/issues/new?template=content-correction.yml)。欢迎从一段错误解释、一个失效链接或一个缺失边界用例开始；请注明准确位置、依据及实际验证结果。
