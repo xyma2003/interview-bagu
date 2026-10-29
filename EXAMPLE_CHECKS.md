@@ -2,7 +2,7 @@
 
 [返回首页](README.md#example-checks) · [算法导航](algorithm/README.md) · [来源核验](SOURCE_AUDIT.md) · [报告错误](CONTRIBUTING.md)
 
-当前自动检查 **16 / 341 道题**：15 道算法题，以及前端 Q37 的四个 Promise 实现。同一题的多种实现不重复计数。这里记录代码检查范围；[23 / 341 题的技术来源核验](SOURCE_AUDIT.md)是另一项工作，两者有重叠，不能相加。
+当前自动检查 **17 / 341 道题**：15 道算法题、前端 Q37 的四个 Promise 实现，以及 Q39 的取消与重试。同一题的多种实现不重复计数。这里记录代码检查范围；[23 / 341 题的技术来源核验](SOURCE_AUDIT.md)是另一项工作，两者有重叠，不能相加。
 
 ## 如何运行
 
@@ -12,8 +12,8 @@
 # Python 3.12+：15 道算法题，使用标准库 unittest
 python3 -m unittest discover -s tests -p 'test_algorithm*.py' -v
 
-# Node.js 22+：前端 Q37 的 Promise 示例
-node --test tests/promise-*.test.cjs
+# Node.js 22+：Q37 Promise 与 Q39 取消重试示例
+node --test tests/promise-*.test.cjs tests/fetch-retry.test.cjs
 ```
 
 两条命令都应退出为 0；Python 显示 `OK`，Node 显示失败数为 0。命令只执行本地文档和测试，不访问在线题库。修改代码后运行相关检查，再观察报错中的题目位置和失败输入。
@@ -56,6 +56,14 @@ Python 的 [提取器](tests/markdown_examples.py)按文件和 Q 题号读取唯
 
 `myAllSettled` 仍不支持稀疏数组和通用 iterable；数组访问器/代理在映射期间改写输入、映射阶段同步异常、Promise 子类及被改写的内建方法不在支持范围内。thenable 自身的 `then` getter 抛错由原生 `Promise.resolve` 转成拒绝，属于已检查场景。组合实现增加 Promise 链，不保证与原生方法具有完全相同的微任务时序。Q37 四个实现均有各自限定范围的回归，不等于完整规范一致性验证。
 
+<a id="fetch-retry-checks"></a>
+
+## 取消与重试检查范围
+
+[前端 Q39](frontend/frontend_bigco.md#q39)的[独立回归](tests/fetch-retry.test.cjs)直接提取原文的重试函数和组合函数，用真实 `AbortController`、固定 fetch 响应及可控计时器验证：请求前取消、请求中取消、退避等待中取消、取消后不再请求、计时器和监听器清理，以及直接返回可调用的 `cancel()`。
+
+保留 `maxRetries=3`、`delay=1000`、`backoff=2` 和原有 `shouldRetry` 规则，并检查正常成功、重试耗尽和自定义停止条件。组合函数合并外部信号与自身取消信号，要求支持 `AbortSignal.any` 的现代浏览器或 Node.js 22+。测试不发真实网络请求，不验证服务器端取消、真实网络耗时或所有浏览器版本。这仍是教学示例，没有新增超时、jitter 或请求幂等策略。
+
 ## 这轮检查带来的修正
 
 - Q32：递归 DFS 改为显式栈，避免 300×300 连通网格触发递归深度限制；保持原地修改行为。
@@ -69,4 +77,4 @@ Python 的 [提取器](tests/markdown_examples.py)按文件和 Q 题号读取唯
 
 [Example checks](.github/workflows/examples.yml)在 Node.js 22 / 24 和 Python 3.12 / 3.13 上运行上述两套检查。执行状态以对应提交的 [Actions 记录](https://github.com/xyma2003/interview-bagu/actions/workflows/examples.yml)为准。
 
-其余 325 道题未纳入这组自动回归，算法手册中的相似实现也不自动算作已测。测试不证明最优复杂度、所有运行时版本、极限资源消耗或真实服务效果；递归示例尤其需要结合深度限制阅读。发现问题时用[内容纠错表单](https://github.com/xyma2003/interview-bagu/issues/new?template=content-correction.yml)提交具体输入和依据，修改方式见[贡献说明](CONTRIBUTING.md)。
+其余 324 道题未纳入这组自动回归，算法手册中的相似实现也不自动算作已测。测试不证明最优复杂度、所有运行时版本、极限资源消耗或真实服务效果；递归示例尤其需要结合深度限制阅读。发现问题时用[内容纠错表单](https://github.com/xyma2003/interview-bagu/issues/new?template=content-correction.yml)提交具体输入和依据，修改方式见[贡献说明](CONTRIBUTING.md)。

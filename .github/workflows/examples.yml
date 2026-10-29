@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Verify the documented Promise examples
-        run: node --test tests/promise-*.test.cjs
+        run: node --test tests/promise-*.test.cjs tests/fetch-retry.test.cjs
 
   algorithm-examples:
     runs-on: ubuntu-latest
