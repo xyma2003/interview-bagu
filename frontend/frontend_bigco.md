@@ -648,7 +648,7 @@ function deepClone(target, map = new WeakMap()) {
   }
   
   // 普通对象和数组
-  const clone = Array.isArray(target) ? [] : Object.create(Object.getPrototypeOf(target));
+  const clone = Array.isArray(target) ? new Array(target.length) : Object.create(Object.getPrototypeOf(target));
   map.set(target, clone);  // 先存，再递归（处理循环引用）
   
   // 处理 Symbol key
@@ -662,6 +662,7 @@ function deepClone(target, map = new WeakMap()) {
 
 **常见遗漏**：
 - 循环引用（WeakMap 记录已拷贝对象）
+- 稀疏数组的长度和空位（先按原长度创建数组，只复制实际存在的属性）
 - Date、RegExp（需要特殊构造）
 - Map、Set（forEach 递归）
 - Symbol 类型的属性键
@@ -674,7 +675,14 @@ function deepClone(target, map = new WeakMap()) {
 3. `Object.getOwnPropertySymbols` 处理 Symbol key
 
 **示例答案**：
-深拷贝的几个关键点：第一，用 WeakMap 记录已拷贝的对象，遇到已拷贝的直接返回，解决循环引用；要先 `map.set(target, clone)` 再递归子属性，不然循环引用时会先递归而不是先记录，仍然死循环。第二，特殊类型单独处理：Date 用 `new Date(target.valueOf())`，RegExp 用 `new RegExp(source, flags)`，Map 和 Set 要 forEach 递归键值。第三，保留原型链：用 `Object.create(Object.getPrototypeOf(target))` 创建 clone，而非 `{}`，这样克隆出来的对象 instanceof 关系不会丢失。第四，Symbol 属性键：`Object.keys` 不包含 Symbol，需要另外用 `Object.getOwnPropertySymbols`。函数通常不深拷贝，直接引用原函数（函数一般是无副作用的）。
+深拷贝的几个关键点：第一，用 WeakMap 记录已拷贝的对象，遇到已拷贝的直接返回，解决循环引用；要先 `map.set(target, clone)` 再递归子属性，不然循环引用时会先递归而不是先记录，仍然死循环。第二，特殊类型单独处理：Date 用 `new Date(target.valueOf())`，RegExp 用 `new RegExp(source, flags)`，Map 和 Set 要 forEach 递归键值。第三，普通对象用 `Object.create(Object.getPrototypeOf(target))` 保留原型；普通数组用 `new Array(target.length)` 保留长度，再复制实际存在的属性，全空数组和尾部空位才不会丢失。空位与值为 `undefined` 的元素不同，不能通过填充数组替代。第四，Symbol 属性键：`Object.keys` 不包含 Symbol，需要另外用 `Object.getOwnPropertySymbols`。函数按原引用返回，不复制闭包；函数仍然可能有副作用。
+
+**已验证范围与限制**：
+
+- 本题是教学实现。自动测试覆盖普通数组、普通对象组成的图：数组长度、空位与显式 `undefined`、嵌套数据的独立性、循环和重复对象引用，以及自定义字符串与 Symbol 属性。命令为 `node --test tests/deep-clone.test.cjs`，直接提取本题代码运行。
+- 当前枚举方式复制自有可枚举字符串属性和全部自有 Symbol 属性；不复制不可枚举字符串属性，也不保留属性描述符。Symbol 属性通过赋值写入，原本不可枚举的 Symbol 属性也会变为可枚举。
+- Date、RegExp 分支没有把新对象登记到 WeakMap，因此不保留它们的重复引用关系；RegExp 的 `lastIndex`、特殊类型的自定义属性也没有复制。Map、Set 保留现有实现，不代表所有特殊类型已通过验证。
+- 保留原型不等于完整复制类实例。本题不承诺访问器、属性描述符、代理、TypedArray、ArrayBuffer、DOM 对象、内部槽、跨 realm 的特殊类型或极深递归等行为；需要这些能力时应另选明确支持对应类型的方案。
 
 ---
 

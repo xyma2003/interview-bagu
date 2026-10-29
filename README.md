@@ -98,7 +98,7 @@ cat LEARNING_GUIDE.md
 
 ## 示例验证
 
-目前自动检查 **17 / 341 道题**：15 道算法题、前端 Q37 的四个 Promise 实现，以及 Q39 的取消与重试。测试直接提取文档代码运行，具体题目、输入范围与限制见[示例验证清单](EXAMPLE_CHECKS.md)。同一题的多个实现不重复计数。
+目前自动检查 **18 / 341 道题**：15 道算法题、前端 Q37 的四个 Promise 实现、Q39 的取消重试，以及 Q42 的深拷贝数组边界。测试直接提取文档代码运行，具体题目、输入范围与限制见[示例验证清单](EXAMPLE_CHECKS.md)。同一题的多个实现不重复计数。
 
 在仓库根目录执行，无额外依赖：
 
@@ -106,11 +106,11 @@ cat LEARNING_GUIDE.md
 # Python 3.12+：算法示例
 python3 -m unittest discover -s tests -p 'test_algorithm*.py' -v
 
-# Node.js 22+：Promise 示例
-node --test tests/promise-*.test.cjs tests/fetch-retry.test.cjs
+# Node.js 22+：Promise、取消重试与深拷贝示例
+node --test tests/promise-*.test.cjs tests/fetch-retry.test.cjs tests/deep-clone.test.cjs
 ```
 
-算法检查覆盖数组、字符串、树图、动态规划、链表和 LRU 的选定边界；Promise 与原生实现对照。CI 覆盖 Node.js 22 / 24、Python 3.12 / 3.13。简化 `myAllSettled` / `myRace` 只检查普通稠密数组，保留教学实现的输入与时序限制，不是完整 polyfill。其余 324 题及算法手册中的相似实现未自动获得测试覆盖，来源核验仍单独按 23/341 统计。
+算法检查覆盖数组、字符串、树图、动态规划、链表和 LRU 的选定边界；Promise 与原生实现对照。CI 覆盖 Node.js 22 / 24、Python 3.12 / 3.13。简化 `myAllSettled` / `myRace` 只检查普通稠密数组，保留教学实现的输入与时序限制，不是完整 polyfill。其余 323 题及算法手册中的相似实现未自动获得测试覆盖，来源核验仍单独按 23/341 统计。
 
 发现内容问题，可以提交[具体纠错](https://github.com/xyma2003/interview-bagu/issues/new?template=content-correction.yml)；修改方式见[贡献说明](CONTRIBUTING.md)。
 
@@ -180,9 +180,9 @@ Precision/Recall/AUC · Embedding/Word2Vec · 反向传播/梯度消失 · K-Mea
 
 ## 维护与参与
 
-当前维护重点是纠正已有内容、补齐来源与输入边界，以及让文档里的代码可以直接验证。来源核验为 **23 / 341 题**，可执行示例检查为 **17 / 341 题**；两者有重叠，不能相加。其余内容、旧版公司与频率标签仍需逐项核对，教学代码也不等于完整生产实现。
+当前维护重点是纠正已有内容、补齐来源与输入边界，以及让文档里的代码可以直接验证。来源核验为 **23 / 341 题**，可执行示例检查为 **18 / 341 题**；两者有重叠，不能相加。其余内容、旧版公司与频率标签仍需逐项核对，教学代码也不等于完整生产实现。
 
-**最近补齐：** [Q39 取消与重试](frontend/frontend_bigco.md#q39)在取消后立即结束请求或退避等待，不再继续重试；组合函数直接返回 `cancel()`。新增[原文执行回归](tests/fetch-retry.test.cjs)，运行时要求与边界见[验证范围](EXAMPLE_CHECKS.md#fetch-retry-checks)。Q37 的四个 Promise 实现继续保留各自回归，同一题不重复计数。
+**最近补齐：** [Q42 深拷贝](frontend/frontend_bigco.md#q42)保留稀疏数组长度和尾部空位，新增[原文执行回归](tests/deep-clone.test.cjs)并明确[适用边界](EXAMPLE_CHECKS.md#deep-clone-checks)。[Q39 取消与重试](frontend/frontend_bigco.md#q39)已支持取消后立即结束等待；Q37 的四个 Promise 实现继续保留各自回归，同一题不重复计数。
 
 继续贡献时，可从未覆盖的题目中选一段实现，按[贡献说明](CONTRIBUTING.md)提供题号、有效输入范围、独立参照和可重复运行的检查。不要直接复制答案到测试中，也不要把未检查的实现算入覆盖范围。
 
